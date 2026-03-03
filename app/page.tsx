@@ -28,7 +28,7 @@ export default function Home() {
         </p>
 
         {/* Button */}
-        <Link href="/products">
+        <Link href="/login">
           <button className="bg-black text-white px-10 py-3 rounded-full hover:opacity-80 transition">
             Get Started
           </button>
