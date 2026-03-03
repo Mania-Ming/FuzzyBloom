@@ -6,7 +6,7 @@ export default function Dashboard() {
     <div className="min-h-screen text-black">
 
       {/* ================= NAVBAR ================= */}
-      <div className="fixed top-0 left-0 w-full bg-white flex items-center justify-between px-10 py-4 shadow-sm z-50">
+      <div className="sticky top-0 w-full h-[88px] bg-white flex items-center justify-between px-10 shadow-sm z-50">
 
         {/* LEFT */}
         <div className="flex items-center gap-4">
@@ -25,7 +25,7 @@ export default function Dashboard() {
           <input
             type="text"
             placeholder="Search"
-            className="outline-none w-full px-5 py-2 text-sm"
+            className="outline-none w-full px-5 py-2 text-sm text-black"
           />
           <button className="bg-black text-white px-6 py-2 text-sm">
             Search
@@ -33,15 +33,12 @@ export default function Dashboard() {
         </div>
 
         {/* RIGHT */}
-        <div className="flex items-center gap-8 font-medium">
+        <div className="flex items-center gap-8 font-medium text-black">
           <Link href="#">Wishlist</Link>
           <Link href="#">Cart</Link>
           <Link href="/">Logout</Link>
         </div>
       </div>
-
-      {/* spacing para di matabonan sa fixed navbar */}
-      <div className="pt-[95px]" />
 
       {/* ================= HERO SECTION ================= */}
       <div className="bg-[#d8ced6] px-20 py-16 flex justify-between items-center">
@@ -91,13 +88,21 @@ export default function Dashboard() {
             { name: "Ribbon", img: "/c3.png" },
             { name: "Headbands", img: "/c4.png" },
           ].map((cat, index) => (
-            <div key={index} className="flex flex-col items-center">
-              <Image
-                src={cat.img}
-                alt={cat.name}
-                width={130}
-                height={130}
-              />
+            <div
+              key={index}
+              className="flex flex-col items-center w-[180px]"
+            >
+              {/* FIXED IMAGE HEIGHT PARA ALIGN */}
+              <div className="h-[150px] flex items-center justify-center">
+                <Image
+                  src={cat.img}
+                  alt={cat.name}
+                  width={130}
+                  height={130}
+                  className="object-contain"
+                />
+              </div>
+
               <p
                 className="mt-4 text-xl text-black"
                 style={{ fontFamily: "var(--font-pacifico)" }}
@@ -106,6 +111,7 @@ export default function Dashboard() {
               </p>
             </div>
           ))}
+
         </div>
       </div>
 
@@ -153,7 +159,7 @@ export default function Dashboard() {
                 className="mx-auto"
               />
 
-              <h3 className="mt-5 font-semibold text-lg">
+              <h3 className="mt-5 font-semibold text-lg text-black">
                 {product.name}
               </h3>
 
@@ -166,6 +172,7 @@ export default function Dashboard() {
               </p>
             </div>
           ))}
+
         </div>
 
         <button className="bg-black text-white px-12 py-3 rounded-full mt-16 hover:opacity-80 transition">
@@ -174,22 +181,24 @@ export default function Dashboard() {
       </div>
 
       {/* ================= FOOTER ================= */}
-      <div className="bg-[#d8ced6] px-20 py-12 text-black">
+      <div className="bg-[#d8ced6] px-16 py-12 text-sm text-black">
 
-        <div className="flex justify-between items-center">
+        <div className="grid grid-cols-3 items-start">
 
           {/* LEFT */}
-          <div className="flex items-center gap-4">
+          <div className="flex gap-4">
             <Image
               src="/logo.jpg"
               alt="Fuzzy Bloom Logo"
-              width={80}
-              height={80}
+              width={70}
+              height={70}
               className="rounded-full"
             />
             <div>
               <p className="font-semibold">Fuzzy Bloom</p>
               <p>Handicrafts by Kate</p>
+              <p>09054026505</p>
+              <p>fuzzybloom@gmail.com</p>
             </div>
           </div>
 
@@ -209,8 +218,8 @@ export default function Dashboard() {
 
         </div>
 
-        <p className="text-center mt-8">
-          Copyright © 2026. Fuzzy Bloom Handicrafts by Kate.
+        <p className="text-center mt-8 text-gray-700">
+          Copyright © 2026. Fuzzy Bloom Handicrafts by Kate. All right reserved.
         </p>
       </div>
 
