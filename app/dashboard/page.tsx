@@ -74,7 +74,7 @@ export default function Dashboard() {
         <div className="flex justify-center gap-16">
 
           <div className="flex flex-col items-center">
-            <Image src="/bouquet.png" alt="Bouquets" width={80} height={80}/>
+            <Image src="/c1.png" alt="Bouquets" width={80} height={80}/>
             <p
               className="mt-3 text-lg text-purple-900"
               style={{ fontFamily: "var(--font-pacifico)" }}
@@ -84,7 +84,7 @@ export default function Dashboard() {
           </div>
 
           <div className="flex flex-col items-center">
-            <Image src="/flower.png" alt="Flower" width={80} height={80}/>
+            <Image src="/c2.png" alt="Flower" width={80} height={80}/>
             <p
               className="mt-3 text-lg text-purple-900"
               style={{ fontFamily: "var(--font-pacifico)" }}
@@ -94,7 +94,7 @@ export default function Dashboard() {
           </div>
 
           <div className="flex flex-col items-center">
-            <Image src="/ribbon.png" alt="Ribbon" width={80} height={80}/>
+            <Image src="/c3.png" alt="Ribbon" width={80} height={80}/>
             <p
               className="mt-3 text-lg text-purple-900"
               style={{ fontFamily: "var(--font-pacifico)" }}
@@ -104,7 +104,7 @@ export default function Dashboard() {
           </div>
 
           <div className="flex flex-col items-center">
-            <Image src="/headband.png" alt="Headbands" width={80} height={80}/>
+            <Image src="/c4.png" alt="Headbands" width={80} height={80}/>
             <p
               className="mt-3 text-lg text-purple-900"
               style={{ fontFamily: "var(--font-pacifico)" }}
@@ -115,6 +115,51 @@ export default function Dashboard() {
 
         </div>
       </div>
+
+       {/* PRODUCTS SECTION */}
+      <div className="text-center pb-16">
+
+        <h2 className="text-2xl font-semibold text-purple-900 mb-10">
+          Kate Handicrafts
+        </h2>
+
+        <div className="flex justify-center gap-10 flex-wrap">
+
+          {/* PRODUCT CARD */}
+          <div className="bg-white p-6 rounded-xl shadow-md w-[260px]">
+            <Image src="/p1.png" alt="Lavender Grace" width={220} height={220}/>
+            <h3 className="mt-4 font-semibold">Lavender Grace</h3>
+            <p className="text-sm text-gray-600 mb-2">
+              Soft pink pom-pom flowers, sweet and cute design
+            </p>
+            <p className="text-red-600 font-bold text-lg">₱499</p>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-md w-[260px]">
+            <Image src="/p2.png" alt="Ruby & Sky" width={220} height={220}/>
+            <h3 className="mt-4 font-semibold">Ruby & Sky</h3>
+            <p className="text-sm text-gray-600 mb-2">
+              Red and baby blue tulips, bold but balanced
+            </p>
+            <p className="text-red-600 font-bold text-lg">₱599</p>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-md w-[260px]">
+            <Image src="/p3.png" alt="Mint Serenity" width={220} height={220}/>
+            <h3 className="mt-4 font-semibold">Mint Serenity</h3>
+            <p className="text-sm text-gray-600 mb-2">
+              Mint green tulips, clean and modern look
+            </p>
+            <p className="text-red-600 font-bold text-lg">₱569</p>
+          </div>
+
+        </div>
+
+        <button className="bg-black text-white px-10 py-3 rounded-full mt-12 hover:opacity-80 transition">
+          Load more
+        </button>
+      </div>
+
 
       {/* FOOTER */}
       <div className="bg-[#d8ced6] px-16 py-10 text-sm">
