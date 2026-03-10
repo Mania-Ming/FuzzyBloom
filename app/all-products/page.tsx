@@ -58,7 +58,7 @@ export default function AllProducts() {
         </div>
 
         <div className="flex items-center gap-8 font-medium">
-          <Link href="#">Wishlist</Link>
+          <Link href="/wishlist">Wishlist</Link>
           <Link href="#">Cart</Link>
           <Link href="/">Logout</Link>
         </div>
@@ -94,21 +94,23 @@ export default function AllProducts() {
         <div className="grid grid-cols-5 gap-8">
 
           {[
-            { name:"Lavender Grace", img:"/p1.png", price:"₱499", desc:"Soft pink pom-pom flowers, sweet and cute design" },
+            { name:"Lavender Grace", img:"/p1.png", price:"₱499", desc:"Soft pink pom-pom flowers, sweet & cute" },
             { name:"Ruby & Sky", img:"/p2.png", price:"₱499", desc:"Red and baby blue tulips, bold but balanced" },
             { name:"Mint Serenity", img:"/p3.png", price:"₱499", desc:"Mint green tulips, clean and modern look" },
-            { name:"Baby Blue Bliss", img:"/p4.png", price:"₱499", desc:"Sky-blue pom-pom flowers, fresh and minimalist" },
+            { name:"Baby Blue Bliss", img:"/p4.png", price:"₱499", desc:"Sky-blue flowers, fresh and minimalist" },
             { name:"Golden Sun", img:"/p5.png", price:"₱499", desc:"Yellow blossoms bright and cheerful bouquet" },
           ].map((item,i)=>(
-            <div key={i} className="bg-white p-4 rounded-xl shadow text-center">
 
+            <Link href="/details" key={i}>
+            <div className="bg-white p-4 rounded-xl shadow text-center cursor-pointer">
+                
               <Image
                 src={item.img}
                 alt={item.name}
                 width={200}
                 height={200}
-                className="mx-auto"
-              />
+                className="mx-auto object-contain h-[220px]"
+                />
 
               <h3 className="mt-3 font-semibold">{item.name}</h3>
 
@@ -124,10 +126,12 @@ export default function AllProducts() {
               </button>
 
             </div>
+             </Link>
           ))}
 
         </div>
       </div>
+      
 
       {/* ================= FLOWER KEYCHAINS ================= */}
       <div className="px-16 mb-16">

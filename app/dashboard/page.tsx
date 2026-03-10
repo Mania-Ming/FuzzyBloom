@@ -1,43 +1,68 @@
+"use client"
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
-export default function Dashboard() {
+export default function AllProducts() {
+
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen text-black">
+
+      {/* ================= SIDEBAR MENU ================= */}
+      {menuOpen && (
+        <div className="fixed top-0 left-0 w-64 h-full bg-white/20 backdrop-blur-md text-dark flex flex-col justify-center items-center space-y-8 text-2xl z-50">   
+          <Link href="#">About</Link>
+          <Link href="#">Contact</Link>
+          <Link href="#">Terms</Link>
+        </div>
+      )}
 
       {/* ================= NAVBAR ================= */}
       <div className="sticky top-0 w-full h-[88px] bg-white flex items-center justify-between px-10 shadow-sm z-50">
 
-        {/* LEFT */}
         <div className="flex items-center gap-4">
-          <Image
-            src="/logo.jpg"
-            alt="Logo"
-            width={55}
-            height={55}
-            className="rounded-full"
-          />
-          <div className="text-2xl cursor-pointer">☰</div>
+
+          {/* LOGO → DASHBOARD */}
+          <Link href="/dashboard">
+            <Image
+              src="/logo.jpg"
+              alt="Logo"
+              width={55}
+              height={55}
+              className="rounded-full cursor-pointer"
+            />
+          </Link>
+
+          {/* HAMBURGER */}
+          <div
+            className="text-2xl cursor-pointer"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            ☰
+          </div>
+
         </div>
 
-        {/* SEARCH */}
         <div className="flex items-center border border-gray-300 rounded-full overflow-hidden w-[420px]">
           <input
             type="text"
             placeholder="Search"
-            className="outline-none w-full px-5 py-2 text-sm text-black"
+            className="outline-none w-full px-5 py-2 text-sm"
           />
           <button className="bg-black text-white px-6 py-2 text-sm">
             Search
           </button>
         </div>
 
-        {/* RIGHT */}
-        <div className="flex items-center gap-8 font-medium text-black">
-          <Link href="#">Wishlist</Link>
+        <div className="flex items-center gap-8 font-medium">
+          <Link href="/wishlist">Wishlist</Link>
           <Link href="#">Cart</Link>
           <Link href="/">Logout</Link>
         </div>
+
       </div>
 
       {/* ================= HERO SECTION ================= */}
@@ -58,10 +83,11 @@ export default function Dashboard() {
             passionately creating handmade floral crafts
             and decorative pieces inspired by nature.
           </p>
-
+          <Link href="/all-products">
           <button className="bg-black text-white px-10 py-3 rounded-full hover:opacity-80 transition">
             Shop now
           </button>
+          </Link>
         </div>
 
         <Image
