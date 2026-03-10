@@ -174,10 +174,11 @@ export default function Dashboard() {
           ))}
 
         </div>
-
+          <Link href="/all-products">
         <button className="bg-black text-white px-12 py-3 rounded-full mt-16 hover:opacity-80 transition">
-          Load more
+          View All Products
         </button>
+        </Link>
       </div>
 
       {/* ================= FOOTER ================= */}
