@@ -13,54 +13,75 @@ export default function AllProducts() {
 
       {/* ================= SIDEBAR MENU ================= */}
       {menuOpen && (
-        <div className="fixed top-0 left-0 w-64 h-full bg-white/20 backdrop-blur-md text-dark flex flex-col justify-center items-center space-y-8 text-2xl z-50">   
-          <Link href="#">About</Link>
+        <div className="fixed left-0 top-[88px] w-64 h-[calc(100vh-88px)] bg-white shadow-lg flex flex-col items-center pt-16 space-y-8 text-xl z-40">
+
+          <Link href="/about">About</Link>
           <Link href="#">Contact</Link>
           <Link href="#">Terms</Link>
+
         </div>
       )}
 
       {/* ================= NAVBAR ================= */}
       <div className="sticky top-0 w-full h-[88px] bg-white flex items-center justify-between px-10 shadow-sm z-50">
 
+        {/* LEFT SIDE */}
         <div className="flex items-center gap-4">
 
-          {/* LOGO → DASHBOARD */}
           <Link href="/dashboard">
             <Image
               src="/logo.jpg"
-              alt="Logo"
+              alt="logo"
               width={55}
               height={55}
-              className="rounded-full cursor-pointer"
+              className="rounded-full"
             />
           </Link>
 
           {/* HAMBURGER */}
           <div
-            className="text-2xl cursor-pointer"
             onClick={() => setMenuOpen(!menuOpen)}
+            className="text-2xl cursor-pointer select-none"
           >
             ☰
           </div>
 
         </div>
 
+        {/* SEARCH BAR */}
         <div className="flex items-center border border-gray-300 rounded-full overflow-hidden w-[420px]">
+
           <input
             type="text"
             placeholder="Search"
             className="outline-none w-full px-5 py-2 text-sm"
           />
-          <button className="bg-black text-white px-6 py-2 text-sm">
+
+          <button className="px-6 py-2 bg-black text-white text-sm">
             Search
           </button>
+
         </div>
 
+        {/* RIGHT SIDE MENU */}
         <div className="flex items-center gap-8 font-medium">
-          <Link href="/wishlist">Wishlist</Link>
-          <Link href="#">Cart</Link>
-          <Link href="/">Logout</Link>
+
+          <Link href="/wishlist">
+            Wishlist
+          </Link>
+
+          <Link href="/cart">
+            Cart
+          </Link>
+
+          <Link href="/orders">
+            Orders
+          </Link>
+
+          <Link href="/">
+            Logout
+          </Link>
+
         </div>
 
       </div>
@@ -83,11 +104,13 @@ export default function AllProducts() {
             passionately creating handmade floral crafts
             and decorative pieces inspired by nature.
           </p>
+
           <Link href="/all-products">
-          <button className="bg-black text-white px-10 py-3 rounded-full hover:opacity-80 transition">
-            Shop now
-          </button>
+            <button className="bg-black text-white px-10 py-3 rounded-full hover:opacity-80 transition">
+              Shop now
+            </button>
           </Link>
+
         </div>
 
         <Image
@@ -97,6 +120,7 @@ export default function AllProducts() {
           height={240}
           className="rounded-full"
         />
+
       </div>
 
       {/* ================= CATEGORIES ================= */}
@@ -114,11 +138,8 @@ export default function AllProducts() {
             { name: "Ribbon", img: "/c3.png" },
             { name: "Headbands", img: "/c4.png" },
           ].map((cat, index) => (
-            <div
-              key={index}
-              className="flex flex-col items-center w-[180px]"
-            >
-              {/* FIXED IMAGE HEIGHT PARA ALIGN */}
+            <div key={index} className="flex flex-col items-center w-[180px]">
+
               <div className="h-[150px] flex items-center justify-center">
                 <Image
                   src={cat.img}
@@ -135,10 +156,12 @@ export default function AllProducts() {
               >
                 {cat.name}
               </p>
+
             </div>
           ))}
 
         </div>
+
       </div>
 
       {/* ================= PRODUCTS ================= */}
@@ -177,6 +200,7 @@ export default function AllProducts() {
               key={index}
               className="bg-white p-8 rounded-2xl shadow-md w-[320px] hover:shadow-xl transition"
             >
+
               <Image
                 src={product.img}
                 alt={product.name}
@@ -196,15 +220,18 @@ export default function AllProducts() {
               <p className="text-black font-bold text-xl mt-3">
                 {product.price}
               </p>
+
             </div>
           ))}
 
         </div>
-          <Link href="/all-products">
-        <button className="bg-black text-white px-12 py-3 rounded-full mt-16 hover:opacity-80 transition">
-          View All Products
-        </button>
+
+        <Link href="/all-products">
+          <button className="bg-black text-white px-12 py-3 rounded-full mt-16 hover:opacity-80 transition">
+            View All Products
+          </button>
         </Link>
+
       </div>
 
       {/* ================= FOOTER ================= */}
@@ -212,7 +239,6 @@ export default function AllProducts() {
 
         <div className="grid grid-cols-3 items-start">
 
-          {/* LEFT */}
           <div className="flex gap-4">
             <Image
               src="/logo.jpg"
@@ -229,13 +255,11 @@ export default function AllProducts() {
             </div>
           </div>
 
-          {/* CENTER */}
           <div className="text-center">
             <p className="font-medium">Kate Dorraine Ceniza</p>
             <p>katedorraineceniza@gmail.com</p>
           </div>
 
-          {/* RIGHT */}
           <div className="text-right space-y-1">
             <p>About Us</p>
             <p>Category</p>
@@ -248,6 +272,7 @@ export default function AllProducts() {
         <p className="text-center mt-8 text-gray-700">
           Copyright © 2026. Fuzzy Bloom Handicrafts by Kate. All right reserved.
         </p>
+
       </div>
 
     </div>

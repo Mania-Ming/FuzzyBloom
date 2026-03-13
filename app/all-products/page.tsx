@@ -8,62 +8,106 @@ export default function AllProducts() {
 
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // ADD TO CART FUNCTION
+  function addToCart(item:any){
+
+    let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+    const exist = cart.find((c:any)=>c.name === item.name);
+
+    if(!exist){
+
+      cart.push({
+        name:item.name,
+        price:item.price,
+        img:item.img,
+        qty:1
+      });
+
+      localStorage.setItem("cart", JSON.stringify(cart));
+
+      alert("Added to Cart 🛒");
+
+    }else{
+
+      alert("Item already in cart");
+
+    }
+  }
+
   return (
     <div className="min-h-screen text-black">
 
       {/* ================= SIDEBAR MENU ================= */}
       {menuOpen && (
         <div className="fixed top-0 left-0 w-64 h-full bg-white/20 backdrop-blur-md text-dark flex flex-col justify-center items-center space-y-8 text-2xl z-50">   
-          <Link href="#">About</Link>
+          <Link href="/about">About</Link>
           <Link href="#">Contact</Link>
           <Link href="#">Terms</Link>
         </div>
       )}
 
       {/* ================= NAVBAR ================= */}
-      <div className="sticky top-0 w-full h-[88px] bg-white flex items-center justify-between px-10 shadow-sm z-50">
+           <div className="sticky top-0 w-full h-[88px] bg-white flex items-center justify-between px-10 shadow-sm">
 
+        {/* LEFT SIDE */}
         <div className="flex items-center gap-4">
 
-          {/* LOGO → DASHBOARD */}
-          <Link href="/dashboard">
-            <Image
-              src="/logo.jpg"
-              alt="Logo"
-              width={55}
-              height={55}
-              className="rounded-full cursor-pointer"
-            />
-          </Link>
+        <Link href="/dashboard">
+        <Image
+        src="/logo.jpg"
+        alt="logo"
+        width={55}
+        height={55}
+        className="rounded-full"
+        />
+        </Link>
 
-          {/* HAMBURGER */}
-          <div
-            className="text-2xl cursor-pointer"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            ☰
-          </div>
+        <div className="text-2xl">
+        ☰
+        </div>
 
         </div>
 
+
+        {/* SEARCH BAR */}
         <div className="flex items-center border border-gray-300 rounded-full overflow-hidden w-[420px]">
-          <input
-            type="text"
-            placeholder="Search"
-            className="outline-none w-full px-5 py-2 text-sm"
-          />
-          <button className="bg-black text-white px-6 py-2 text-sm">
-            Search
-          </button>
+
+        <input
+        type="text"
+        placeholder="Search"
+        className="outline-none w-full px-5 py-2 text-sm"
+        />
+
+        <button className="px-6 py-2 bg-black text-white text-sm">
+        Search
+        </button>
+
         </div>
 
+
+        {/* RIGHT SIDE MENU */}
         <div className="flex items-center gap-8 font-medium">
-          <Link href="/wishlist">Wishlist</Link>
-          <Link href="#">Cart</Link>
-          <Link href="/">Logout</Link>
+
+        <Link href="/wishlist">
+        Wishlist
+        </Link>
+
+        <Link href="/cart">
+        Cart
+        </Link>
+
+        <Link href="/orders">
+        Orders
+        </Link>
+
+        <Link href="/">
+        Logout
+        </Link>
+
         </div>
 
-      </div>
+        </div>
 
       {/* ================= TITLE ================= */}
       <div className="text-center py-10">
@@ -75,17 +119,14 @@ export default function AllProducts() {
         </h1>
       </div>
 
-      {/* ================= REST OF YOUR CODE (UNCHANGED) ================= */}
 
       {/* ================= BOUQUETS ================= */}
       <div className="px-16 mb-16">
 
-        <h2
-          className="text-2xl mb-6"
-          style={{ fontFamily: "var(--font-pacifico)" }}
-        >
+        <h2 className="text-2xl mb-6" style={{ fontFamily: "var(--font-pacifico)" }}>
           Bouquets
         </h2>
+
         <p className="text-sm mb-4 text-gray-600">
           Handmade floral keychain with soft pipe-cleaner petals and pearl accent.
           Available in assorted colors.
@@ -101,45 +142,47 @@ export default function AllProducts() {
             { name:"Golden Sun", img:"/p5.png", price:"₱499", desc:"Yellow blossoms bright and cheerful bouquet" },
           ].map((item,i)=>(
 
-            <Link href="/details" key={i}>
-            <div className="bg-white p-4 rounded-xl shadow text-center cursor-pointer">
-                
-              <Image
-                src={item.img}
-                alt={item.name}
-                width={200}
-                height={200}
-                className="mx-auto object-contain h-[220px]"
+            <div key={i} className="bg-white p-4 rounded-xl shadow text-center">
+
+              <Link href="/details">
+
+                <Image
+                  src={item.img}
+                  alt={item.name}
+                  width={200}
+                  height={200}
+                  className="mx-auto object-contain h-[220px] cursor-pointer"
                 />
 
-              <h3 className="mt-3 font-semibold">{item.name}</h3>
+                <h3 className="mt-3 font-semibold">{item.name}</h3>
 
-              {/* DESCRIPTION */}
-              <p className="text-sm text-gray-600 mt-1">
-                {item.desc}
-              </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {item.desc}
+                </p>
 
-              <p className="text-red-600 font-bold mt-2">{item.price}</p>
+                <p className="text-red-600 font-bold mt-2">{item.price}</p>
 
-              <button className="mt-2 text-sm bg-[#f3d9e5] px-4 py-1 rounded-full">
+              </Link>
+
+              <button
+                onClick={() => addToCart(item)}
+                className="mt-2 text-sm bg-[#f3d9e5] px-4 py-1 rounded-full"
+              >
                 Add to Cart
               </button>
 
             </div>
-             </Link>
+
           ))}
 
         </div>
       </div>
-      
+
 
       {/* ================= FLOWER KEYCHAINS ================= */}
       <div className="px-16 mb-16">
 
-        <h2
-          className="text-2xl mb-2"
-          style={{ fontFamily: "var(--font-pacifico)" }}
-        >
+        <h2 className="text-2xl mb-2" style={{ fontFamily: "var(--font-pacifico)" }}>
           Flower Keychains
         </h2>
 
@@ -158,20 +201,17 @@ export default function AllProducts() {
           We can customize colors.
         </p>
 
-        <button className="mb-6 text-sm bg-[#f3d9e5] px-4 py-2 rounded-full">
+        <button
+          onClick={() => addToCart({name:"Petal Pop Keychain", price:"₱129", img:"/k1.png"})}
+          className="mb-6 text-sm bg-[#f3d9e5] px-4 py-2 rounded-full"
+        >
           Add to Cart
         </button>
 
         <div className="grid grid-cols-6 gap-6">
 
-          {[
-            "/k1.png",
-            "/k2.png",
-            "/k3.png",
-            "/k4.png",
-            "/k5.png",
-            "/k6.png",
-          ].map((img,i)=>(
+          {["/k1.png","/k2.png","/k3.png","/k4.png","/k5.png","/k6.png"].map((img,i)=>(
+
             <div key={i} className="bg-white p-3 rounded-lg shadow">
 
               <Image
@@ -182,19 +222,18 @@ export default function AllProducts() {
               />
 
             </div>
+
           ))}
 
         </div>
 
       </div>
 
+
       {/* ================= RIBBON KEYCHAINS ================= */}
       <div className="px-16 mb-16">
 
-        <h2
-          className="text-2xl mb-2"
-          style={{ fontFamily: "var(--font-pacifico)" }}
-        >
+        <h2 className="text-2xl mb-2" style={{ fontFamily: "var(--font-pacifico)" }}>
           Ribbon Keychains
         </h2>
 
@@ -203,28 +242,22 @@ export default function AllProducts() {
         </p>
 
         <p className="text-sm mb-4 text-gray-600">
-          Handmade fluffy ribbon keychain with pearl center. Soft, cute, and perfect for bags, keys, or gifts.
+          Handmade fluffy ribbon keychain with pearl center.
         </p>
 
         <p className="text-red-600 font-bold text-xl mb-2">₱99</p>
 
-        <p className="text-sm text-gray-500 mb-4">
-          We can customize colors.
-        </p>
-
-        <button className="mb-6 text-sm bg-[#f3d9e5] px-4 py-2 rounded-full">
+        <button
+          onClick={() => addToCart({name:"Pearl Bow Keychain", price:"₱99", img:"/r1.png"})}
+          className="mb-6 text-sm bg-[#f3d9e5] px-4 py-2 rounded-full"
+        >
           Add to Cart
         </button>
 
         <div className="grid grid-cols-6 gap-6">
 
-          {[
-            "/r1.png",
-            "/r2.png",
-            "/r3.png",
-            "/r4.png",
-            "/r5.png",
-          ].map((img,i)=>(
+          {["/r1.png","/r2.png","/r3.png","/r4.png","/r5.png"].map((img,i)=>(
+
             <div key={i} className="bg-white p-3 rounded-lg shadow">
 
               <Image
@@ -235,6 +268,7 @@ export default function AllProducts() {
               />
 
             </div>
+
           ))}
 
         </div>
@@ -245,28 +279,20 @@ export default function AllProducts() {
       {/* ================= HEADBANDS ================= */}
       <div className="px-16 mb-16">
 
-        <h2
-          className="text-2xl mb-2"
-          style={{ fontFamily: "var(--font-pacifico)" }}
-        >
+        <h2 className="text-2xl mb-2" style={{ fontFamily: "var(--font-pacifico)" }}>
           Headband
         </h2>
 
-        <p className="text-sm mb-2 text-gray-600">
-          Sunflower Bloom Headband
-        </p>
-
         <p className="text-sm mb-4 text-gray-600">
-          (Handmade fluffy headband with sunflower details. Cute, comfy, and perfect for daily wear or gifts.)
+          Sunflower Bloom Headband
         </p>
 
         <p className="text-red-600 font-bold text-xl mb-2">₱99</p>
 
-        <p className="text-sm text-gray-500 mb-4">
-          We can customize colors.
-        </p>
-
-        <button className="mb-6 text-sm bg-[#f3d9e5] px-4 py-2 rounded-full">
+        <button
+          onClick={() => addToCart({name:"Sunflower Headband", price:"₱99", img:"/h1.png"})}
+          className="mb-6 text-sm bg-[#f3d9e5] px-4 py-2 rounded-full"
+        >
           Add to Cart
         </button>
 
@@ -287,48 +313,49 @@ export default function AllProducts() {
         </div>
 
       </div>
-            {/* ================= FOOTER ================= */}
-                  <div className="bg-[#d8ced6] px-16 py-12 text-sm text-black">
-            
-                    <div className="grid grid-cols-3 items-start">
-            
-                      {/* LEFT */}
-                      <div className="flex gap-4">
-                        <Image
-                          src="/logo.jpg"
-                          alt="Fuzzy Bloom Logo"
-                          width={70}
-                          height={70}
-                          className="rounded-full"
-                        />
-                        <div>
-                          <p className="font-semibold">Fuzzy Bloom</p>
-                          <p>Handicrafts by Kate</p>
-                          <p>09054026505</p>
-                          <p>fuzzybloom@gmail.com</p>
-                        </div>
-                      </div>
-            
-                      {/* CENTER */}
-                      <div className="text-center">
-                        <p className="font-medium">Kate Dorraine Ceniza</p>
-                        <p>katedorraineceniza@gmail.com</p>
-                      </div>
-            
-                      {/* RIGHT */}
-                      <div className="text-right space-y-1">
-                        <p>About Us</p>
-                        <p>Category</p>
-                        <p>Shop</p>
-                        <p>Policies</p>
-                      </div>
-            
-                    </div>
-            
-                    <p className="text-center mt-8 text-gray-700">
-                      Copyright © 2026. Fuzzy Bloom Handicrafts by Kate. All right reserved.
-                    </p>
-                  </div>
+
+
+      {/* ================= FOOTER ================= */}
+      <div className="bg-[#d8ced6] px-16 py-12 text-sm text-black">
+
+        <div className="grid grid-cols-3 items-start">
+
+          <div className="flex gap-4">
+            <Image
+              src="/logo.jpg"
+              alt="Fuzzy Bloom Logo"
+              width={70}
+              height={70}
+              className="rounded-full"
+            />
+            <div>
+              <p className="font-semibold">Fuzzy Bloom</p>
+              <p>Handicrafts by Kate</p>
+              <p>09054026505</p>
+              <p>fuzzybloom@gmail.com</p>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <p className="font-medium">Kate Dorraine Ceniza</p>
+            <p>katedorraineceniza@gmail.com</p>
+          </div>
+
+          <div className="text-right space-y-1">
+            <p>About Us</p>
+            <p>Category</p>
+            <p>Shop</p>
+            <p>Policies</p>
+          </div>
+
+        </div>
+
+        <p className="text-center mt-8 text-gray-700">
+          Copyright © 2026. Fuzzy Bloom Handicrafts by Kate. All right reserved.
+        </p>
+
+      </div>
+
     </div>
   );
 }

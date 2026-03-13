@@ -20,8 +20,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${pacifico.variable} bg-[#f2eef0]`}>
-        {children}
+      <body
+      className={`${pacifico.variable}`}
+      style={{
+      backgroundImage: "url('/bg.jpg')",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundAttachment: "fixed",
+      }}
+      >
+
+      <div className="min-h-screen bg-white/60 backdrop-blur-sm">
+      {children}
+      </div>
+
       </body>
     </html>
   );

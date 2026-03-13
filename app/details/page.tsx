@@ -4,71 +4,131 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-export default function AllProducts() {
+export default function ProductDetails() {
 
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen,setMenuOpen] = useState(false)
+
+  const product = {
+    name: "Lavender Grace",
+    price: "₱499",
+    img: "/p1.png",
+    qty: 1
+  }
+
+
+  // ADD TO CART
+  function addToCart(){
+
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]")
+
+    cart.push(product)
+
+    localStorage.setItem("cart",JSON.stringify(cart))
+
+    alert("Added to Cart!")
+
+  }
+
+
+  // ADD TO WISHLIST
+  function addToWishlist(){
+
+    const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]")
+
+    wishlist.push(product)
+
+    localStorage.setItem("wishlist",JSON.stringify(wishlist))
+
+    alert("Added to Wishlist!")
+
+  }
+
+
 
   return (
     <div className="min-h-screen text-black">
 
-      {/* ================= SIDEBAR MENU ================= */}
+       {/* ================= SIDEBAR MENU ================= */}
       {menuOpen && (
-        <div className="fixed top-0 left-0 w-64 h-full bg-white/20 backdrop-blur-md text-dark flex flex-col justify-center items-center space-y-8 text-2xl z-50">   
-          <Link href="#">About</Link>
+        <div className="fixed left-0 top-[88px] w-64 h-[calc(100vh-88px)] bg-white shadow-lg flex flex-col items-center pt-16 space-y-8 text-xl z-40">
+
+          <Link href="/about">About</Link>
           <Link href="#">Contact</Link>
           <Link href="#">Terms</Link>
+
         </div>
       )}
 
       {/* ================= NAVBAR ================= */}
       <div className="sticky top-0 w-full h-[88px] bg-white flex items-center justify-between px-10 shadow-sm z-50">
 
+        {/* LEFT SIDE */}
         <div className="flex items-center gap-4">
 
-          {/* LOGO → DASHBOARD */}
           <Link href="/dashboard">
             <Image
               src="/logo.jpg"
-              alt="Logo"
+              alt="logo"
               width={55}
               height={55}
-              className="rounded-full cursor-pointer"
+              className="rounded-full"
             />
           </Link>
 
           {/* HAMBURGER */}
           <div
-            className="text-2xl cursor-pointer"
             onClick={() => setMenuOpen(!menuOpen)}
+            className="text-2xl cursor-pointer select-none"
           >
             ☰
           </div>
 
         </div>
 
+        {/* SEARCH BAR */}
         <div className="flex items-center border border-gray-300 rounded-full overflow-hidden w-[420px]">
+
           <input
             type="text"
             placeholder="Search"
             className="outline-none w-full px-5 py-2 text-sm"
           />
-          <button className="bg-black text-white px-6 py-2 text-sm">
+
+          <button className="px-6 py-2 bg-black text-white text-sm">
             Search
           </button>
+
         </div>
 
+        {/* RIGHT SIDE MENU */}
         <div className="flex items-center gap-8 font-medium">
-          <Link href="/wishlist">Wishlist</Link>
-          <Link href="#">Cart</Link>
-          <Link href="/">Logout</Link>
+
+          <Link href="/wishlist">
+            Wishlist
+          </Link>
+
+          <Link href="/cart">
+            Cart
+          </Link>
+
+          <Link href="/orders">
+            Orders
+          </Link>
+
+          <Link href="/">
+            Logout
+          </Link>
+
         </div>
 
       </div>
 
-      {/* ================= PRODUCT DETAILS ================= */}
+
+
+      {/* PRODUCT DETAILS */}
       <div className="px-20 py-14 grid grid-cols-2 gap-16 items-start">
 
-        {/* LEFT IMAGE */}
+        {/* IMAGE */}
         <div className="bg-white rounded-xl p-8 shadow flex justify-center">
 
           <Image
@@ -80,10 +140,11 @@ export default function AllProducts() {
 
         </div>
 
-        {/* RIGHT INFO */}
+
+        {/* INFO */}
         <div>
 
-          <h2 className="text-3xl font-semibold text-dark-900 mb-3">
+          <h2 className="text-3xl font-semibold mb-3">
             Lavender Grace
           </h2>
 
@@ -96,13 +157,14 @@ export default function AllProducts() {
             perfect for expressing gentle love and appreciation.
           </p>
 
+
           <div className="mb-6 text-sm">
             <p>Perfect for Gifts</p>
             <p>Anniversary / Birthday</p>
             <p>Handmade with Love</p>
           </div>
 
-          {/* DETAILS BOX */}
+
           <div className="bg-[#efe6ea] rounded-xl p-4 text-sm mb-6">
 
             <p><b>Product Details</b></p>
@@ -112,6 +174,7 @@ export default function AllProducts() {
             <p>Material: Pipe cleaner flowers, premium wrap, ribbon</p>
 
           </div>
+
 
           <div className="flex items-center gap-4 mb-4">
 
@@ -125,14 +188,21 @@ export default function AllProducts() {
 
           </div>
 
+
           {/* BUTTONS */}
           <div className="flex gap-4">
 
-            <button className="bg-[#e6cfd8] px-5 py-2 rounded-full text-sm">
+            <button
+              onClick={addToWishlist}
+              className="bg-[#e6cfd8] px-5 py-2 rounded-full text-sm"
+            >
               Add to Wishlist
             </button>
 
-            <button className="bg-[#e6cfd8] px-5 py-2 rounded-full text-sm">
+            <button
+              onClick={addToCart}
+              className="bg-[#e6cfd8] px-5 py-2 rounded-full text-sm"
+            >
               Add to Cart
             </button>
 
@@ -142,7 +212,9 @@ export default function AllProducts() {
 
       </div>
 
-      {/* ================= FOOTER ================= */}
+
+
+      {/* FOOTER */}
       <div className="bg-[#d8ced6] px-16 py-12 text-sm text-black">
 
         <div className="grid grid-cols-3 items-start">
