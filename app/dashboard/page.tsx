@@ -3,33 +3,31 @@
 import Image from "next/image";
 import Link from "next/link";
 
-
 export default function Dashboard() {
 
-  const products = [
-    {
-      name: "Lavender Grace",
-      img: "/p1.png",
-      price: "₱499",
-    },
-    {
-      name: "Rose Romance",
-      img: "/p2.png",
-      price: "₱549",
-    },
-    {
-      name: "Daisy Delight",
-      img: "/p3.png",
-      price: "₱449",
-    },
-    {
-      name: "Pink Petal Keychain",
-      img: "/p4.png",
-      price: "₱129",
-    },
-  ];
+const products = [
+{
+name: "Lavender Grace",
+img: "/p1.png",
+price: "₱499",
+},
+{
+name: "Rose Romance",
+img: "/p2.png",
+price: "₱549",
+},
+{
+name: "Daisy Delight",
+img: "/p3.png",
+price: "₱449",
+},
+{
+name: "Pink Petal Keychain",
+img: "/p4.png",
+price: "₱129",
+},
+];
 
-  
 function addToCart(product:any){
 
 let cart = JSON.parse(localStorage.getItem("cart") || "[]")
@@ -59,294 +57,292 @@ alert("Added to wishlist ❤️")
 
 }
 
-  return (
-    <div className="min-h-screen text-black">
+return (
 
-      {/* NAVBAR */}
-      <div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-10 backdrop-blur-md bg-purple/25 z-25">
+<div className="min-h-screen text-black">
 
-        <Link href="/dashboard">
-          <Image
-            src="/logo.jpg"
-            alt="logo"
-            width={50}
-            height={50}
-            className="rounded-full object-cover"
-          />
-        </Link>
+{/* NAVBAR */}
+<div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-6 md:px-16 backdrop-blur-md bg-purple/25 z-20">
 
-        <div className="flex items-center gap-10 font-medium text-sm">
+<Link href="/dashboard">
+<Image
+src="/logo.jpg"
+alt="logo"
+width={50}
+height={50}
+className="rounded-full object-cover"
+/>
+</Link>
 
-          <Link href="/about">
-            About Us
-          </Link>
+<div className="flex items-center gap-6 md:gap-10 font-medium text-sm">
 
-          <Link href="/wishlist">
-            Wishlist
-          </Link>
-
-          <Link href="/cart">
-            Cart
-          </Link>
-
-          <Link href="/orders">
-            Orders
-          </Link>
-
-          <Link href="/">
-            Logout
-          </Link>
-
-        </div>
-
-      </div>
-
-      {/* HERO */}
-<div className="bg-[#cfc6cf] px-50 py-10 flex items-center justify-between mx-0 mt-0">
-
-  {/* LEFT TEXT */}
-  <div className="max-w-md">
-
-    <h1
-      className="text-4xl mb-2"
-      style={{ fontFamily: "var(--font-pacifico)" }}
-    >
-      Fuzzy Bloom
-    </h1>
-
-    <p className="text-sm mb-3">
-      Handicrafts by Kate
-    </p>
-
-    <p className="text-sm mb-6 leading-relaxed">
-      Ms. Kate Dorraine Ceniza <br />
-      Founder and Handmade Artist of Fuzzy Bloom,
-      passionately creating handmade floral crafts
-      and decorative pieces inspired by nature,
-      creativity, and the joy of meaningful gifts.
-    </p>
-
-    <Link href="/bouquets">
-      <button className="bg-black text-white px-8 py-2 rounded-full">
-        Shop now
-      </button>
-    </Link>
-
-  </div>
-
-  {/* RIGHT LOGO */}
-  <Image
-    src="/logo.jpg"
-    alt="Fuzzy Bloom Logo"
-    width={180}
-    height={180}
-    className="rounded-full object-cover"
-  />
+<Link href="/about">About Us</Link>
+<Link href="/wishlist">Wishlist</Link>
+<Link href="/cart">Cart</Link>
+<Link href="/orders">Orders</Link>
+<Link href="/">Logout</Link>
 
 </div>
+
+</div>
+
+{/* HERO */}
+<div className="bg-[#cfc6cf]">
+
+<div className="max-w-7xl mx-auto px-6 md:px-16 py-10 flex flex-wrap items-center justify-between gap-8">
+
+<div className="max-w-md">
+
+<h1
+className="text-4xl mb-2"
+style={{ fontFamily: "var(--font-pacifico)" }}
+>
+Fuzzy Bloom
+</h1>
+
+<p className="text-sm mb-3">
+Handicrafts by Kate
+</p>
+
+<p className="text-sm mb-6 leading-relaxed">
+Ms. Kate Dorraine Ceniza <br />
+Founder and Handmade Artist of Fuzzy Bloom,
+passionately creating handmade floral crafts
+and decorative pieces inspired by nature,
+creativity, and the joy of meaningful gifts.
+</p>
+
+<Link href="/bouquets">
+<button className="bg-black text-white px-8 py-2 rounded-full">
+Shop now
+</button>
+</Link>
+
+</div>
+
+<Image
+src="/logo.jpg"
+alt="Fuzzy Bloom Logo"
+width={180}
+height={180}
+className="rounded-full object-cover"
+/>
+
+</div>
+
+</div>
+
 {/* CATEGORIES */}
-<div className="flex justify-center gap-20 py-16">
 
-  {[
-    { name: "Bouquets", icon: "🌸", link: "/bouquets" },
-    { name: "Flower Keychains", icon: "🌼", link: "/flower-keychains" },
-    { name: "Ribbon Keychains", icon: "🎀", link: "/ribbon-keychains" },
-    { name: "Headbands", icon: "👑", link: "/headbands" },
-  ].map((cat, index) => (
+<div className="max-w-7xl mx-auto px-6 md:px-16">
 
-    <Link key={index} href={cat.link}>
+<div className="flex flex-wrap justify-center gap-10 py-16">
 
-      <div className="flex flex-col items-center cursor-pointer">
+{[
+{ name: "Bouquets", icon: "🌸", link: "/bouquets" },
+{ name: "Flower Keychains", icon: "🌼", link: "/flower-keychains" },
+{ name: "Ribbon Keychains", icon: "🎀", link: "/ribbon-keychains" },
+{ name: "Headbands", icon: "👑", link: "/headbands" },
+].map((cat, index) => (
 
-        <div className="w-[70px] h-[70px] rounded-full border border-gray-300 flex items-center justify-center text-2xl bg-white shadow-sm hover:scale-110 transition">
+<Link key={index} href={cat.link}>
 
-          {cat.icon}
+<div className="flex flex-col items-center cursor-pointer">
 
-        </div>
+<div className="w-[70px] h-[70px] rounded-full border border-gray-300 flex items-center justify-center text-2xl bg-white shadow-sm hover:scale-110 transition">
 
-        <p className="text-sm mt-3">
-          {cat.name}
-        </p>
-
-      </div>
-
-    </Link>
-
-  ))}
+{cat.icon}
 
 </div>
 
+<p className="text-sm mt-3">
+{cat.name}
+</p>
 
-      {/* PRODUCTS */}
-      <div className="px-16 mt-16">
+</div>
 
-        <h2
-          className="text-3xl mb-10"
-          style={{ fontFamily: "var(--font-pacifico)" }}
-        >
-          Hot Handicrafts
-        </h2>
+</Link>
 
-        <div className="grid grid-cols-4 gap-10">
+))}
 
-          {products.map((product, index) => (
+</div>
 
-            <div
-              key={index}
-              className="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition"
-            >
+</div>
 
-              <div className="h-[250px] flex items-center justify-center">
-                <Image
-                  src={product.img}
-                  alt={product.name}
-                  width={220}
-                  height={220}
-                  className="object-contain"
-                />
-              </div>
+{/* PRODUCTS */}
 
-              {/* Added spacing here */}
-              <div className="flex justify-between items-center mt-5">
+<div className="max-w-7xl mx-auto px-6 md:px-16 mt-10">
 
-                <div>
+<h2
+className="text-3xl mb-10"
+style={{ fontFamily: "var(--font-pacifico)" }}
+>
+Hot Handicrafts
+</h2>
 
-                  <p className="text-sm font-medium">
-                    {product.name}
-                  </p>
+<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
 
-                  <p className="text-red-600 font-medium text-sm mt-1">
-                    {product.price}
-                  </p>
+{products.map((product, index) => (
 
-                </div>
+<div
+key={index}
+className="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition"
+>
 
-                <div className="flex gap-3 text-lg">
+<div className="h-[250px] flex items-center justify-center">
 
-                 <button
-              onClick={() => addToWishlist(product)}
-              className="hover:scale-125 transition"
-              >
-              ♡
-              </button>
+<Image
+src={product.img}
+alt={product.name}
+width={220}
+height={220}
+className="object-contain w-full h-auto"
+/>
 
-              <button
-              onClick={() => addToCart(product)}
-              className="hover:scale-125 transition"
-              >
-              🛒
-              </button>
+</div>
 
-                </div>
+<div className="flex justify-between items-center mt-5">
 
-              </div>
+<div>
 
-            </div>
+<p className="text-sm font-medium break-words">
+{product.name}
+</p>
 
-          ))}
+<p className="text-red-600 font-medium text-sm mt-1">
+{product.price}
+</p>
 
-        </div>
+</div>
 
-        <div className="text-center mt-12">
-          
-                <Link 
-      href="/bouquets"
-      className="bg-[#4b2f2f] text-white px-8 py-2 rounded-full inline-block"
-      >
-      View All
-      </Link>
+<div className="flex gap-3 text-lg">
 
-        </div>
+<button
+onClick={() => addToWishlist(product)}
+className="hover:scale-125 transition"
+>
+♡
+</button>
 
-      </div>
+<button
+onClick={() => addToCart(product)}
+className="hover:scale-125 transition"
+>
+🛒
+</button>
 
+</div>
 
-      {/* FOOTER */}
-      <div className="mt-20 border-t pt-12 px-16 pb-6 text-sm">
+</div>
 
-        <div className="grid grid-cols-4 items-start">
+</div>
 
-          <div className="flex gap-4">
+))}
 
-            <Image
-              src="/logo.jpg"
-              alt="logo"
-              width={70}
-              height={70}
-              className="rounded-full object-cover"
-            />
+</div>
 
-            <div>
+<div className="text-center mt-12">
 
-              <p className="font-semibold">
-                Fuzzy Bloom
-              </p>
+<Link
+href="/bouquets"
+className="bg-[#4b2f2f] text-white px-8 py-2 rounded-full inline-block"
+>
+View All
+</Link>
 
-              <p>
-                Handicrafts by Kate
-              </p>
+</div>
 
-              <p>
-                fuzzybloom@gmail.com
-              </p>
+</div>
 
-            </div>
+{/* FOOTER */}
 
-          </div>
+<div className="mt-20 border-t pt-12 pb-6">
 
-          <div>
+<div className="max-w-7xl mx-auto px-6 md:px-16">
 
-            <p className="font-medium">
-              Kate Dorrene Cristie
-            </p>
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 items-start">
 
-            <p>
-              katecristie@gmail.com
-            </p>
+<div className="flex gap-4">
 
-            <p>
-              katedorrene@yahoo.com
-            </p>
+<Image
+src="/logo.jpg"
+alt="logo"
+width={70}
+height={70}
+className="rounded-full object-cover"
+/>
 
-          </div>
+<div>
 
-          <div>
+<p className="font-semibold">
+Fuzzy Bloom
+</p>
 
-            <p className="font-medium mb-2">
-              About Us
-            </p>
+<p>
+Handicrafts by Kate
+</p>
 
-            <p>
-              Our Story
-            </p>
+<p>
+fuzzybloom@gmail.com
+</p>
 
-            <p>
-              Contact
-            </p>
+</div>
 
-          </div>
+</div>
 
-          <div>
+<div>
 
-            <p className="font-medium mb-2">
-              Category
-            </p>
+<p className="font-medium">
+Kate Dorrene Cristie
+</p>
 
-            <p>Bouquets</p>
-            <p>Flower Keychains</p>
-            <p>Ribbon Keychains</p>
-            <p>Headbands</p>
+<p>
+katecristie@gmail.com
+</p>
 
-          </div>
+<p>
+katedorrene@yahoo.com
+</p>
 
-        </div>
+</div>
 
-        <p className="text-center mt-10 text-gray-500 text-xs">
-          Copyright © 2026. Fuzzy Bloom Handicrafts by Kate.
-        </p>
+<div>
 
-      </div>
+<p className="font-medium mb-2">
+About Us
+</p>
 
-    </div>
-  );
+<p>Our Story</p>
+<p>Contact</p>
+
+</div>
+
+<div>
+
+<p className="font-medium mb-2">
+Category
+</p>
+
+<p>Bouquets</p>
+<p>Flower Keychains</p>
+<p>Ribbon Keychains</p>
+<p>Headbands</p>
+
+</div>
+
+</div>
+
+<p className="text-center mt-10 text-gray-500 text-xs">
+
+Copyright © 2026. Fuzzy Bloom Handicrafts by Kate.
+
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+);
 }
