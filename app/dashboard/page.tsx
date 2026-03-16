@@ -126,7 +126,7 @@ alert("Added to wishlist ❤️")
       creativity, and the joy of meaningful gifts.
     </p>
 
-    <Link href="/all-products">
+    <Link href="/bouquets">
       <button className="bg-black text-white px-8 py-2 rounded-full">
         Shop now
       </button>
