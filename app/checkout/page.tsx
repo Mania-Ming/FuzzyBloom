@@ -5,16 +5,15 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 
 type CartItem = {
-  name: string
-  price: string
-  img?: string
-  qty: number
+name: string
+price: any
+img?: string
+qty: number
 }
 
 export default function CheckoutPage(){
 
 const [cartItems,setCartItems] = useState<CartItem[]>([])
-const [menuOpen,setMenuOpen] = useState(false)
 
 const [name,setName] = useState("")
 const [street,setStreet] = useState("")
@@ -25,35 +24,36 @@ const [payment,setPayment] = useState("cod")
 
 const shipping = 20
 
-
 /* LOAD CART SAFELY */
 useEffect(()=>{
 
 if(typeof window !== "undefined"){
 
 const storedCart = JSON.parse(localStorage.getItem("cart") || "[]")
+
 setCartItems(storedCart)
 
 }
 
 },[])
 
-
-/* CALCULATE TOTAL */
+/* CALCULATE SUBTOTAL */
 
 const subtotal = cartItems.reduce((sum,item)=>{
 
-const price =
-typeof item.price === "string"
-? parseFloat(item.price.replace("₱",""))
-: item.price
+let price = 0
+
+if(typeof item.price === "string"){
+price = parseFloat(item.price.replace("₱",""))
+}else{
+price = item.price
+}
 
 return sum + price * item.qty
 
 },0)
 
 const total = subtotal + (cartItems.length > 0 ? shipping : 0)
-
 
 /* PLACE ORDER */
 
@@ -88,7 +88,7 @@ payment:payment
 
 }
 
-let oldOrders:any[] = []
+let oldOrders:any = []
 
 if(typeof window !== "undefined"){
 oldOrders = JSON.parse(localStorage.getItem("orders") || "[]")
@@ -100,15 +100,13 @@ localStorage.removeItem("cart")
 
 alert("Order placed successfully!")
 
-window.location.href = "/orders"
+window.location.href="/orders"
 
 }
-
 
 return(
 
 <div className="min-h-screen text-black">
-
 
 {/* NAVBAR */}
 
@@ -136,14 +134,11 @@ className="rounded-full"
 
 </div>
 
-
 <h1 className="text-center text-2xl mt-10 mb-10">
 Checkout
 </h1>
 
-
 <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 px-6 mb-20">
-
 
 {/* LEFT SIDE CART */}
 
@@ -154,6 +149,7 @@ Shopping Cart
 </h2>
 
 {cartItems.length === 0 && (
+
 <p className="text-gray-500">No items in cart</p>
 )}
 
@@ -188,13 +184,12 @@ Qty: {item.qty}
 </div>
 
 <p className="text-red-600 font-bold">
-{item.price}
+{typeof item.price === "string" ? item.price : `₱${item.price}`}
 </p>
 
 </div>
 
 ))}
-
 
 <div className="bg-white border border-gray-200 p-4 rounded-xl flex justify-between mt-6">
 
@@ -208,12 +203,9 @@ Qty: {item.qty}
 
 </div>
 
-
-
 {/* RIGHT SIDE */}
 
 <div className="space-y-6">
-
 
 {/* DELIVERY ADDRESS */}
 
@@ -253,8 +245,6 @@ className="w-full border p-3 rounded"
 
 </div>
 
-
-
 {/* PAYMENT */}
 
 <div className="bg-white border border-gray-200 p-6 rounded-xl">
@@ -289,8 +279,6 @@ onChange={()=>setPayment("gcash")}
 
 </div>
 
-
-
 {/* TOTAL */}
 
 <div className="text-right space-y-1">
@@ -305,19 +293,17 @@ Total: <span className="text-red-600">₱{total}</span>
 
 </div>
 
-
 <button
 onClick={placeOrder}
 className="w-full bg-[#4b2e2e] text-white py-3 rounded-full hover:bg-[#3a2323]"
+
 >
-Place Order
-</button>
+
+Place Order </button>
 
 </div>
 
 </div>
-
-
 
 {/* FOOTER */}
 
