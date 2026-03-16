@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 
 type CartItem = {
   name: string
-  price: string
+  price: number
   img?: string
   qty: number
 }
@@ -15,10 +15,9 @@ type CartItem = {
 export default function CartPage(){
 
 const [cartItems,setCartItems] = useState<CartItem[]>([])
-const [menuOpen,setMenuOpen] = useState(false)
+const router = useRouter()
 
 const shipping = 20
-const router = useRouter()
 
 
 // LOAD CART
@@ -82,9 +81,7 @@ saveCart(updated)
 // CALCULATE TOTAL
 const subtotal = cartItems.reduce((sum,item)=>{
 
-const price = parseFloat(item.price.replace("₱",""))
-
-return sum + price * item.qty
+return sum + item.price * item.qty
 
 },0)
 
@@ -109,27 +106,10 @@ router.push("/checkout")
 
 return(
 
-<div className="min-h-screen">
-
-{/* ================= SIDEBAR MENU ================= */}
-{menuOpen && (
-
-<div className="fixed left-0 top-[88px] w-64 h-[calc(100vh-88px)] bg-white shadow-lg flex flex-col items-center pt-16 space-y-8 text-xl z-40">
-
-<Link href="/about">About</Link>
-<Link href="#">Contact</Link>
-<Link href="#">Terms</Link>
-
-</div>
-
-)}
-
+<div className="min-h-screen text-black">
 
 {/* ================= NAVBAR ================= */}
-<div className="sticky top-0 w-full h-[88px] bg-white flex items-center justify-between px-10 shadow-sm z-50">
-
-{/* LEFT SIDE */}
-<div className="flex items-center gap-4">
+<div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-10 backdrop-blur-md bg-purple/25 z-20">
 
 <Link href="/dashboard">
 <Image
@@ -141,64 +121,39 @@ className="rounded-full"
 />
 </Link>
 
-<div
-onClick={()=>setMenuOpen(!menuOpen)}
-className="text-2xl cursor-pointer"
+<div className="flex items-center gap-10 font-medium text-sm">
+
+<Link href="/about">About Us</Link>
+
+<Link href="/wishlist">Wishlist</Link>
+
+<Link href="/cart">Cart</Link>
+
+<Link href="/orders">Orders</Link>
+
+<Link href="/">Logout</Link>
+
+</div>
+
+</div>
+
+
+
+{/* TITLE */}
+<div className="px-20 pt-12 pb-6">
+
+<h1
+className="text-4xl"
+style={{ fontFamily: "var(--font-pacifico)" }}
 >
-☰
-</div>
-
-</div>
-
-
-{/* SEARCH BAR */}
-<div className="flex items-center border border-gray-300 rounded-full overflow-hidden w-[420px]">
-
-<input
-type="text"
-placeholder="Search"
-className="outline-none w-full px-5 py-2 text-sm"
-/>
-
-<button className="px-6 py-2 bg-black text-white text-sm">
-Search
-</button>
-
-</div>
-
-
-{/* RIGHT SIDE MENU */}
-<div className="flex items-center gap-8 font-medium">
-
-<Link href="/wishlist">
-Wishlist
-</Link>
-
-<Link href="/cart">
-Cart
-</Link>
-
-<Link href="/orders">
-Orders
-</Link>
-
-<Link href="/">
-Logout
-</Link>
-
-</div>
-
-</div>
-
-
-
-<h1 className="text-center text-2xl mt-10 mb-10">
 Shopping Cart
 </h1>
 
+</div>
 
 
-<div className="max-w-6xl mx-auto grid grid-cols-3 gap-10 px-10">
+
+<div className="max-w-6xl mx-auto grid grid-cols-3 gap-10 px-10 pb-20">
 
 
 {/* CART ITEMS */}
@@ -217,26 +172,27 @@ Your cart is empty.
 
 <div
 key={index}
-className="bg-[#ead7dc] p-5 rounded-xl flex justify-between items-center"
+className="flex justify-between items-center bg-white p-5 rounded-2xl shadow"
 >
 
-<div className="flex gap-4 items-center">
+<div className="flex items-center gap-5">
 
 <Image
 src={item.img || "/p2.png"}
 alt={item.name}
 width={90}
 height={90}
+className="rounded-lg"
 />
 
 <div>
 
-<h3 className="font-semibold">
+<h3 className="font-semibold text-lg">
 {item.name}
 </h3>
 
 <p className="text-red-600 font-bold">
-{item.price}
+₱{item.price}
 </p>
 
 </div>
@@ -244,24 +200,24 @@ height={90}
 </div>
 
 
-<div className="flex items-center gap-4">
+<div className="flex items-center gap-6">
 
-<div className="flex bg-[#d9aeb8] rounded-full overflow-hidden">
+<div className="flex items-center border rounded-full overflow-hidden">
 
 <button
 onClick={()=>decreaseQty(index)}
-className="px-3"
+className="px-3 py-1"
 >
 -
 </button>
 
-<span className="px-4 bg-white">
+<span className="px-4">
 {item.qty}
 </span>
 
 <button
 onClick={()=>increaseQty(index)}
-className="px-3"
+className="px-3 py-1"
 >
 +
 </button>
@@ -287,9 +243,9 @@ Remove
 
 
 {/* ORDER SUMMARY */}
-<div className="bg-[#ead7dc] p-6 rounded-xl h-fit">
+<div className="bg-white p-6 rounded-2xl shadow h-fit">
 
-<h2 className="text-xl mb-4">
+<h2 className="text-xl mb-5 font-semibold">
 Order Summary
 </h2>
 
@@ -299,11 +255,11 @@ Order Summary
 </div>
 
 <div className="flex justify-between mb-2">
-<span>Shipping Fee</span>
+<span>Shipping</span>
 <span>₱{cartItems.length > 0 ? shipping : 0}</span>
 </div>
 
-<div className="flex justify-between font-bold mb-6">
+<div className="flex justify-between font-bold mb-6 text-lg">
 <span>Total</span>
 <span className="text-red-600">
 ₱{total}
@@ -313,7 +269,7 @@ Order Summary
 
 <button
 onClick={handleCheckout}
-className="w-full bg-[#d8ced6] py-2 rounded-full"
+className="w-full bg-black text-white py-2 rounded-full"
 >
 Checkout
 </button>
@@ -324,11 +280,12 @@ Checkout
 
 
 
-<div className="text-center mt-10 mb-20">
+{/* CONTINUE SHOPPING */}
+<div className="text-center mb-20">
 
 <Link
-href="/all-products"
-className="text-sm"
+href="/dashboard"
+className="text-sm underline"
 >
 Continue Shopping
 </Link>
@@ -336,54 +293,57 @@ Continue Shopping
 </div>
 
 
+{/* FOOTER */}
+<div className="mt-20 border-t pt-12 px-16 pb-6 text-sm">
 
-{/* ================= FOOTER ================= */}
-<div className="bg-[#d8ced6] px-16 py-12 text-sm text-black">
-
-<div className="grid grid-cols-3 items-start">
+<div className="grid grid-cols-4 items-start">
 
 <div className="flex gap-4">
 
 <Image
 src="/logo.jpg"
-alt="Fuzzy Bloom Logo"
+alt="logo"
 width={70}
 height={70}
-className="rounded-full"
+className="rounded-full object-cover"
 />
 
 <div>
 <p className="font-semibold">Fuzzy Bloom</p>
 <p>Handicrafts by Kate</p>
-<p>09054026505</p>
 <p>fuzzybloom@gmail.com</p>
 </div>
 
 </div>
 
-
-<div className="text-center">
-<p className="font-medium">Kate Dorraine Ceniza</p>
-<p>katedorraineceniza@gmail.com</p>
+<div>
+<p className="font-medium">Kate Dorrene Cristie</p>
+<p>katecristie@gmail.com</p>
+<p>katedorrene@yahoo.com</p>
 </div>
 
+<div>
+<p className="font-medium mb-2">About Us</p>
+<p>Our Story</p>
+<p>Contact</p>
+</div>
 
-<div className="text-right space-y-1">
-<p>About Us</p>
-<p>Category</p>
-<p>Shop</p>
-<p>Policies</p>
+<div>
+<p className="font-medium mb-2">Category</p>
+<p>Bouquets</p>
+<p>Flower Keychains</p>
+<p>Ribbon Keychains</p>
+<p>Headbands</p>
 </div>
 
 </div>
 
-<p className="text-center mt-8 text-gray-700">
-Copyright © 2026. Fuzzy Bloom Handicrafts by Kate. All right reserved.
+<p className="text-center mt-10 text-gray-500 text-xs">
+Copyright © 2026. Fuzzy Bloom Handicrafts by Kate.
 </p>
 
 </div>
 
 </div>
-
 )
 }

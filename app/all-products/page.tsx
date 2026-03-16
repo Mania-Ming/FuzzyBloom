@@ -1,361 +1,345 @@
 "use client"
 
-import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
+import Image from "next/image"
+import Link from "next/link"
+import { useState } from "react"
 
-export default function AllProducts() {
+export default function AllProducts(){
 
-  const [menuOpen, setMenuOpen] = useState(false);
+const [menuOpen,setMenuOpen] = useState(false)
 
-  // ADD TO CART FUNCTION
-  function addToCart(item:any){
+/* ---------------- CART FUNCTION ---------------- */
 
-    let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+function addToCart(item:any){
 
-    const exist = cart.find((c:any)=>c.name === item.name);
+let cart = JSON.parse(localStorage.getItem("cart") || "[]")
 
-    if(!exist){
+cart.push({
+name:item.name,
+price:item.price,
+img:item.img,
+qty:1
+})
 
-      cart.push({
-        name:item.name,
-        price:item.price,
-        img:item.img,
-        qty:1
-      });
+localStorage.setItem("cart",JSON.stringify(cart))
 
-      localStorage.setItem("cart", JSON.stringify(cart));
+alert("Added to Cart 🛒")
 
-      alert("Added to Cart 🛒");
+}
 
-    }else{
+/* ---------------- FLOWER VARIANTS ---------------- */
 
-      alert("Item already in cart");
+const flowerVariants = [
+{img:"/k1.png",color:"White"},
+{img:"/k2.png",color:"Yellow"},
+{img:"/k3.png",color:"Blue"},
+{img:"/k4.png",color:"Red"},
+{img:"/k5.png",color:"Purple"},
+{img:"/k6.png",color:"Pink"},
+]
 
-    }
-  }
+const [flowerSelected,setFlowerSelected] = useState(flowerVariants[0])
 
-  return (
-    <div className="min-h-screen text-black">
+/* ---------------- RIBBON VARIANTS ---------------- */
 
-      {/* ================= SIDEBAR MENU ================= */}
-      {menuOpen && (
-        <div className="fixed top-0 left-0 w-64 h-full bg-white/20 backdrop-blur-md text-dark flex flex-col justify-center items-center space-y-8 text-2xl z-50">   
-          <Link href="/about">About</Link>
-          <Link href="#">Contact</Link>
-          <Link href="#">Terms</Link>
-        </div>
-      )}
+const ribbonVariants = [
+{img:"/r1.png",color:"Blue / Pink"},
+{img:"/r2.png",color:"Purple / Pink"},
+]
 
-      {/* ================= NAVBAR ================= */}
-           <div className="sticky top-0 w-full h-[88px] bg-white flex items-center justify-between px-10 shadow-sm">
+const [ribbonSelected,setRibbonSelected] = useState(ribbonVariants[0])
 
-        {/* LEFT SIDE */}
-        <div className="flex items-center gap-4">
 
-        <Link href="/dashboard">
-        <Image
-        src="/logo.jpg"
-        alt="logo"
-        width={55}
-        height={55}
-        className="rounded-full"
-        />
-        </Link>
+return(
 
-        <div className="text-2xl">
-        ☰
-        </div>
+<div className="min-h-screen text-black">
 
-        </div>
+{/* ================= NAVBAR ================= */}
 
+<div className="sticky top-0 w-full h-[88px] bg-white/40 backdrop-blur-md flex items-center justify-between px-10 shadow-sm">
 
-        {/* SEARCH BAR */}
-        <div className="flex items-center border border-gray-300 rounded-full overflow-hidden w-[420px]">
+<div className="flex items-center gap-4">
 
-        <input
-        type="text"
-        placeholder="Search"
-        className="outline-none w-full px-5 py-2 text-sm"
-        />
+<Link href="/dashboard">
+<Image
+src="/logo.jpg"
+alt="logo"
+width={55}
+height={55}
+className="rounded-full"
+/>
+</Link>
 
-        <button className="px-6 py-2 bg-black text-white text-sm">
-        Search
-        </button>
+<div className="text-2xl">☰</div>
 
-        </div>
+</div>
 
 
-        {/* RIGHT SIDE MENU */}
-        <div className="flex items-center gap-8 font-medium">
+<div className="flex items-center border border-gray-300 rounded-full overflow-hidden w-[420px]">
 
-        <Link href="/wishlist">
-        Wishlist
-        </Link>
+<input
+type="text"
+placeholder="Search"
+className="outline-none w-full px-5 py-2 text-sm"
+/>
 
-        <Link href="/cart">
-        Cart
-        </Link>
+<button className="px-6 py-2 bg-black text-white text-sm">
+Search
+</button>
 
-        <Link href="/orders">
-        Orders
-        </Link>
+</div>
 
-        <Link href="/">
-        Logout
-        </Link>
 
-        </div>
+<div className="flex items-center gap-8 font-medium">
 
-        </div>
+<Link href="/wishlist">Wishlist</Link>
+<Link href="/cart">Cart</Link>
+<Link href="/orders">Orders</Link>
+<Link href="/">Logout</Link>
 
-      {/* ================= TITLE ================= */}
-      <div className="text-center py-10">
-        <h1
-          className="text-4xl"
-          style={{ fontFamily: "var(--font-pacifico)" }}
-        >
-          Kate Handicrafts
-        </h1>
-      </div>
+</div>
 
+</div>
 
-      {/* ================= BOUQUETS ================= */}
-      <div className="px-16 mb-16">
 
-        <h2 className="text-2xl mb-6" style={{ fontFamily: "var(--font-pacifico)" }}>
-          Bouquets
-        </h2>
+{/* ================= TITLE ================= */}
 
-        <p className="text-sm mb-4 text-gray-600">
-          Handmade floral keychain with soft pipe-cleaner petals and pearl accent.
-          Available in assorted colors.
-        </p>
+<div className="text-center py-10">
 
-        <div className="grid grid-cols-5 gap-8">
+<h1
+className="text-4xl"
+style={{fontFamily:"var(--font-pacifico)"}}
+>
+Kate Handicrafts
+</h1>
 
-          {[
-            { name:"Lavender Grace", img:"/p1.png", price:"₱499", desc:"Soft pink pom-pom flowers, sweet & cute" },
-            { name:"Ruby & Sky", img:"/p2.png", price:"₱499", desc:"Red and baby blue tulips, bold but balanced" },
-            { name:"Mint Serenity", img:"/p3.png", price:"₱499", desc:"Mint green tulips, clean and modern look" },
-            { name:"Baby Blue Bliss", img:"/p4.png", price:"₱499", desc:"Sky-blue flowers, fresh and minimalist" },
-            { name:"Golden Sun", img:"/p5.png", price:"₱499", desc:"Yellow blossoms bright and cheerful bouquet" },
-          ].map((item,i)=>(
+</div>
 
-            <div key={i} className="bg-white p-4 rounded-xl shadow text-center">
 
-              <Link href="/details">
+{/* ================= BOUQUETS ================= */}
 
-                <Image
-                  src={item.img}
-                  alt={item.name}
-                  width={200}
-                  height={200}
-                  className="mx-auto object-contain h-[220px] cursor-pointer"
-                />
+<div className="px-16 mb-20">
 
-                <h3 className="mt-3 font-semibold">{item.name}</h3>
+<h2 className="text-3xl mb-6" style={{fontFamily:"var(--font-pacifico)"}}>
+Bouquets
+</h2>
 
-                <p className="text-sm text-gray-600 mt-1">
-                  {item.desc}
-                </p>
+<div className="grid grid-cols-5 gap-8">
 
-                <p className="text-red-600 font-bold mt-2">{item.price}</p>
+{[
+{name:"Lavender Grace",img:"/p1.png",price:"₱499"},
+{name:"Ruby & Sky",img:"/p2.png",price:"₱499"},
+{name:"Mint Serenity",img:"/p3.png",price:"₱499"},
+{name:"Baby Blue Bliss",img:"/p4.png",price:"₱499"},
+{name:"Golden Sun",img:"/p5.png",price:"₱499"},
+].map((item,i)=>(
 
-              </Link>
+<div key={i} className="bg-white p-4 rounded-xl shadow text-center">
 
-              <button
-                onClick={() => addToCart(item)}
-                className="mt-2 text-sm bg-[#f3d9e5] px-4 py-1 rounded-full"
-              >
-                Add to Cart
-              </button>
+<Image
+src={item.img}
+alt={item.name}
+width={200}
+height={200}
+className="mx-auto object-contain h-[200px]"
+/>
 
-            </div>
+<h3 className="mt-3 font-semibold">{item.name}</h3>
 
-          ))}
+<p className="text-red-600 font-bold mt-2">{item.price}</p>
 
-        </div>
-      </div>
+<button
+onClick={()=>addToCart(item)}
+className="mt-2 bg-[#f3d9e5] px-4 py-1 rounded-full text-sm"
+>
+Add to Cart
+</button>
 
+</div>
 
-      {/* ================= FLOWER KEYCHAINS ================= */}
-      <div className="px-16 mb-16">
+))}
 
-        <h2 className="text-2xl mb-2" style={{ fontFamily: "var(--font-pacifico)" }}>
-          Flower Keychains
-        </h2>
+</div>
 
-        <p className="text-sm mb-2 text-gray-600">
-          Petal Pop Keychain
-        </p>
+</div>
 
-        <p className="text-sm mb-4 text-gray-600">
-          Handmade floral keychain with soft pipe-cleaner petals and pearl accent.
-          Available in assorted colors.
-        </p>
 
-        <p className="text-red-600 font-bold text-xl mb-2">₱129</p>
+{/* ================= FLOWER KEYCHAIN ================= */}
 
-        <p className="text-sm text-gray-500 mb-4">
-          We can customize colors.
-        </p>
+<div className="px-16 mb-20">
 
-        <button
-          onClick={() => addToCart({name:"Petal Pop Keychain", price:"₱129", img:"/k1.png"})}
-          className="mb-6 text-sm bg-[#f3d9e5] px-4 py-2 rounded-full"
-        >
-          Add to Cart
-        </button>
+<h2 className="text-3xl mb-4" style={{fontFamily:"var(--font-pacifico)"}}>
+Flower Keychains
+</h2>
 
-        <div className="grid grid-cols-6 gap-6">
+<p className="text-gray-600 mb-4">
+Handmade floral keychain with soft pipe-cleaner petals.
+</p>
 
-          {["/k1.png","/k2.png","/k3.png","/k4.png","/k5.png","/k6.png"].map((img,i)=>(
+<p className="text-xl text-[#c55a73] font-bold mb-4">
+₱129
+</p>
 
-            <div key={i} className="bg-white p-3 rounded-lg shadow">
 
-              <Image
-                src={img}
-                alt="keychain"
-                width={150}
-                height={150}
-              />
+<Image
+src={flowerSelected.img}
+alt="flower"
+width={220}
+height={220}
+/>
 
-            </div>
 
-          ))}
+<p className="mt-6 mb-2 font-medium">
+Choose Color
+</p>
 
-        </div>
+<div className="flex gap-4">
 
-      </div>
+{flowerVariants.map((item,i)=>(
 
+<div
+key={i}
+onClick={()=>setFlowerSelected(item)}
+className={`cursor-pointer border rounded-lg p-2
+${flowerSelected.img===item.img ? "border-pink-500":"border-gray-300"}
+`}
+>
 
-      {/* ================= RIBBON KEYCHAINS ================= */}
-      <div className="px-16 mb-16">
+<Image
+src={item.img}
+alt={item.color}
+width={70}
+height={70}
+/>
 
-        <h2 className="text-2xl mb-2" style={{ fontFamily: "var(--font-pacifico)" }}>
-          Ribbon Keychains
-        </h2>
+</div>
 
-        <p className="text-sm mb-2 text-gray-600">
-          Pearl Bow Keychain
-        </p>
+))}
 
-        <p className="text-sm mb-4 text-gray-600">
-          Handmade fluffy ribbon keychain with pearl center.
-        </p>
+</div>
 
-        <p className="text-red-600 font-bold text-xl mb-2">₱99</p>
 
-        <button
-          onClick={() => addToCart({name:"Pearl Bow Keychain", price:"₱99", img:"/r1.png"})}
-          className="mb-6 text-sm bg-[#f3d9e5] px-4 py-2 rounded-full"
-        >
-          Add to Cart
-        </button>
+<button
+onClick={()=>addToCart({
+name:"Flower Keychain - "+flowerSelected.color,
+price:"₱129",
+img:flowerSelected.img
+})}
+className="mt-6 bg-[#4b2e2e] text-white px-6 py-2 rounded-full"
+>
+Add to Cart
+</button>
 
-        <div className="grid grid-cols-6 gap-6">
+</div>
 
-          {["/r1.png","/r2.png","/r3.png","/r4.png","/r5.png"].map((img,i)=>(
 
-            <div key={i} className="bg-white p-3 rounded-lg shadow">
+{/* ================= RIBBON KEYCHAIN ================= */}
 
-              <Image
-                src={img}
-                alt="keychain"
-                width={150}
-                height={150}
-              />
+<div className="px-16 mb-20">
 
-            </div>
+<h2 className="text-3xl mb-4" style={{fontFamily:"var(--font-pacifico)"}}>
+Ribbon Keychains
+</h2>
 
-          ))}
+<p className="text-gray-600 mb-4">
+Elegant handmade satin ribbon bow keychain.
+</p>
 
-        </div>
+<p className="text-xl text-[#c55a73] font-bold mb-4">
+₱99
+</p>
 
-      </div>
 
+<Image
+src={ribbonSelected.img}
+alt="ribbon"
+width={220}
+height={220}
+/>
 
-      {/* ================= HEADBANDS ================= */}
-      <div className="px-16 mb-16">
 
-        <h2 className="text-2xl mb-2" style={{ fontFamily: "var(--font-pacifico)" }}>
-          Headband
-        </h2>
+<p className="mt-6 mb-2 font-medium">
+Choose Style
+</p>
 
-        <p className="text-sm mb-4 text-gray-600">
-          Sunflower Bloom Headband
-        </p>
+<div className="flex gap-4">
 
-        <p className="text-red-600 font-bold text-xl mb-2">₱99</p>
+{ribbonVariants.map((item,i)=>(
 
-        <button
-          onClick={() => addToCart({name:"Sunflower Headband", price:"₱99", img:"/h1.png"})}
-          className="mb-6 text-sm bg-[#f3d9e5] px-4 py-2 rounded-full"
-        >
-          Add to Cart
-        </button>
+<div
+key={i}
+onClick={()=>setRibbonSelected(item)}
+className={`cursor-pointer border rounded-lg p-2
+${ribbonSelected.img===item.img ? "border-pink-500":"border-gray-300"}
+`}
+>
 
-        <div className="grid grid-cols-4 gap-8">
+<Image
+src={item.img}
+alt={item.color}
+width={70}
+height={70}
+/>
 
-          <div className="bg-white p-4 rounded-xl shadow text-center">
+</div>
 
-            <Image
-              src="/h1.png"
-              alt="headband"
-              width={200}
-              height={200}
-              className="mx-auto"
-            />
+))}
 
-          </div>
+</div>
 
-        </div>
 
-      </div>
+<button
+onClick={()=>addToCart({
+name:"Ribbon Keychain - "+ribbonSelected.color,
+price:"₱99",
+img:ribbonSelected.img
+})}
+className="mt-6 bg-[#4b2e2e] text-white px-6 py-2 rounded-full"
+>
+Add to Cart
+</button>
 
+</div>
 
-      {/* ================= FOOTER ================= */}
-      <div className="bg-[#d8ced6] px-16 py-12 text-sm text-black">
 
-        <div className="grid grid-cols-3 items-start">
+{/* ================= HEADBAND ================= */}
 
-          <div className="flex gap-4">
-            <Image
-              src="/logo.jpg"
-              alt="Fuzzy Bloom Logo"
-              width={70}
-              height={70}
-              className="rounded-full"
-            />
-            <div>
-              <p className="font-semibold">Fuzzy Bloom</p>
-              <p>Handicrafts by Kate</p>
-              <p>09054026505</p>
-              <p>fuzzybloom@gmail.com</p>
-            </div>
-          </div>
+<div className="px-16 mb-20">
 
-          <div className="text-center">
-            <p className="font-medium">Kate Dorraine Ceniza</p>
-            <p>katedorraineceniza@gmail.com</p>
-          </div>
+<h2 className="text-3xl mb-4" style={{fontFamily:"var(--font-pacifico)"}}>
+Headband
+</h2>
 
-          <div className="text-right space-y-1">
-            <p>About Us</p>
-            <p>Category</p>
-            <p>Shop</p>
-            <p>Policies</p>
-          </div>
+<p className="text-gray-600 mb-4">
+Sunflower Bloom Headband
+</p>
 
-        </div>
+<p className="text-xl text-[#c55a73] font-bold mb-4">
+₱99
+</p>
 
-        <p className="text-center mt-8 text-gray-700">
-          Copyright © 2026. Fuzzy Bloom Handicrafts by Kate. All right reserved.
-        </p>
+<Image
+src="/h1.png"
+alt="headband"
+width={220}
+height={220}
+/>
 
-      </div>
+<button
+onClick={()=>addToCart({
+name:"Sunflower Headband",
+price:"₱99",
+img:"/h1.png"
+})}
+className="mt-6 bg-[#4b2e2e] text-white px-6 py-2 rounded-full"
+>
+Add to Cart
+</button>
 
-    </div>
-  );
+</div>
+
+</div>
+
+)
+
 }
