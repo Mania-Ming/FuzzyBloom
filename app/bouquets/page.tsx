@@ -75,10 +75,12 @@ alert("Added to wishlist ❤️")
 }
 
 return(
+
 <div className="min-h-screen text-black">
 
 {/* NAVBAR */}
-<div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-10 backdrop-blur-md bg-purple/25 z-25">
+
+<div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-6 md:px-16 backdrop-blur-md bg-purple/25 z-20">
 
 <Link href="/dashboard">
 <Image
@@ -90,7 +92,7 @@ className="rounded-full object-cover"
 />
 </Link>
 
-<div className="flex items-center gap-10 font-medium text-sm">
+<div className="flex items-center gap-6 md:gap-10 font-medium text-sm">
 
 <Link href="/about">About Us</Link>
 <Link href="/wishlist">Wishlist</Link>
@@ -102,20 +104,21 @@ className="rounded-full object-cover"
 
 </div>
 
-
 {/* PAGE CONTENT */}
 
-<div className="px-16 pt-10">
+<div className="max-w-7xl mx-auto px-6 md:px-16 pt-10">
 
 {/* BACK */}
 <button
 onClick={() => window.history.back()}
 className="flex items-center text-sm mb-6 hover:underline"
+
 >
-← Back
-</button>
+
+← Back </button>
 
 {/* BRAND */}
+
 <h1
 className="text-center text-4xl mb-10"
 style={{ fontFamily: "var(--font-pacifico)" }}
@@ -130,20 +133,19 @@ style={{fontFamily:"var(--font-pacifico)"}}
 Bouquets
 </h2>
 
-<p className="text-gray-600 mb-10">
+<p className="text-gray-600 mb-10 max-w-xl">
 Handmade floral keychain with soft pipe-cleaner petals and pearl accent. Available in assorted colors.
 </p>
 
-
 {/* PRODUCT GRID */}
 
-<div className="grid grid-cols-5 gap-8">
+<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
 
 {products.map((product,index)=>(
 
 <div
 key={index}
-className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow text-center"
+className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow text-center hover:shadow-lg transition"
 >
 
 <Image
@@ -151,10 +153,10 @@ src={product.img}
 alt={product.name}
 width={220}
 height={220}
-className="mx-auto"
+className="mx-auto object-contain w-full h-auto"
 />
 
-<h3 className="mt-4 font-semibold text-lg">
+<h3 className="mt-4 font-semibold text-lg break-words">
 {product.name}
 </h3>
 
@@ -167,21 +169,24 @@ className="mx-auto"
 </p>
 
 {/* BUTTONS */}
+
 <div className="flex justify-center gap-3 mt-4">
 
 <button
 onClick={()=>addToWishlist(product)}
 className="w-10 h-10 flex items-center justify-center border rounded-full hover:bg-pink-100"
+
 >
-❤️
-</button>
+
+❤️ </button>
 
 <button
 onClick={()=>addToCart(product)}
 className="px-3 py-2 bg-pink-200 rounded-full hover:bg-pink-300 transition text-sm"
+
 >
-Add to Cart
-</button>
+
+Add to Cart </button>
 
 </div>
 
@@ -193,11 +198,13 @@ Add to Cart
 
 </div>
 
-
 {/* FOOTER */}
-<div className="mt-20 border-t pt-12 px-16 pb-6 text-sm">
 
-<div className="grid grid-cols-4 items-start">
+<div className="mt-20 border-t pt-12 pb-6">
+
+<div className="max-w-7xl mx-auto px-6 md:px-16 text-sm">
+
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 items-start">
 
 <div className="flex gap-4">
 
@@ -210,61 +217,31 @@ className="rounded-full object-cover"
 />
 
 <div>
-
-<p className="font-semibold">
-Fuzzy Bloom
-</p>
-
-<p>
-Handicrafts by Kate
-</p>
-
-<p>
-fuzzybloom@gmail.com
-</p>
-
+<p className="font-semibold">Fuzzy Bloom</p>
+<p>Handicrafts by Kate</p>
+<p>fuzzybloom@gmail.com</p>
 </div>
 
 </div>
 
 <div>
-
-<p className="font-medium">
-Kate Dorrene Cristie
-</p>
-
-<p>
-katecristie@gmail.com
-</p>
-
-<p>
-katedorrene@yahoo.com
-</p>
-
+<p className="font-medium">Kate Dorrene Cristie</p>
+<p>katecristie@gmail.com</p>
+<p>katedorrene@yahoo.com</p>
 </div>
 
 <div>
-
-<p className="font-medium mb-2">
-About Us
-</p>
-
+<p className="font-medium mb-2">About Us</p>
 <p>Our Story</p>
 <p>Contact</p>
-
 </div>
 
 <div>
-
-<p className="font-medium mb-2">
-Category
-</p>
-
+<p className="font-medium mb-2">Category</p>
 <p>Bouquets</p>
 <p>Flower Keychains</p>
 <p>Ribbon Keychains</p>
 <p>Headbands</p>
-
 </div>
 
 </div>
@@ -276,5 +253,9 @@ Copyright © 2026. Fuzzy Bloom Handicrafts by Kate.
 </div>
 
 </div>
+
+</div>
+
 )
+
 }
