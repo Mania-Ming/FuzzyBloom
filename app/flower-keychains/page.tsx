@@ -4,9 +4,14 @@ import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
 
+type Product = {
+name: string
+img: string
+}
+
 export default function FlowerKeychainsPage(){
 
-const colors = [
+const colors:Product[] = [
 { name:"Red", img:"/k1.png" },
 { name:"Blue", img:"/k2.png" },
 { name:"Yellow", img:"/k3.png" },
@@ -14,9 +19,13 @@ const colors = [
 { name:"Pink", img:"/k5.png" }
 ]
 
-const [selected,setSelected] = useState(colors[0])
+const [selected,setSelected] = useState<Product>(colors[0])
+
+/* ADD TO CART */
 
 function addToCart(){
+
+if(typeof window === "undefined") return
 
 let cart = JSON.parse(localStorage.getItem("cart") || "[]")
 
@@ -33,8 +42,11 @@ alert("Added to cart 🛒")
 
 }
 
-/* ❤️ WISHLIST FUNCTION */
+/* ADD TO WISHLIST */
+
 function addToWishlist(){
+
+if(typeof window === "undefined") return
 
 let wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]")
 
@@ -56,7 +68,7 @@ return(
 
 {/* NAVBAR */}
 
-<div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-10 backdrop-blur-md bg-white/30 z-20">
+<div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-6 md:px-16 backdrop-blur-md bg-white/30 z-20">
 
 <Link href="/dashboard">
 <Image
@@ -68,7 +80,7 @@ className="rounded-full object-cover"
 />
 </Link>
 
-<div className="flex items-center gap-10 font-medium text-sm">
+<div className="flex items-center gap-6 md:gap-10 font-medium text-sm">
 
 <Link href="/about">About Us</Link>
 <Link href="/wishlist">Wishlist</Link>
@@ -77,16 +89,18 @@ className="rounded-full object-cover"
 <Link href="/">Logout</Link>
 
 </div>
+
 </div>
 
 {/* PAGE CONTENT */}
 
-<div className="px-16 pt-10">
+<div className="max-w-7xl mx-auto px-6 md:px-16 pt-10">
 
 {/* BACK BUTTON */}
+
 <button
-onClick={() => window.history.back()}
-className="flex items-center text-sm mb-6 hover:underline"
+onClick={()=>window.history.back()}
+className="text-sm mb-6 hover:underline"
 
 >
 
@@ -120,7 +134,7 @@ Choose your favorite flower color
 
 {/* PRODUCT */}
 
-<div className="grid grid-cols-2 gap-20 items-center max-w-[1200px] mx-auto">
+<div className="grid grid-cols-1 md:grid-cols-2 gap-14 items-center max-w-[1200px] mx-auto">
 
 {/* IMAGE */}
 
@@ -131,6 +145,7 @@ src={selected.img}
 alt="Flower Keychain"
 width={260}
 height={260}
+className="object-contain"
 />
 
 </div>
@@ -164,6 +179,7 @@ src={c.img}
 alt={c.name}
 width={70}
 height={70}
+className="object-contain"
 />
 
 </div>
@@ -172,7 +188,7 @@ height={70}
 
 </div>
 
-{/* ❤️ WISHLIST + CART BUTTON */}
+{/* BUTTONS */}
 
 <div className="flex items-center gap-4">
 
@@ -202,9 +218,11 @@ Add to Cart </button>
 
 {/* FOOTER */}
 
-<div className="mt-20 border-t pt-12 px-16 pb-6 text-sm">
+<div className="mt-20 border-t pt-12 pb-6">
 
-<div className="grid grid-cols-4 items-start">
+<div className="max-w-7xl mx-auto px-6 md:px-16 text-sm">
+
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 items-start">
 
 <div className="flex gap-4">
 
@@ -283,5 +301,9 @@ Copyright © 2026. Fuzzy Bloom Handicrafts by Kate.
 </div>
 
 </div>
+
+</div>
+
 )
+
 }

@@ -6,10 +6,10 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 type CartItem = {
-  name: string
-  price: number
-  img?: string
-  qty: number
+name: string
+price: number
+img?: string
+qty: number
 }
 
 export default function CartPage(){
@@ -19,38 +19,30 @@ const router = useRouter()
 
 const shipping = 20
 
-
 // LOAD CART
 useEffect(()=>{
 
 const storedCart = JSON.parse(localStorage.getItem("cart") || "[]")
-
 setCartItems(storedCart)
 
 },[])
-
 
 // SAVE CART
 function saveCart(updated:CartItem[]){
 
 setCartItems(updated)
-
 localStorage.setItem("cart",JSON.stringify(updated))
 
 }
-
 
 // INCREASE QTY
 function increaseQty(index:number){
 
 const updated = [...cartItems]
-
 updated[index].qty += 1
-
 saveCart(updated)
 
 }
-
 
 // DECREASE QTY
 function decreaseQty(index:number){
@@ -65,18 +57,14 @@ saveCart(updated)
 
 }
 
-
 // REMOVE ITEM
 function removeItem(index:number){
 
 const updated = [...cartItems]
-
 updated.splice(index,1)
-
 saveCart(updated)
 
 }
-
 
 // CALCULATE TOTAL
 const subtotal = cartItems.reduce((sum,item)=>{
@@ -87,14 +75,12 @@ return sum + item.price * item.qty
 
 const total = subtotal + (cartItems.length > 0 ? shipping : 0)
 
-
 // CHECKOUT
 function handleCheckout(){
 
 if(cartItems.length === 0){
 
 alert("Your cart is empty!")
-
 return
 
 }
@@ -103,13 +89,13 @@ router.push("/checkout")
 
 }
 
-
 return(
 
 <div className="min-h-screen text-black">
 
-{/* ================= NAVBAR ================= */}
-<div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-10 backdrop-blur-md bg-purple/25 z-20">
+{/* NAVBAR */}
+
+<div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-6 md:px-16 backdrop-blur-md bg-purple/25 z-20">
 
 <Link href="/dashboard">
 <Image
@@ -121,26 +107,21 @@ className="rounded-full"
 />
 </Link>
 
-<div className="flex items-center gap-10 font-medium text-sm">
+<div className="flex items-center gap-6 md:gap-10 font-medium text-sm">
 
 <Link href="/about">About Us</Link>
-
 <Link href="/wishlist">Wishlist</Link>
-
 <Link href="/cart">Cart</Link>
-
 <Link href="/orders">Orders</Link>
-
 <Link href="/">Logout</Link>
 
 </div>
 
 </div>
 
-
-
 {/* TITLE */}
-<div className="px-20 pt-12 pb-6">
+
+<div className="max-w-7xl mx-auto px-6 md:px-16 pt-12 pb-6">
 
 <h1
 className="text-4xl"
@@ -151,13 +132,13 @@ Shopping Cart
 
 </div>
 
+{/* CART SECTION */}
 
-
-<div className="max-w-6xl mx-auto grid grid-cols-3 gap-10 px-10 pb-20">
-
+<div className="max-w-7xl mx-auto px-6 md:px-16 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-10">
 
 {/* CART ITEMS */}
-<div className="col-span-2 space-y-6">
+
+<div className="lg:col-span-2 space-y-6">
 
 {cartItems.length === 0 && (
 
@@ -167,12 +148,11 @@ Your cart is empty.
 
 )}
 
-
 {cartItems.map((item,index)=>(
 
 <div
 key={index}
-className="flex justify-between items-center bg-white p-5 rounded-2xl shadow"
+className="flex flex-wrap md:flex-nowrap justify-between items-center bg-white p-5 rounded-2xl shadow"
 >
 
 <div className="flex items-center gap-5">
@@ -182,12 +162,12 @@ src={item.img || "/p2.png"}
 alt={item.name}
 width={90}
 height={90}
-className="rounded-lg"
+className="rounded-lg object-cover"
 />
 
 <div>
 
-<h3 className="font-semibold text-lg">
+<h3 className="font-semibold text-lg break-words">
 {item.name}
 </h3>
 
@@ -199,14 +179,14 @@ className="rounded-lg"
 
 </div>
 
-
-<div className="flex items-center gap-6">
+<div className="flex items-center gap-6 mt-4 md:mt-0">
 
 <div className="flex items-center border rounded-full overflow-hidden">
 
 <button
 onClick={()=>decreaseQty(index)}
 className="px-3 py-1"
+
 >
 -
 </button>
@@ -218,19 +198,21 @@ className="px-3 py-1"
 <button
 onClick={()=>increaseQty(index)}
 className="px-3 py-1"
+
 >
 +
+
 </button>
 
 </div>
 
-
 <button
 onClick={()=>removeItem(index)}
 className="text-red-500 text-sm"
+
 >
-Remove
-</button>
+
+Remove </button>
 
 </div>
 
@@ -240,9 +222,8 @@ Remove
 
 </div>
 
-
-
 {/* ORDER SUMMARY */}
+
 <div className="bg-white p-6 rounded-2xl shadow h-fit">
 
 <h2 className="text-xl mb-5 font-semibold">
@@ -266,21 +247,20 @@ Order Summary
 </span>
 </div>
 
-
 <button
 onClick={handleCheckout}
-className="w-full bg-black text-white py-2 rounded-full"
+className="w-full bg-black text-white py-2 rounded-full hover:bg-gray-800 transition"
+
 >
-Checkout
-</button>
+
+Checkout </button>
 
 </div>
 
 </div>
-
-
 
 {/* CONTINUE SHOPPING */}
+
 <div className="text-center mb-20">
 
 <Link
@@ -292,11 +272,13 @@ Continue Shopping
 
 </div>
 
-
 {/* FOOTER */}
-<div className="mt-20 border-t pt-12 px-16 pb-6 text-sm">
 
-<div className="grid grid-cols-4 items-start">
+<div className="mt-20 border-t pt-12 pb-6">
+
+<div className="max-w-7xl mx-auto px-6 md:px-16 text-sm">
+
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 items-start">
 
 <div className="flex gap-4">
 
@@ -345,5 +327,9 @@ Copyright © 2026. Fuzzy Bloom Handicrafts by Kate.
 </div>
 
 </div>
+
+</div>
+
 )
+
 }

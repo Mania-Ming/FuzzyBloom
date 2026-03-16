@@ -3,15 +3,18 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 type CartItem = {
 name: string
-price: any
+price: number
 img?: string
 qty: number
 }
 
 export default function CheckoutPage(){
+
+const router = useRouter()
 
 const [cartItems,setCartItems] = useState<CartItem[]>([])
 
@@ -29,7 +32,8 @@ useEffect(()=>{
 
 if(typeof window !== "undefined"){
 
-const storedCart = JSON.parse(localStorage.getItem("cart") || "[]")
+const storedCart:CartItem[] =
+JSON.parse(localStorage.getItem("cart") || "[]")
 
 setCartItems(storedCart)
 
@@ -41,15 +45,7 @@ setCartItems(storedCart)
 
 const subtotal = cartItems.reduce((sum,item)=>{
 
-let price = 0
-
-if(typeof item.price === "string"){
-price = parseFloat(item.price.replace("₱",""))
-}else{
-price = item.price
-}
-
-return sum + price * item.qty
+return sum + item.price * item.qty
 
 },0)
 
@@ -100,7 +96,7 @@ localStorage.removeItem("cart")
 
 alert("Order placed successfully!")
 
-window.location.href="/orders"
+router.push("/orders")
 
 }
 
@@ -110,7 +106,7 @@ return(
 
 {/* NAVBAR */}
 
-<div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-10 backdrop-blur-md bg-purple/25 z-20">
+<div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-6 md:px-16 backdrop-blur-md bg-purple/25 z-20">
 
 <Link href="/dashboard">
 <Image
@@ -122,7 +118,7 @@ className="rounded-full"
 />
 </Link>
 
-<div className="flex items-center gap-10 font-medium text-sm">
+<div className="flex items-center gap-6 md:gap-10 font-medium text-sm">
 
 <Link href="/about">About Us</Link>
 <Link href="/wishlist">Wishlist</Link>
@@ -134,11 +130,13 @@ className="rounded-full"
 
 </div>
 
-<h1 className="text-center text-2xl mt-10 mb-10">
+{/* TITLE */}
+
+<h1 className="text-center text-3xl mt-10 mb-10">
 Checkout
 </h1>
 
-<div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 px-6 mb-20">
+<div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 px-6 md:px-16 mb-20">
 
 {/* LEFT SIDE CART */}
 
@@ -151,6 +149,7 @@ Shopping Cart
 {cartItems.length === 0 && (
 
 <p className="text-gray-500">No items in cart</p>
+
 )}
 
 {cartItems.map((item,index)=>(
@@ -167,6 +166,7 @@ src={item.img || "/p2.png"}
 alt={item.name}
 width={60}
 height={60}
+className="rounded-lg object-cover"
 />
 
 <div>
@@ -184,7 +184,7 @@ Qty: {item.qty}
 </div>
 
 <p className="text-red-600 font-bold">
-{typeof item.price === "string" ? item.price : `₱${item.price}`}
+₱{item.price}
 </p>
 
 </div>
@@ -307,9 +307,11 @@ Place Order </button>
 
 {/* FOOTER */}
 
-<div className="mt-20 border-t pt-12 px-16 pb-6 text-sm">
+<div className="mt-20 border-t pt-12 pb-6">
 
-<div className="grid grid-cols-4 items-start">
+<div className="max-w-7xl mx-auto px-6 md:px-16 text-sm">
+
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 items-start">
 
 <div className="flex gap-4">
 
@@ -358,5 +360,9 @@ Copyright © 2026. Fuzzy Bloom Handicrafts by Kate.
 </div>
 
 </div>
+
+</div>
+
 )
+
 }
