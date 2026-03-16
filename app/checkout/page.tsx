@@ -2,13 +2,13 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useState,useEffect } from "react"
+import { useState, useEffect } from "react"
 
 type CartItem = {
-name:string
-price:string
-img?:string
-qty:number
+  name: string
+  price: string
+  img?: string
+  qty: number
 }
 
 export default function CheckoutPage(){
@@ -25,25 +25,38 @@ const [payment,setPayment] = useState("cod")
 
 const shipping = 20
 
-// LOAD CART
+
+/* LOAD CART SAFELY */
 useEffect(()=>{
+
+if(typeof window !== "undefined"){
 
 const storedCart = JSON.parse(localStorage.getItem("cart") || "[]")
 setCartItems(storedCart)
 
+}
+
 },[])
 
-// CALCULATE TOTAL
+
+/* CALCULATE TOTAL */
+
 const subtotal = cartItems.reduce((sum,item)=>{
 
-const price = parseFloat(item.price.replace("₱",""))
+const price =
+typeof item.price === "string"
+? parseFloat(item.price.replace("₱",""))
+: item.price
+
 return sum + price * item.qty
 
 },0)
 
 const total = subtotal + (cartItems.length > 0 ? shipping : 0)
 
-// PLACE ORDER
+
+/* PLACE ORDER */
+
 function placeOrder(){
 
 if(cartItems.length === 0){
@@ -75,7 +88,11 @@ payment:payment
 
 }
 
-const oldOrders = JSON.parse(localStorage.getItem("orders") || "[]")
+let oldOrders:any[] = []
+
+if(typeof window !== "undefined"){
+oldOrders = JSON.parse(localStorage.getItem("orders") || "[]")
+}
 
 localStorage.setItem("orders",JSON.stringify([order,...oldOrders]))
 
@@ -87,9 +104,11 @@ window.location.href = "/orders"
 
 }
 
+
 return(
 
 <div className="min-h-screen text-black">
+
 
 {/* NAVBAR */}
 
@@ -117,11 +136,14 @@ className="rounded-full"
 
 </div>
 
+
 <h1 className="text-center text-2xl mt-10 mb-10">
 Checkout
 </h1>
 
+
 <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 px-6 mb-20">
+
 
 {/* LEFT SIDE CART */}
 
@@ -132,7 +154,6 @@ Shopping Cart
 </h2>
 
 {cartItems.length === 0 && (
-
 <p className="text-gray-500">No items in cart</p>
 )}
 
@@ -174,6 +195,7 @@ Qty: {item.qty}
 
 ))}
 
+
 <div className="bg-white border border-gray-200 p-4 rounded-xl flex justify-between mt-6">
 
 <p className="font-semibold">Subtotal</p>
@@ -186,9 +208,12 @@ Qty: {item.qty}
 
 </div>
 
+
+
 {/* RIGHT SIDE */}
 
 <div className="space-y-6">
+
 
 {/* DELIVERY ADDRESS */}
 
@@ -228,6 +253,8 @@ className="w-full border p-3 rounded"
 
 </div>
 
+
+
 {/* PAYMENT */}
 
 <div className="bg-white border border-gray-200 p-6 rounded-xl">
@@ -262,6 +289,8 @@ onChange={()=>setPayment("gcash")}
 
 </div>
 
+
+
 {/* TOTAL */}
 
 <div className="text-right space-y-1">
@@ -276,69 +305,72 @@ Total: <span className="text-red-600">₱{total}</span>
 
 </div>
 
+
 <button
 onClick={placeOrder}
 className="w-full bg-[#4b2e2e] text-white py-3 rounded-full hover:bg-[#3a2323]"
-
 >
+Place Order
+</button>
 
-Place Order </button>
+</div>
 
 </div>
 
-</div>
+
 
 {/* FOOTER */}
-      <div className="mt-20 border-t pt-12 px-16 pb-6 text-sm">
 
-        <div className="grid grid-cols-4 items-start">
+<div className="mt-20 border-t pt-12 px-16 pb-6 text-sm">
 
-          <div className="flex gap-4">
+<div className="grid grid-cols-4 items-start">
 
-            <Image
-              src="/logo.jpg"
-              alt="logo"
-              width={70}
-              height={70}
-              className="rounded-full object-cover"
-            />
+<div className="flex gap-4">
 
-            <div>
-              <p className="font-semibold">Fuzzy Bloom</p>
-              <p>Handicrafts by Kate</p>
-              <p>fuzzybloom@gmail.com</p>
-            </div>
+<Image
+src="/logo.jpg"
+alt="logo"
+width={70}
+height={70}
+className="rounded-full object-cover"
+/>
 
-          </div>
+<div>
+<p className="font-semibold">Fuzzy Bloom</p>
+<p>Handicrafts by Kate</p>
+<p>fuzzybloom@gmail.com</p>
+</div>
 
-          <div>
-            <p className="font-medium">Kate Dorrene Cristie</p>
-            <p>katecristie@gmail.com</p>
-            <p>katedorrene@yahoo.com</p>
-          </div>
+</div>
 
-          <div>
-            <p className="font-medium mb-2">About Us</p>
-            <p>Our Story</p>
-            <p>Contact</p>
-          </div>
+<div>
+<p className="font-medium">Kate Dorrene Cristie</p>
+<p>katecristie@gmail.com</p>
+<p>katedorrene@yahoo.com</p>
+</div>
 
-          <div>
-            <p className="font-medium mb-2">Category</p>
-            <p>Bouquets</p>
-            <p>Flower Keychains</p>
-            <p>Ribbon Keychains</p>
-            <p>Headbands</p>
-          </div>
+<div>
+<p className="font-medium mb-2">About Us</p>
+<p>Our Story</p>
+<p>Contact</p>
+</div>
 
-        </div>
+<div>
+<p className="font-medium mb-2">Category</p>
+<p>Bouquets</p>
+<p>Flower Keychains</p>
+<p>Ribbon Keychains</p>
+<p>Headbands</p>
+</div>
 
-        <p className="text-center mt-10 text-gray-500 text-xs">
-          Copyright © 2026. Fuzzy Bloom Handicrafts by Kate.
-        </p>
+</div>
 
-      </div>
+<p className="text-center mt-10 text-gray-500 text-xs">
+Copyright © 2026. Fuzzy Bloom Handicrafts by Kate.
+</p>
 
-    </div>
-  )
+</div>
+
+</div>
+)
 }
