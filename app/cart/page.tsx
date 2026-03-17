@@ -121,7 +121,7 @@ Shopping Cart
 {cartItems.length === 0 && (
 
 <p className="text-gray-500">
-Your cart is empty.
+Your cart is empty right now.
 </p>
 
 )}
