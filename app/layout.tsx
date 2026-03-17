@@ -1,5 +1,5 @@
 import QueryProvider from "@/lib/QueryProvider"
-
+import type { Metadata } from "next"
 import { Pacifico } from "next/font/google";
 import "./globals.css";
 
