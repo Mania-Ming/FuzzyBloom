@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import QueryProvider from "@/lib/QueryProvider"
+
 import { Pacifico } from "next/font/google";
 import "./globals.css";
 
@@ -30,7 +31,9 @@ export default function RootLayout({
         }}
       >
         <div className="min-h-screen bg-white/60 backdrop-blur-sm">
+          <QueryProvider>
           {children}
+        </QueryProvider>
         </div>
       </body>
     </html>

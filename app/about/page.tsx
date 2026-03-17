@@ -2,37 +2,16 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import Navbar from "@/components/Navbar"
+import ProtectedRoute from "@/components/ProtectedRoute"
 
 export default function About() {
 
 return (
-
+<ProtectedRoute>
 <div className="min-h-screen text-black">
 
-{/* NAVBAR */}
-<div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-6 md:px-16 backdrop-blur-md bg-purple/25 z-20">
-
-<Link href="/dashboard">
-<Image
-src="/logo.jpg"
-alt="logo"
-width={50}
-height={50}
-className="rounded-full object-cover"
-/>
-</Link>
-
-<div className="flex items-center gap-6 md:gap-10 font-medium text-sm">
-
-<Link href="/about">About Us</Link>
-<Link href="/wishlist">Wishlist</Link>
-<Link href="/cart">Cart</Link>
-<Link href="/orders">Orders</Link>
-<Link href="/">Logout</Link>
-
-</div>
-
-</div>
+<Navbar />
 
 
 {/* ABOUT CONTENT */}
@@ -220,7 +199,6 @@ Copyright © 2026. Fuzzy Bloom Handicrafts by Kate.
 </div>
 
 </div>
-
+</ProtectedRoute>
 )
-
 }

@@ -2,13 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useState } from "react";
+import { useRegister } from "@/lib/hooks/useRegister";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { mutate: register, isPending, isError, error } = useRegister();
+
+  const [fullName, setFullName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/login");
+    register({ full_name: fullName, email, password }, {
+      onSuccess: () => router.push("/login"),
+    })
   };
 
   return (
@@ -44,6 +53,8 @@ export default function RegisterPage() {
           <input
             type="text"
             placeholder="Full Name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
             required
           />
@@ -51,6 +62,8 @@ export default function RegisterPage() {
           <input
             type="email"
             placeholder="Email Address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
             required
           />
@@ -58,15 +71,24 @@ export default function RegisterPage() {
           <input
             type="password"
             placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
             required
           />
 
+          {isError && (
+            <p className="text-red-500 text-sm">
+              {error?.message ?? "Registration failed. Please try again."}
+            </p>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-black text-white py-3 rounded-full hover:opacity-80 transition"
+            disabled={isPending}
+            className="w-full bg-black text-white py-3 rounded-full hover:opacity-80 transition disabled:opacity-50"
           >
-            Register
+            {isPending ? "Registering..." : "Register"}
           </button>
 
         </form>

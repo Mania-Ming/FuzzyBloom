@@ -3,6 +3,8 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useState, useEffect } from "react"
+import Navbar from "@/components/Navbar"
+import ProtectedRoute from "@/components/ProtectedRoute"
 
 export default function WishlistPage() {
 
@@ -51,32 +53,9 @@ export default function WishlistPage() {
   }
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen flex flex-col text-black">
-
-      {/* NAVBAR */}
-      <div className="sticky top-0 w-full h-[88px] flex items-center justify-between px-6 md:px-10 backdrop-blur-md bg-white/30 z-20">
-
-        <Link href="/dashboard">
-          <Image
-            src="/logo.jpg"
-            alt="logo"
-            width={55}
-            height={55}
-            className="rounded-full"
-          />
-        </Link>
-
-        <div className="flex items-center gap-6 md:gap-10 font-medium text-sm">
-
-          <Link href="/about">About Us</Link>
-          <Link href="/wishlist">Wishlist</Link>
-          <Link href="/cart">Cart</Link>
-          <Link href="/orders">Orders</Link>
-          <Link href="/">Logout</Link>
-
-        </div>
-
-      </div>
+      <Navbar />
 
 
       {/* TITLE */}
@@ -212,5 +191,6 @@ export default function WishlistPage() {
       </div>
 
     </div>
+    </ProtectedRoute>
   )
 }
