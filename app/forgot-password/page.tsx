@@ -2,14 +2,26 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import api from "@/lib/api/axiosInstance"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [sent, setSent] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSent(true)
+    setIsLoading(true)
+    setError("")
+    try {
+      await api.post("/auth/forgot-password/", { email })
+      setSent(true)
+    } catch (err: any) {
+      setError(err?.response?.data?.detail ?? "Something went wrong. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -30,6 +42,7 @@ export default function ForgotPasswordPage() {
               <p className="text-sm text-gray-500">
                 We sent a reset link to <span className="font-semibold text-gray-700">{email}</span>
               </p>
+              <p className="text-xs text-gray-400">Didn't receive it? Check your spam folder.</p>
               <Link href="/login" className="inline-block mt-2 text-[#4b2e2e] text-sm font-semibold hover:underline">
                 ← Back to Login
               </Link>
@@ -47,11 +60,19 @@ export default function ForgotPasswordPage() {
                   required
                 />
               </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-red-600 text-sm text-center">
+                  {error}
+                </div>
+              )}
+
               <button
                 type="submit"
-                className="w-full bg-[#4b2e2e] text-white py-3 rounded-full hover:bg-[#3a2323] transition font-semibold text-sm shadow-md shadow-[#4b2e2e]/20"
+                disabled={isLoading}
+                className="w-full bg-[#4b2e2e] text-white py-3 rounded-full hover:bg-[#3a2323] transition font-semibold text-sm shadow-md shadow-[#4b2e2e]/20 disabled:opacity-60"
               >
-                Send Reset Link
+                {isLoading ? "Sending..." : "Send Reset Link"}
               </button>
               <Link href="/login" className="block text-center text-sm text-gray-500 hover:text-gray-700 transition">
                 ← Back to Login
