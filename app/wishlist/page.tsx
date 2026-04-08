@@ -4,193 +4,81 @@ import Image from "next/image"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import Navbar from "@/components/Navbar"
+import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 
 export default function WishlistPage() {
-
   const [wishlist, setWishlist] = useState<any[]>([])
 
-  // LOAD WISHLIST
   useEffect(() => {
-    try{
-      const data = JSON.parse(localStorage.getItem("wishlist") || "[]")
-      setWishlist(data)
-    }catch{
-      setWishlist([])
-    }
+    try { setWishlist(JSON.parse(localStorage.getItem("wishlist") || "[]")) }
+    catch { setWishlist([]) }
   }, [])
 
-  // REMOVE ITEM
-  function removeItem(index:number){
-
-    const updated = wishlist.filter((_,i) => i !== index)
-
+  function removeItem(i: number) {
+    const updated = wishlist.filter((_, idx) => idx !== i)
     setWishlist(updated)
-
     localStorage.setItem("wishlist", JSON.stringify(updated))
   }
 
-  // ADD TO CART
-  function addToCart(item:any){
-
-    let cart = JSON.parse(localStorage.getItem("cart") || "[]")
-
-    const exist = cart.find((c:any)=>c.name === item.name)
-
-    if(!exist){
-
-      cart.push({...item, qty:1})
-
-      localStorage.setItem("cart", JSON.stringify(cart))
-
-      alert("Added to Cart 🛒")
-
-    }else{
-
-      alert("Already in Cart")
-
-    }
+  function addToCart(item: any) {
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]")
+    const exist = cart.find((c: any) => c.name === item.name)
+    if (!exist) { cart.push({ ...item, qty: 1 }); localStorage.setItem("cart", JSON.stringify(cart)) }
   }
 
   return (
     <ProtectedRoute>
-    <div className="min-h-screen flex flex-col text-black">
-      <Navbar />
+      <div className="min-h-screen flex flex-col text-gray-800">
+        <Navbar />
+        <main className="max-w-4xl mx-auto w-full px-6 md:px-12 py-10 flex-1">
 
+          <div className="mb-8">
+            <h1 className="text-3xl text-[#2a1515]" style={{ fontFamily: "var(--font-pacifico)" }}>Wishlist</h1>
+            <p className="text-gray-500 text-sm mt-1">{wishlist.length} saved item{wishlist.length !== 1 ? "s" : ""}</p>
+          </div>
 
-      {/* TITLE */}
-      <div className="px-6 md:px-20 pt-12 pb-6">
+          {wishlist.length === 0 && (
+            <div className="text-center py-24 text-gray-400 bg-white/60 rounded-3xl border border-white/60">
+              <p className="text-5xl mb-4">♡</p>
+              <p className="font-medium text-gray-500">Your wishlist is empty</p>
+              <Link href="/dashboard" className="text-[#4b2e2e] text-sm font-semibold mt-3 inline-block hover:underline">Browse Products →</Link>
+            </div>
+          )}
 
-        <h1
-          className="text-3xl md:text-4xl"
-          style={{ fontFamily: "var(--font-pacifico)" }}
-        >
-          Wishlist
-        </h1>
-
-      </div>
-
-
-      {/* WISHLIST ITEMS */}
-      <div className="px-6 md:px-20 pb-20 space-y-6">
-
-        {wishlist.length === 0 && (
-          <p className="text-center text-gray-500 py-20">
-            Your wishlist is empty
-          </p>
-        )}
-
-        {wishlist.map((item,index)=>(
-
-          <div
-            key={index}
-            className="flex flex-wrap items-center justify-between gap-4 bg-white p-5 rounded-2xl shadow"
-          >
-
-            {/* LEFT SIDE */}
-            <div className="flex items-center gap-5">
-
-              <Image
-                src={item.img || "/logo.jpg"}
-                alt={item.name}
-                width={80}
-                height={80}
-                className="rounded-lg"
-              />
-
-              <div>
-
-                <h3 className="font-semibold text-lg">
-                  {item.name}
-                </h3>
-
-                <p className="text-red-600 font-bold mt-1">
-                  ₱{item.price}
-                </p>
-
+          <div className="space-y-3">
+            {wishlist.map((item, i) => (
+              <div key={i} className="bg-white/80 rounded-2xl border border-white/60 shadow-sm p-4 flex items-center gap-4 flex-wrap">
+                <div className="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
+                  <Image src={item.img || "/logo.jpg"} alt={item.name} width={56} height={56} className="rounded-lg object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-gray-800">{item.name}</p>
+                  <p className="text-[#4b2e2e] font-bold text-sm mt-0.5">₱{Number(item.price) || 0}</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => addToCart(item)}
+                    className="bg-[#4b2e2e] text-white px-4 py-2 rounded-full text-xs font-semibold hover:bg-[#3a2323] transition"
+                  >
+                    + Add to Cart
+                  </button>
+                  <button
+                    onClick={() => removeItem(i)}
+                    className="p-2 rounded-full border border-gray-200 text-gray-400 hover:text-red-400 hover:border-red-200 transition"
+                    title="Remove"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-
-            </div>
-
-
-            {/* RIGHT SIDE BUTTONS */}
-            <div className="flex items-center gap-3">
-
-              <button
-                onClick={()=>addToCart(item)}
-                className="bg-[#4b343b] text-white px-4 py-2 rounded-lg text-sm hover:opacity-90"
-              >
-                🛒
-              </button>
-
-              <button
-                onClick={()=>removeItem(index)}
-                className="bg-gray-200 px-4 py-2 rounded-lg text-sm hover:bg-gray-300"
-              >
-                🗑
-              </button>
-
-            </div>
-
+            ))}
           </div>
-
-        ))}
-
+        </main>
+        <Footer />
       </div>
-
-
-      {/* FOOTER */}
-      <div className="mt-auto border-t pt-12 px-6 md:px-16 pb-6 text-sm">
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 items-start">
-
-          <div className="flex gap-4">
-
-            <Image
-              src="/logo.jpg"
-              alt="logo"
-              width={70}
-              height={70}
-              className="rounded-full object-cover"
-            />
-
-            <div>
-              <p className="font-semibold">Fuzzy Bloom</p>
-              <p>Handicrafts by Kate</p>
-              <p>fuzzybloom@gmail.com</p>
-            </div>
-
-          </div>
-
-          <div>
-            <p className="font-medium">Kate Dorrene Cristie</p>
-            <p>katecristie@gmail.com</p>
-            <p>katedorrene@yahoo.com</p>
-          </div>
-
-          <div>
-            <p className="font-medium mb-2">About Us</p>
-            <p>Our Story</p>
-            <p>Contact</p>
-          </div>
-
-          <div>
-            <p className="font-medium mb-2">Category</p>
-            <p>Bouquets</p>
-            <p>Flower Keychains</p>
-            <p>Ribbon Keychains</p>
-            <p>Headbands</p>
-          </div>
-
-        </div>
-
-        <p className="text-center mt-10 text-gray-500 text-xs">
-          Copyright © 2026. Fuzzy Bloom Handicrafts by Kate.
-        </p>
-
-      </div>
-
-    </div>
     </ProtectedRoute>
   )
 }

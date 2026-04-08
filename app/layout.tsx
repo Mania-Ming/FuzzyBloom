@@ -1,28 +1,29 @@
 import QueryProvider from "@/lib/QueryProvider"
 import type { Metadata } from "next"
-import { Pacifico } from "next/font/google";
-import "./globals.css";
+import { Pacifico, Inter } from "next/font/google"
+import "./globals.css"
 
 const pacifico = Pacifico({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-pacifico",
-});
+})
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+})
 
 export const metadata: Metadata = {
   title: "Fuzzy Bloom | Handicrafts by Kate",
   description: "Fuzzy Bloom Handicrafts by Kate",
-};
+}
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body
-        className={`${pacifico.variable}`}
+        className={`${pacifico.variable} ${inter.variable}`}
         style={{
           backgroundImage: "url('/bg.jpg')",
           backgroundSize: "cover",
@@ -30,12 +31,10 @@ export default function RootLayout({
           backgroundAttachment: "fixed",
         }}
       >
-        <div className="min-h-screen bg-white/60 backdrop-blur-sm">
-          <QueryProvider>
-          {children}
-        </QueryProvider>
+        <div className="min-h-screen bg-white/65 backdrop-blur-sm">
+          <QueryProvider>{children}</QueryProvider>
         </div>
       </body>
     </html>
-  );
+  )
 }

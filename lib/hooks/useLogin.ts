@@ -7,6 +7,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: (payload: LoginPayload) => loginService(payload),
     onSuccess: async () => {
+      localStorage.setItem("isLoggedIn", "true")
       await queryClient.refetchQueries({ queryKey: ["me"] })
     },
   })
