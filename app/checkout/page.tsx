@@ -38,21 +38,15 @@ export default function CheckoutPage() {
   async function placeOrder() {
     if (cartItems.length === 0) { alert("Cart is empty!"); return }
     if (payment === "gcash" && !gcashProof) { alert("Please upload GCash proof of payment."); return }
+    if (!user?.id) return
 
-    let gcashProofUrl = null
     if (payment === "gcash" && gcashProof) {
-      const fileName = `gcash/${user?.id}_${Date.now()}`
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("proofs")
-        .upload(fileName, gcashProof)
-      if (!uploadError && uploadData) {
-        const { data: urlData } = supabase.storage.from("proofs").getPublicUrl(fileName)
-        gcashProofUrl = urlData.publicUrl
-      }
+      const fileName = `gcash/${user.id}_${Date.now()}`
+      await supabase.storage.from("proofs").upload(fileName, gcashProof)
     }
 
     await saveOrder({
-      user_id: user?.id!,
+      user_id: user.id,
       items: cartItems,
       subtotal,
       shipping,
