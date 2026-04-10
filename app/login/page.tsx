@@ -1,36 +1,60 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useState } from "react"
-import { useLogin } from "@/lib/hooks/useLogin"
+import { supabase } from "@/lib/supabase"
+import { useQueryClient } from "@tanstack/react-query"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { mutate: login, isPending, isError, error } = useLogin()
+  const queryClient = useQueryClient()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [isPending, setIsPending] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace("/dashboard")
+    })
+  }, [router])
+
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    login({ email, password }, { onSuccess: () => router.push("/dashboard") })
+    if (!email || !password) return
+    setIsPending(true)
+    setErrorMsg("")
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (error) {
+      setErrorMsg("Invalid email or password.")
+      setIsPending(false)
+      return
+    }
+
+    localStorage.setItem("isLoggedIn", "true")
+    queryClient.setQueryData(["me"], {
+      id: data.user.id,
+      full_name: data.user.user_metadata?.full_name ?? "",
+      email: data.user.email ?? "",
+    })
+    router.push("/dashboard")
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md fade-up">
-
-        {/* CARD */}
+    <div className="h-screen overflow-hidden flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
         <div className="bg-white/85 backdrop-blur-xl rounded-3xl shadow-xl border border-white/60 p-8 md:p-10">
 
-          {/* LOGO */}
           <div className="flex flex-col items-center mb-8">
             <img src="/logo.jpg" alt="logo" className="w-16 h-16 rounded-full object-cover ring-4 ring-[#4b2e2e]/10 mb-4" />
             <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
             <p className="text-gray-500 text-sm mt-1">Sign in to your Fuzzy Bloom account</p>
           </div>
 
-          {/* TABS */}
           <div className="flex bg-gray-100 rounded-xl p-1 mb-7">
             <span className="flex-1 text-center py-2 rounded-lg bg-white shadow-sm text-sm font-semibold text-[#4b2e2e]">Login</span>
             <Link href="/register" className="flex-1 text-center py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 transition">Register</Link>
@@ -63,9 +87,9 @@ export default function LoginPage() {
               />
             </div>
 
-            {isError && (
+            {errorMsg && (
               <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-red-600 text-sm text-center">
-                {(error as any)?.response?.data?.detail ?? "Invalid email or password."}
+                {errorMsg}
               </div>
             )}
 

@@ -1,26 +1,69 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useState } from "react"
-import { useRegister } from "@/lib/hooks/useRegister"
+import { supabase } from "@/lib/supabase"
 
 export default function RegisterPage() {
   const router = useRouter()
-  const { mutate: register, isPending, isError, error } = useRegister()
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [isPending, setIsPending] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
+  const [successMsg, setSuccessMsg] = useState("")
 
-  const handleRegister = (e: React.FormEvent) => {
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace("/dashboard")
+    })
+  }, [router])
+
+  async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
-    register({ full_name: fullName, email, password }, { onSuccess: () => router.push("/login") })
+    if (!fullName || !email || !password) return
+    if (password.length < 6) { setErrorMsg("Password must be at least 6 characters."); return }
+
+    setIsPending(true)
+    setErrorMsg("")
+    setSuccessMsg("")
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName } },
+    })
+
+    if (error) {
+      if (error.message.includes("already registered")) {
+        setErrorMsg("This email is already registered. Try logging in.")
+      } else if (error.message.includes("weak")) {
+        setErrorMsg("Password is too weak. Use at least 6 characters.")
+      } else {
+        setErrorMsg(error.message || "Registration failed. Please try again.")
+      }
+      setIsPending(false)
+      return
+    }
+
+    // insert into profiles
+    if (data.user) {
+      await supabase.from("profiles").upsert({
+        id: data.user.id,
+        full_name: fullName,
+        email,
+      })
+    }
+
+    setSuccessMsg("Account created! Redirecting to login...")
+    setTimeout(() => router.push("/login"), 1500)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md fade-up">
-
+    <div className="h-screen overflow-hidden flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
         <div className="bg-white/85 backdrop-blur-xl rounded-3xl shadow-xl border border-white/60 p-8 md:p-10">
 
           <div className="flex flex-col items-center mb-8">
@@ -29,7 +72,6 @@ export default function RegisterPage() {
             <p className="text-gray-500 text-sm mt-1">Join the Fuzzy Bloom community</p>
           </div>
 
-          {/* TABS */}
           <div className="flex bg-gray-100 rounded-xl p-1 mb-7">
             <Link href="/login" className="flex-1 text-center py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 transition">Login</Link>
             <span className="flex-1 text-center py-2 rounded-lg bg-white shadow-sm text-sm font-semibold text-[#4b2e2e]">Register</span>
@@ -62,25 +104,23 @@ export default function RegisterPage() {
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Password</label>
               <input
                 type="password"
-                placeholder="••••••••"
+                placeholder="Min. 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4b2e2e]/30 focus:border-[#4b2e2e] bg-gray-50/80 text-sm transition"
                 required
+                minLength={6}
               />
             </div>
 
-            {isError && (
+            {errorMsg && (
               <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-red-600 text-sm text-center">
-                {(() => {
-                  const data = (error as any)?.response?.data
-                  if (!data) return "Registration failed. Please try again."
-                  if (typeof data === "string") return data
-                  if (data.detail) return data.detail
-                  const firstKey = Object.keys(data)[0]
-                  const msg = data[firstKey]
-                  return `${firstKey}: ${Array.isArray(msg) ? msg[0] : msg}`
-                })()}
+                {errorMsg}
+              </div>
+            )}
+            {successMsg && (
+              <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-green-600 text-sm text-center">
+                {successMsg}
               </div>
             )}
 
