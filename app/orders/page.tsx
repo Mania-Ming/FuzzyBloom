@@ -6,6 +6,8 @@ import { useEffect, useState } from "react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
+import { supabase } from "@/lib/supabase"
+import { useMe } from "@/lib/hooks/useMe"
 
 const statusColors: Record<string, string> = {
   Pending: "bg-amber-50 text-amber-600 border-amber-100",
@@ -16,12 +18,18 @@ const statusColors: Record<string, string> = {
 }
 
 export default function OrdersPage() {
+  const { data: user } = useMe()
   const [orders, setOrders] = useState<any[]>([])
 
   useEffect(() => {
-    try { setOrders(JSON.parse(localStorage.getItem("orders") || "[]")) }
-    catch { setOrders([]) }
-  }, [])
+    if (!user?.id) return
+    supabase
+      .from("orders")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setOrders(data || []))
+  }, [user?.id])
 
   return (
     <ProtectedRoute>
@@ -50,7 +58,7 @@ export default function OrdersPage() {
                 <div className="flex justify-between items-center px-5 py-4 border-b border-gray-50 flex-wrap gap-2">
                   <div>
                     <p className="font-semibold text-sm text-gray-800">Order #{order.id}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{order.date}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{order.created_at ? new Date(order.created_at).toLocaleDateString() : order.date}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${statusColors[order.status] ?? statusColors.Pending}`}>

@@ -8,6 +8,8 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { useMe } from "@/lib/hooks/useMe"
+import { useInsertOrder } from "@/lib/hooks/useInsertOrder"
+import { supabase } from "@/lib/supabase"
 
 type CartItem = { name: string; price: number; img?: string; qty: number }
 
@@ -18,6 +20,7 @@ export default function CheckoutPage() {
   const [payment, setPayment] = useState("cod")
   const [gcashProof, setGcashProof] = useState<File | null>(null)
   const [gcashPreview, setGcashPreview] = useState<string | null>(null)
+  const { mutateAsync: saveOrder } = useInsertOrder()
   const shipping = 20
 
   useEffect(() => {
@@ -32,22 +35,32 @@ export default function CheckoutPage() {
     if (file) { setGcashProof(file); setGcashPreview(URL.createObjectURL(file)) }
   }
 
-  function placeOrder() {
+  async function placeOrder() {
     if (cartItems.length === 0) { alert("Cart is empty!"); return }
     if (payment === "gcash" && !gcashProof) { alert("Please upload GCash proof of payment."); return }
-    const order = {
-      id: Date.now(),
+
+    let gcashProofUrl = null
+    if (payment === "gcash" && gcashProof) {
+      const fileName = `gcash/${user?.id}_${Date.now()}`
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("proofs")
+        .upload(fileName, gcashProof)
+      if (!uploadError && uploadData) {
+        const { data: urlData } = supabase.storage.from("proofs").getPublicUrl(fileName)
+        gcashProofUrl = urlData.publicUrl
+      }
+    }
+
+    await saveOrder({
+      user_id: user?.id!,
       items: cartItems,
       subtotal,
       shipping,
       total,
-      date: new Date().toLocaleDateString(),
-      status: "Pending",
       payment,
-      buyer: { name: user?.full_name, email: user?.email },
-    }
-    const oldOrders = JSON.parse(localStorage.getItem("orders") || "[]")
-    localStorage.setItem("orders", JSON.stringify([order, ...oldOrders]))
+      status: "Pending",
+    })
+
     localStorage.removeItem("cart")
     alert("Order placed successfully! 🎉")
     router.push("/orders")

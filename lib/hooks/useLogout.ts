@@ -5,12 +5,7 @@ export function useLogout() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: logoutService,
-    onSuccess: () => {
-      localStorage.setItem("isLoggedIn", "false")
-      queryClient.setQueryData(["me"], null)
-      queryClient.removeQueries({ queryKey: ["me"] })
-    },
-    onError: () => {
+    onSettled: () => {
       localStorage.setItem("isLoggedIn", "false")
       queryClient.setQueryData(["me"], null)
       queryClient.removeQueries({ queryKey: ["me"] })

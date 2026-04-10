@@ -6,9 +6,9 @@ export function useLogin() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: LoginPayload) => loginService(payload),
-    onSuccess: async () => {
+    onSuccess: async (user) => {
       localStorage.setItem("isLoggedIn", "true")
-      await queryClient.refetchQueries({ queryKey: ["me"] })
+      queryClient.setQueryData(["me"], user)
     },
   })
 }
