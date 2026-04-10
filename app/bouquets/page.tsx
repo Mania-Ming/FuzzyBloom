@@ -7,11 +7,11 @@ import Footer from "@/components/Footer"
 import { useAuth } from "@/lib/hooks/useAuth"
 
 const products = [
-  { name: "Lavender Grace", desc: "Soft pink pom-pom flowers, sweet & cute", price: 499, img: "/p1.png" },
-  { name: "Ruby & Sky", desc: "Red and baby blue tulips, bold but balanced", price: 499, img: "/p2.png" },
-  { name: "Mint Serenity", desc: "Mint green tulips, clean and modern look", price: 499, img: "/p3.png" },
-  { name: "Baby Blue Bliss", desc: "Sky-blue flowers, fresh and minimalist", price: 499, img: "/p4.png" },
-  { name: "Golden Sun", desc: "Yellow blossoms bright and cheerful bouquet", price: 499, img: "/p5.png" },
+  { name: "Lavender Grace", desc: "Soft pink pom-pom flowers, sweet & cute", price: 350, img: "/p1.png" },
+  { name: "Ruby & Sky", desc: "Red and baby blue tulips, bold but balanced", price: 420, img: "/p2.png" },
+  { name: "Mint Serenity", desc: "Mint green tulips, clean and modern look", price: 380, img: "/p3.png" },
+  { name: "Baby Blue Bliss", desc: "Sky-blue flowers, fresh and minimalist", price: 360, img: "/p4.png" },
+  { name: "Golden Sun", desc: "Yellow blossoms bright and cheerful bouquet", price: 400, img: "/p5.png" },
 ]
 
 export default function BouquetsPage() {

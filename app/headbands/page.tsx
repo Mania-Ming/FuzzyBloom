@@ -27,7 +27,7 @@ export default function HeadbandsPage() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]")
     const name = "Headband - " + selected.name
     const exist = cart.find((i: any) => i.name === name)
-    if (exist) { exist.qty += 1 } else { cart.push({ name, price: 149, img: selected.img, qty: 1 }) }
+    if (exist) { exist.qty += 1 } else { cart.push({ name, price: 150, img: selected.img, qty: 1 }) }
     localStorage.setItem("cart", JSON.stringify(cart))
   }
 
@@ -36,7 +36,7 @@ export default function HeadbandsPage() {
     const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]")
     const name = "Headband - " + selected.name
     if (!wishlist.find((i: any) => i.name === name)) {
-      wishlist.push({ name, price: 149, img: selected.img })
+      wishlist.push({ name, price: 150, img: selected.img })
       localStorage.setItem("wishlist", JSON.stringify(wishlist))
     }
   }
@@ -65,7 +65,7 @@ export default function HeadbandsPage() {
             <p className="text-gray-500 text-sm mb-5">Choose your favorite headband color</p>
 
             <div className="flex items-baseline gap-2 mb-6">
-              <span className="text-3xl font-bold text-[#4b2e2e]">₱149</span>
+              <span className="text-3xl font-bold text-[#4b2e2e]">₱150</span>
               <span className="text-sm text-gray-400">per piece</span>
             </div>
 
