@@ -75,7 +75,7 @@ export default function CheckoutPage() {
     <ProtectedRoute>
       <div className="h-screen overflow-hidden flex flex-col text-gray-800">
         <Navbar />
-        <main className="flex-1 overflow-hidden max-w-5xl mx-auto w-full px-6 md:px-12 py-6">
+        <main className="flex-1 overflow-y-auto max-w-5xl mx-auto w-full px-6 md:px-12 py-6">
 
           <h1 className="text-2xl text-[#2a1515] mb-4" style={{ fontFamily: "var(--font-pacifico)" }}>Checkout</h1>
 
@@ -211,6 +211,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         </main>
+        <Footer />
       </div>
     </ProtectedRoute>
   )

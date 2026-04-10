@@ -81,7 +81,7 @@ export default function ProfilePage() {
     <ProtectedRoute>
       <div className="h-screen overflow-hidden flex flex-col text-gray-800">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center px-6 py-4 overflow-hidden">
+        <div className="flex-1 flex items-center justify-center px-6 py-8 overflow-y-auto">
           <div className="w-full max-w-lg">
             <div className="bg-white/85 backdrop-blur-xl rounded-3xl shadow-xl border border-white/60 overflow-hidden">
 
