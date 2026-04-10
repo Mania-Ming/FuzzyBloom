@@ -73,16 +73,13 @@ export default function CheckoutPage() {
 
   return (
     <ProtectedRoute>
-      <div className="h-screen flex flex-col text-gray-800 overflow-hidden">
+      <div className="min-h-screen flex flex-col text-gray-800">
         <Navbar />
+        <main className="flex-1 max-w-5xl mx-auto w-full px-6 md:px-12 py-8">
 
-        {/* SCROLLABLE CONTENT */}
-        <div className="flex-1 overflow-y-auto">
-          <main className="max-w-5xl mx-auto w-full px-6 md:px-12 py-8">
+          <h1 className="text-2xl text-[#2a1515] mb-6" style={{ fontFamily: "var(--font-pacifico)" }}>Checkout</h1>
 
-            <h1 className="text-2xl text-[#2a1515] mb-6" style={{ fontFamily: "var(--font-pacifico)" }}>Checkout</h1>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             {/* LEFT — ORDER ITEMS */}
             <div className="space-y-4">
@@ -122,7 +119,7 @@ export default function CheckoutPage() {
             {/* RIGHT — PAYMENT */}
             <div className="space-y-4">
 
-              {/* BUYER INFO */}
+              {/* DELIVERY INFO */}
               <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm">
                 <h2 className="font-semibold text-gray-700 mb-3">Delivery Information</h2>
                 <div className="space-y-2 text-sm text-gray-600">
@@ -152,14 +149,12 @@ export default function CheckoutPage() {
                     <span>{profile?.contact_number || "—"}</span>
                   </div>
                 </div>
-
                 {(!profile?.address || !profile?.contact_number) && (
                   <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 text-xs text-amber-700">
                     ⚠️ Please update your profile to add delivery information.{" "}
                     <Link href="/profile" className="font-semibold underline">Go to Profile →</Link>
                   </div>
                 )}
-
                 {(profile?.address && profile?.contact_number) && (
                   <Link href="/profile" className="text-xs text-[#4b2e2e] font-medium hover:underline mt-3 inline-block">Edit in Profile →</Link>
                 )}
@@ -168,7 +163,6 @@ export default function CheckoutPage() {
               {/* PAYMENT METHOD */}
               <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm">
                 <h2 className="font-semibold text-gray-700 mb-4">Payment Method</h2>
-
                 <div className="space-y-2.5">
                   {[
                     { value: "cod", label: "Cash on Delivery", icon: "💵" },
@@ -186,7 +180,6 @@ export default function CheckoutPage() {
                     </label>
                   ))}
                 </div>
-
                 {payment === "gcash" && (
                   <div className="mt-4">
                     <p className="text-sm font-semibold text-gray-700 mb-2">Upload Proof of Payment</p>
@@ -212,9 +205,9 @@ export default function CheckoutPage() {
                 Place Order — ₱{total}
               </button>
             </div>
-          </main>
-        </div>
 
+          </div>
+        </main>
         <Footer />
       </div>
     </ProtectedRoute>
