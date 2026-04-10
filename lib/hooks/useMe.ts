@@ -16,15 +16,17 @@ export function useMe() {
       // fetch profile for full_name and profile_image
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, profile_image")
+        .select("full_name, profile_image, address, contact_number")
         .eq("id", user.id)
         .single()
 
-      return {
+     return {
         id: user.id,
         full_name: profile?.full_name ?? user.user_metadata?.full_name ?? "",
         email: user.email ?? "",
         profile_image: profile?.profile_image ?? undefined,
+        address: profile?.address ?? "",
+        contact_number: profile?.contact_number ?? "",
       }
     },
     retry: false,
