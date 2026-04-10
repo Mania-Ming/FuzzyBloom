@@ -57,7 +57,11 @@ export default function RegisterPage() {
       })
     }
 
-    setSuccessMsg("Account created! Redirecting to login...")
+    // sign out immediately so user must log in manually
+    await supabase.auth.signOut()
+    localStorage.setItem("isLoggedIn", "false")
+
+    setSuccessMsg("Account created! Please log in.")
     setTimeout(() => router.push("/login"), 1500)
   }
 
