@@ -10,10 +10,10 @@ const categories = [
 ]
 
 const products = [
-  { name: "Lavender Grace", img: "/p1.png", price: 499 },
-  { name: "Rose Romance", img: "/p2.png", price: 549 },
-  { name: "Daisy Delight", img: "/p3.png", price: 449 },
-  { name: "Pink Petal Keychain", img: "/p4.png", price: 129 },
+  { name: "Lavender Grace", img: "/p1.png", price: 350 },
+  { name: "Rose Romance", img: "/p2.png", price: 420 },
+  { name: "Flower Keychain", img: "/k1.png", price: 25 },
+  { name: "Ribbon Keychain", img: "/r1.png", price: 20 },
 ]
 
 export default function Home() {
