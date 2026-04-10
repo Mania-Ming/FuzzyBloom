@@ -1,8 +1,12 @@
 import { useMutation } from "@tanstack/react-query"
-import { refreshService } from "@/lib/services/authService"
+import { supabase } from "@/lib/supabase"
 
 export function useRefresh() {
   return useMutation({
-    mutationFn: refreshService,
+    mutationFn: async () => {
+      const { data, error } = await supabase.auth.refreshSession()
+      if (error) throw error
+      return data
+    },
   })
 }
