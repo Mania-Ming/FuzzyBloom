@@ -49,26 +49,38 @@ export default function CheckoutPage() {
   async function placeOrder() {
     if (cartItems.length === 0) { alert("Cart is empty!"); return }
     if (payment === "gcash" && !gcashProof) { alert("Please upload GCash proof of payment."); return }
-    if (!user?.id) return
+    if (!user?.id) { alert("You must be logged in to place an order."); return }
 
-    if (payment === "gcash" && gcashProof) {
-      const fileName = `gcash/${user.id}_${Date.now()}`
-      await supabase.storage.from("proofs").upload(fileName, gcashProof)
+    // check session
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      alert("Your session has expired. Please log in again.")
+      router.push("/login")
+      return
     }
 
-    await saveOrder({
-      user_id: user.id,
-      items: cartItems,
-      subtotal,
-      shipping,
-      total,
-      payment,
-      status: "Pending",
-    })
+    try {
+      if (payment === "gcash" && gcashProof) {
+        const fileName = `gcash/${user.id}_${Date.now()}`
+        await supabase.storage.from("proofs").upload(fileName, gcashProof)
+      }
 
-    localStorage.removeItem("cart")
-    alert("Order placed successfully! 🎉")
-    router.push("/orders")
+      await saveOrder({
+        user_id: user.id,
+        items: cartItems,
+        subtotal,
+        shipping,
+        total,
+        payment,
+        status: "Pending",
+      })
+
+      localStorage.removeItem("cart")
+      alert("Order placed successfully! 🎉")
+      router.push("/orders")
+    } catch (err: any) {
+      alert("Failed to place order: " + (err?.message ?? "Unknown error. Please try again."))
+    }
   }
 
   return (
