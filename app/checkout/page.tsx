@@ -73,13 +73,16 @@ export default function CheckoutPage() {
 
   return (
     <ProtectedRoute>
-      <div className="h-screen overflow-hidden flex flex-col text-gray-800">
+      <div className="h-screen flex flex-col text-gray-800 overflow-hidden">
         <Navbar />
-        <main className="flex-1 overflow-y-auto max-w-5xl mx-auto w-full px-6 md:px-12 py-6">
 
-          <h1 className="text-2xl text-[#2a1515] mb-4" style={{ fontFamily: "var(--font-pacifico)" }}>Checkout</h1>
+        {/* SCROLLABLE CONTENT */}
+        <div className="flex-1 overflow-y-auto">
+          <main className="max-w-5xl mx-auto w-full px-6 md:px-12 py-8">
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+            <h1 className="text-2xl text-[#2a1515] mb-6" style={{ fontFamily: "var(--font-pacifico)" }}>Checkout</h1>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             {/* LEFT — ORDER ITEMS */}
             <div className="space-y-4">
@@ -209,8 +212,9 @@ export default function CheckoutPage() {
                 Place Order — ₱{total}
               </button>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
+
         <Footer />
       </div>
     </ProtectedRoute>
