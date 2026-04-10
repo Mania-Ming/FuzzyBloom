@@ -22,10 +22,21 @@ export default function CheckoutPage() {
   const [gcashPreview, setGcashPreview] = useState<string | null>(null)
   const { mutateAsync: saveOrder } = useInsertOrder()
   const shipping = 20
+  const [profile, setProfile] = useState<{ address: string; contact_number: string } | null>(null)
 
   useEffect(() => {
     setCartItems(JSON.parse(localStorage.getItem("cart") || "[]"))
   }, [])
+
+  useEffect(() => {
+    if (!user?.id) return
+    supabase
+      .from("profiles")
+      .select("address, contact_number")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => setProfile(data))
+  }, [user?.id])
 
   const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.qty) || 1), 0)
   const total = subtotal + (cartItems.length > 0 ? shipping : 0)
@@ -62,13 +73,13 @@ export default function CheckoutPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen flex flex-col text-gray-800">
+      <div className="h-screen overflow-hidden flex flex-col text-gray-800">
         <Navbar />
-        <main className="max-w-5xl mx-auto w-full px-6 md:px-12 py-10 flex-1">
+        <main className="flex-1 overflow-hidden max-w-5xl mx-auto w-full px-6 md:px-12 py-6">
 
-          <h1 className="text-3xl text-[#2a1515] mb-8" style={{ fontFamily: "var(--font-pacifico)" }}>Checkout</h1>
+          <h1 className="text-2xl text-[#2a1515] mb-4" style={{ fontFamily: "var(--font-pacifico)" }}>Checkout</h1>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
 
             {/* LEFT — ORDER ITEMS */}
             <div className="space-y-4">
@@ -110,22 +121,45 @@ export default function CheckoutPage() {
 
               {/* BUYER INFO */}
               <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm">
-                <h2 className="font-semibold text-gray-700 mb-3">Buyer Information</h2>
+                <h2 className="font-semibold text-gray-700 mb-3">Delivery Information</h2>
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                     <span>{user?.full_name ?? "—"}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                     <span>{user?.email ?? "—"}</span>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>{profile?.address || "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <span>{profile?.contact_number || "—"}</span>
+                  </div>
                 </div>
-                <Link href="/profile" className="text-xs text-[#4b2e2e] font-medium hover:underline mt-3 inline-block">Edit in Profile →</Link>
+
+                {(!profile?.address || !profile?.contact_number) && (
+                  <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 text-xs text-amber-700">
+                    ⚠️ Please update your profile to add delivery information.{" "}
+                    <Link href="/profile" className="font-semibold underline">Go to Profile →</Link>
+                  </div>
+                )}
+
+                {(profile?.address && profile?.contact_number) && (
+                  <Link href="/profile" className="text-xs text-[#4b2e2e] font-medium hover:underline mt-3 inline-block">Edit in Profile →</Link>
+                )}
               </div>
 
               {/* PAYMENT METHOD */}
@@ -177,7 +211,6 @@ export default function CheckoutPage() {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     </ProtectedRoute>
   )
