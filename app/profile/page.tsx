@@ -52,6 +52,15 @@ export default function ProfilePage() {
     setErrorMsg("")
     setSuccessMsg("")
 
+    // check session validity before saving
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError || !session) {
+      await supabase.auth.signOut()
+      localStorage.setItem("isLoggedIn", "false")
+      router.replace("/login?message=Your session has expired. Please log in again.")
+      return
+    }
+
     const { error } = await supabase
       .from("profiles")
       .update({ full_name: fullName, address, contact_number: contactNumber })
