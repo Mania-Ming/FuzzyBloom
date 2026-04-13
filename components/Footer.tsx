@@ -21,7 +21,16 @@ export default function Footer() {
             <p className="text-white/40 text-xs leading-relaxed max-w-[220px]">
               Handmade floral crafts inspired by nature, creativity, and meaningful gifts.
             </p>
-            <p className="text-white/40 text-xs mt-3">fuzzybloom@gmail.com</p>
+            <p className="text-white/40 text-xs mt-3">
+              <a
+                href="https://www.facebook.com/kate.dorraine.ceniza"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition"
+              >
+                Facebook: Kate Dorraine Ceniza
+              </a>
+            </p>
           </div>
 
           {/* SHOP */}
