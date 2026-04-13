@@ -8,10 +8,10 @@ import { useAuth } from "@/lib/hooks/useAuth"
 
 const products = [
   { id: "393d5726-d16e-425e-87b4-0a42659ee327", name: "Lavender Grace", desc: "Soft pink pom-pom flowers, sweet & cute", price: 350, img: "/p1.png" },
-  { id: "6f71f609-c714-491f-ac3f-07803559262b", name: "Ruby & Sky", desc: "Red and baby blue tulips, bold but balanced", price: 420, img: "/p2.png" },
+  { id: "6f71f609-c714-491f-ac3f-07803559262b", name: "Ruby & Sky", desc: "Red and baby blue tulips, bold but balanced", price: 350, img: "/p2.png" },
   { id: "3673fa44-8a97-4f6b-86a1-d59c395ac4b3", name: "Mint Serenity", desc: "Mint green tulips, clean and modern look", price: 380, img: "/p3.png" },
-  { id: "54393891-a19e-40f4-a0a0-b9797d9268f1", name: "Baby Blue Bliss", desc: "Sky-blue flowers, fresh and minimalist", price: 360, img: "/p4.png" },
-  { id: "3d5a12e9-db15-4d73-8cc3-32327f0a3145", name: "Golden Sun", desc: "Yellow blossoms bright and cheerful bouquet", price: 400, img: "/p5.png" },
+  { id: "54393891-a19e-40f4-a0a0-b9797d9268f1", name: "Baby Blue Bliss", desc: "Sky-blue flowers, fresh and minimalist", price: 280, img: "/p4.png" },
+  { id: "3d5a12e9-db15-4d73-8cc3-32327f0a3145", name: "Golden Sun", desc: "Yellow blossoms bright and cheerful bouquet", price: 280, img: "/p5.png" },
 ]
 
 export default function BouquetsPage() {

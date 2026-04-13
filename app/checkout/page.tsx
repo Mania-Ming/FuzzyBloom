@@ -10,7 +10,6 @@ import ProtectedRoute from "@/components/ProtectedRoute"
 import { useMe } from "@/lib/hooks/useMe"
 import { useInsertOrder } from "@/lib/hooks/useInsertOrder"
 import { supabase } from "@/lib/supabase"
-import { insertOrderItems } from "@/lib/api/auth"
 
 type CartItem = { product_id: string; name: string; price: number; img?: string; qty: number }
 
@@ -76,14 +75,14 @@ export default function CheckoutPage() {
         status: "Pending",
       })
 
-      // insert each cart item into order_items table
       const orderItems = cartItems.map((item) => ({
         order_id: order.id,
-        product_id: item.product_id || item.name,
-        quantity: Number(item.qty) || 1,
-        price: Number(item.price) || 0,
+        product_id: item.product_id,
+        quantity: item.qty,
+        price: item.price,
       }))
-      await insertOrderItems(orderItems)
+      const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
+      if (itemsError) throw itemsError
 
       localStorage.removeItem("cart")
       alert("Order placed successfully! 🎉")
