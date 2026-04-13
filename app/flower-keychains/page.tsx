@@ -7,14 +7,15 @@ import SmartNavbar from "@/components/SmartNavbar"
 import Footer from "@/components/Footer"
 import { useAuth } from "@/lib/hooks/useAuth"
 
-type Product = { name: string; img: string }
+type Product = { id: string; name: string; img: string }
 
 const colors: Product[] = [
-  { name: "Red", img: "/k1.png" },
-  { name: "Blue", img: "/k2.png" },
-  { name: "Yellow", img: "/k3.png" },
-  { name: "Purple", img: "/k4.png" },
-  { name: "Pink", img: "/k5.png" },
+  { id: "b7ed3194-9a79-448a-aaba-c0c0af2a7ca9", name: "Pink", img: "/k1.png" },
+  { id: "25252edd-2276-4d09-bff8-ddbe83bdd078", name: "Purple", img: "/k2.png" },
+  { id: "3252c399-c743-4a2f-8b1f-e163c797fcfd", name: "White", img: "/k3.png" },
+  { id: "af739689-0076-4dae-b5db-9d576e7ac181", name: "Yellow", img: "/k4.png" },
+  { id: "f4adda5d-0b8a-49e4-91da-d81c887cb6d1", name: "Red", img: "/k5.png" },
+  { id: "271971f8-2f13-43f3-a98b-1589a1d9b771", name: "Blue", img: "/k6.png" },
 ]
 
 export default function FlowerKeychainsPage() {
@@ -27,7 +28,7 @@ export default function FlowerKeychainsPage() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]")
     const name = "Flower Keychain - " + selected.name
     const exist = cart.find((i: any) => i.name === name)
-    if (exist) { exist.qty += 1 } else { cart.push({ product_id: "flower-keychain-" + selected.name.toLowerCase(), name, price: 25, img: selected.img, qty: 1 }) }
+    if (exist) { exist.qty += 1 } else { cart.push({ product_id: selected.id, name, price: 25, img: selected.img, qty: 1 }) }
     localStorage.setItem("cart", JSON.stringify(cart))
   }
 

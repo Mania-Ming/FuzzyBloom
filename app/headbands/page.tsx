@@ -7,14 +7,14 @@ import SmartNavbar from "@/components/SmartNavbar"
 import Footer from "@/components/Footer"
 import { useAuth } from "@/lib/hooks/useAuth"
 
-type Product = { name: string; img: string }
+type Product = { id: string; name: string; img: string }
 
 const colors: Product[] = [
-  { name: "Black", img: "/h1.png" },
-  { name: "Pink", img: "/h2.png" },
-  { name: "White", img: "/h3.png" },
-  { name: "Purple", img: "/h4.png" },
-  { name: "Blue", img: "/h5.png" },
+  { id: "2d9c4599-d5e5-4902-96ff-1aa9464d451b", name: "Yellow", img: "/h1.png" },
+  { id: "24a6b480-3bf1-4834-9297-8ab91f20f5d1", name: "Pink", img: "/h2.png" },
+  { id: "f99b34e8-7cff-4829-bc10-57b6d7de95a0", name: "White", img: "/h3.png" },
+  { id: "323d1ef5-a5c2-4273-970c-79b36115d17c", name: "Purple", img: "/h4.png" },
+  { id: "8c1d1e44-5120-44e4-9070-7e1160690eef", name: "Red", img: "/h5.png" },
 ]
 
 export default function HeadbandsPage() {
@@ -27,7 +27,7 @@ export default function HeadbandsPage() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]")
     const name = "Headband - " + selected.name
     const exist = cart.find((i: any) => i.name === name)
-    if (exist) { exist.qty += 1 } else { cart.push({ product_id: "headband-" + selected.name.toLowerCase(), name, price: 150, img: selected.img, qty: 1 }) }
+    if (exist) { exist.qty += 1 } else { cart.push({ product_id: selected.id, name, price: 150, img: selected.img, qty: 1 }) }
     localStorage.setItem("cart", JSON.stringify(cart))
   }
 
