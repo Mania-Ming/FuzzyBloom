@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase"
 // TYPES
 export type RegisterPayload = { full_name: string; email: string; password: string }
 export type LoginPayload = { email: string; password: string }
-export type MeResponse = { id: string; full_name: string; email: string; profile_image?: string }
+export type MeResponse = { id: string; full_name: string; email: string; profile_image?: string; address?: string; contact_number?: string }
 
 // REGISTER
 export async function registerUser(payload: RegisterPayload): Promise<MeResponse> {
@@ -51,10 +51,9 @@ export async function getMe(): Promise<MeResponse> {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) throw new Error("Not authenticated")
 
-  // fetch profile from profiles table for extra fields
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, profile_image")
+    .select("full_name, profile_image, address, contact_number")
     .eq("id", user.id)
     .single()
 
@@ -63,6 +62,8 @@ export async function getMe(): Promise<MeResponse> {
     full_name: profile?.full_name ?? user.user_metadata?.full_name ?? "",
     email: user.email ?? "",
     profile_image: profile?.profile_image ?? undefined,
+    address: profile?.address ?? "",
+    contact_number: profile?.contact_number ?? "",
   }
 }
 
