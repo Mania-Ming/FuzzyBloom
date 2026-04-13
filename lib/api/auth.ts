@@ -101,15 +101,3 @@ export async function insertOrderItems(items: {
   if (error) throw error
   return data
 }
-
-// INSERT ORDER ITEMS
-export async function insertOrderItems(items: {
-  order_id: string
-  product_id: string
-  quantity: number
-  price: number
-}[]) {
-  const { data, error } = await supabase.from("order_items").insert(items)
-  if (error) throw error
-  return data
-}
