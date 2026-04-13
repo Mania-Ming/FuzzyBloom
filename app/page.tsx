@@ -32,11 +32,11 @@ export default function Home() {
       </nav>
 
       {/* HERO */}
-      <section className="bg-gradient-to-br from-[#e8d5e8] via-[#f0e0ec] to-[#ddd0dd]">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 flex flex-wrap items-center justify-center gap-10">
+      <section className="bg-gradient-to-br from-[#e8d5e8] via-[#f0e0ec] to-[#ddd0dd] w-full">
+        <div className="w-full px-8 md:px-16 py-12 flex flex-wrap items-center justify-between gap-6">
 
           {/* LEFT */}
-          <div className="flex-1 min-w-[260px] max-w-sm">
+          <div className="max-w-sm">
             <span className="inline-block text-xs font-semibold text-[#4b2e2e] bg-[#4b2e2e]/10 px-3 py-1 rounded-full mb-3 tracking-wide uppercase">
               Handmade with Love
             </span>
@@ -60,7 +60,7 @@ export default function Home() {
           </div>
 
           {/* RIGHT — 2x2 category grid */}
-          <div className="grid grid-cols-2 gap-3 shrink-0">
+          <div className="grid grid-cols-2 gap-3">
             {[
               { name: "Bouquet", icon: "🌸", link: "/bouquets", bg: "bg-purple-100 hover:bg-purple-200" },
               { name: "Flower", icon: "🌼", link: "/flower-keychains", bg: "bg-pink-100 hover:bg-pink-200" },
