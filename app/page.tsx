@@ -59,21 +59,39 @@ export default function Home() {
             </span>
           </div>
 
-          {/* RIGHT — 2x2 category grid */}
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { name: "Bouquet", icon: "🌸", link: "/bouquets", bg: "bg-purple-100 hover:bg-purple-200" },
-              { name: "Flower", icon: "🌼", link: "/flower-keychains", bg: "bg-pink-100 hover:bg-pink-200" },
-              { name: "Ribbon", icon: "🎀", link: "/ribbon-keychains", bg: "bg-orange-50 hover:bg-orange-100" },
-              { name: "Headband", icon: "👑", link: "/headbands", bg: "bg-emerald-50 hover:bg-emerald-100" },
-            ].map((cat, i) => (
-              <Link key={i} href={cat.link}>
-                <div className={`${cat.bg} w-36 h-36 rounded-2xl flex flex-col items-center justify-center gap-2 border border-white/60 shadow-sm hover:scale-105 hover:shadow-md transition-all duration-200 cursor-pointer`}>
-                  <span className="text-4xl">{cat.icon}</span>
-                  <p className="text-xs font-semibold text-gray-700">{cat.name}</p>
+          {/* RIGHT — collage layout */}
+          <div className="flex gap-3 h-72">
+
+            {/* LEFT — tall full-height */}
+            <Link href="/bouquets" className="flex-1">
+              <div className="bg-purple-100 hover:bg-purple-200 h-full rounded-2xl flex flex-col items-center justify-center gap-2 border border-white/60 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200 cursor-pointer">
+                <span className="text-4xl">🌸</span>
+                <p className="text-xs font-semibold text-gray-700">Bouquet</p>
+              </div>
+            </Link>
+
+            {/* RIGHT — 3 stacked rectangles */}
+            <div className="flex flex-col gap-3 flex-1">
+              <Link href="/flower-keychains" className="flex-[2]">
+                <div className="bg-pink-100 hover:bg-pink-200 h-full rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200 cursor-pointer">
+                  <span className="text-3xl">🌼</span>
+                  <p className="text-xs font-semibold text-gray-700">Flower</p>
                 </div>
               </Link>
-            ))}
+              <Link href="/ribbon-keychains" className="flex-1">
+                <div className="bg-orange-50 hover:bg-orange-100 h-full rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200 cursor-pointer">
+                  <span className="text-2xl">🎀</span>
+                  <p className="text-xs font-semibold text-gray-700">Ribbon</p>
+                </div>
+              </Link>
+              <Link href="/headbands" className="flex-[2]">
+                <div className="bg-emerald-50 hover:bg-emerald-100 h-full rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200 cursor-pointer">
+                  <span className="text-3xl">👑</span>
+                  <p className="text-xs font-semibold text-gray-700">Headband</p>
+                </div>
+              </Link>
+            </div>
+
           </div>
 
         </div>
