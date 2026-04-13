@@ -33,10 +33,10 @@ export default function Home() {
 
       {/* HERO */}
       <section className="bg-gradient-to-br from-[#e8d5e8] via-[#f0e0ec] to-[#ddd0dd]">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-10 flex flex-wrap items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 flex flex-wrap items-center justify-center gap-10">
 
           {/* LEFT */}
-          <div className="flex-1 min-w-[260px] max-w-md">
+          <div className="flex-1 min-w-[260px] max-w-sm">
             <span className="inline-block text-xs font-semibold text-[#4b2e2e] bg-[#4b2e2e]/10 px-3 py-1 rounded-full mb-3 tracking-wide uppercase">
               Handmade with Love
             </span>
@@ -46,7 +46,7 @@ export default function Home() {
             <p className="text-sm text-gray-600 mb-5 leading-relaxed">
               Handmade floral crafts and decorative pieces inspired by nature, creativity, and the joy of meaningful gifts.
             </p>
-            <div className="flex gap-3 flex-wrap">
+            <div className="flex gap-3 flex-wrap mb-4">
               <Link href="/login" className="bg-[#4b2e2e] text-white px-6 py-2.5 rounded-full hover:bg-[#3a2323] transition font-medium shadow-md shadow-[#4b2e2e]/20 text-sm">
                 Shop Now
               </Link>
@@ -54,6 +54,9 @@ export default function Home() {
                 About Us
               </Link>
             </div>
+            <span className="inline-flex items-center gap-1.5 bg-white/80 border border-white/60 text-gray-600 text-xs px-3 py-1.5 rounded-full shadow-sm">
+              Made with love in the Philippines 🇵🇭
+            </span>
           </div>
 
           {/* RIGHT — 2x2 category grid */}
@@ -65,8 +68,8 @@ export default function Home() {
               { name: "Headband", icon: "👑", link: "/headbands", bg: "bg-emerald-50 hover:bg-emerald-100" },
             ].map((cat, i) => (
               <Link key={i} href={cat.link}>
-                <div className={`${cat.bg} w-32 h-32 rounded-2xl flex flex-col items-center justify-center gap-2 border border-white/60 shadow-sm hover:scale-105 hover:shadow-md transition-all duration-200 cursor-pointer`}>
-                  <span className="text-3xl">{cat.icon}</span>
+                <div className={`${cat.bg} w-36 h-36 rounded-2xl flex flex-col items-center justify-center gap-2 border border-white/60 shadow-sm hover:scale-105 hover:shadow-md transition-all duration-200 cursor-pointer`}>
+                  <span className="text-4xl">{cat.icon}</span>
                   <p className="text-xs font-semibold text-gray-700">{cat.name}</p>
                 </div>
               </Link>
