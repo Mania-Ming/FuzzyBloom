@@ -60,7 +60,7 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <Image src="/logo.jpg" alt="Fuzzy Bloom" width={160} height={160} className="rounded-full object-cover shadow-2xl ring-4 ring-white/60" />
+          <Image src="/kate.jpg" alt="Kate Dorraine Ceniza" width={200} height={200} className="rounded-2xl object-cover shadow-2xl ring-4 ring-white/60" />
         </div>
       </section>
 

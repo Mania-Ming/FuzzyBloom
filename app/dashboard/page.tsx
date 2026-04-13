@@ -42,34 +42,9 @@ export default function Dashboard() {
       <div className="min-h-screen flex flex-col text-gray-800">
         <Navbar />
 
-        {/* HERO */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-[#e8d5e8] via-[#f0e0ec] to-[#ddd0dd]">
-          <div className="max-w-7xl mx-auto px-6 md:px-12 py-10 flex items-center justify-between gap-6">
-            <div className="fade-up">
-              <span className="inline-block text-xs font-semibold text-[#4b2e2e] bg-[#4b2e2e]/10 px-3 py-1 rounded-full mb-3 tracking-wide uppercase">
-                Handmade with Love
-              </span>
-              <h1 className="text-4xl mb-1 text-[#2a1515] leading-tight" style={{ fontFamily: "var(--font-pacifico)" }}>
-                Fuzzy Bloom
-              </h1>
-              <p className="text-[#4b2e2e]/70 font-medium text-sm mb-1">Handicrafts by Kate</p>
-              <p className="text-sm text-gray-500 mb-5 leading-relaxed max-w-sm">
-                Handmade floral crafts and decorative pieces inspired by nature, creativity, and the joy of meaningful gifts.
-              </p>
-              <Link href="/bouquets" className="inline-block bg-[#4b2e2e] text-white px-6 py-2.5 rounded-full hover:bg-[#3a2323] transition font-medium shadow-md shadow-[#4b2e2e]/20 text-sm">
-                Shop Now
-              </Link>
-            </div>
-            <div className="relative fade-up shrink-0">
-              <div className="absolute inset-0 bg-[#4b2e2e]/10 rounded-full blur-2xl scale-110" />
-              <Image src="/logo.jpg" alt="Fuzzy Bloom" width={150} height={150} className="relative rounded-full object-cover shadow-xl ring-4 ring-white/60" />
-            </div>
-          </div>
-        </section>
-
         {/* CATEGORIES */}
         <section className="max-w-7xl mx-auto w-full px-6 md:px-12 py-12">
-          <div className="mb-6">
+          <div className="text-center mb-6">
             <h2 className="text-xl font-bold text-gray-800">Shop by Category</h2>
             <p className="text-gray-500 text-sm mt-0.5">Browse our handcrafted collections</p>
           </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import SmartNavbar from "@/components/SmartNavbar"
 import Footer from "@/components/Footer"
@@ -20,6 +21,7 @@ export default function BouquetsPage() {
   const { isLoggedIn } = useAuth()
   const { data: user } = useMe()
   const router = useRouter()
+  const [zoomedImg, setZoomedImg] = useState<{ src: string; name: string } | null>(null)
 
   async function addToCart(product: any) {
     if (!isLoggedIn) { router.push("/login"); return }
@@ -55,6 +57,20 @@ export default function BouquetsPage() {
   return (
     <div className="min-h-screen flex flex-col text-gray-800">
       <SmartNavbar />
+
+      {/* ZOOM MODAL */}
+      {zoomedImg && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-6"
+          onClick={() => setZoomedImg(null)}
+        >
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <Image src={zoomedImg.src} alt={zoomedImg.name} width={480} height={480} className="mx-auto object-contain rounded-xl" />
+            <p className="text-center font-semibold text-gray-800 mt-4">{zoomedImg.name}</p>
+            <button onClick={() => setZoomedImg(null)} className="mt-4 w-full py-2 rounded-full border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition">Close</button>
+          </div>
+        </div>
+      )}
       <main className="max-w-7xl mx-auto px-6 md:px-12 py-10 flex-1 w-full">
 
         <button onClick={() => window.history.back()} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#4b2e2e] transition mb-6 group">
@@ -72,7 +88,10 @@ export default function BouquetsPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
           {products.map((product, i) => (
             <div key={i} className="bg-white/80 rounded-2xl shadow-sm border border-white/60 p-4 card-hover flex flex-col">
-              <div className="h-[160px] flex items-center justify-center bg-gray-50/50 rounded-xl mb-3">
+              <div
+                className="h-[160px] flex items-center justify-center bg-gray-50/50 rounded-xl mb-3 cursor-zoom-in"
+                onClick={() => setZoomedImg({ src: product.img, name: product.name })}
+              >
                 <Image src={product.img} alt={product.name} width={140} height={140} className="object-contain w-full h-auto max-h-[140px]" />
               </div>
               <h3 className="font-semibold text-sm text-gray-800">{product.name}</h3>
