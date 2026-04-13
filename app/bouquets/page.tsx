@@ -37,12 +37,18 @@ export default function BouquetsPage() {
     }
   }
 
-  function addToWishlist(product: any) {
+  async function addToWishlist(product: any) {
     if (!isLoggedIn) { router.push("/login"); return }
     const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]")
     if (!wishlist.find((i: any) => i.name === product.name)) {
       wishlist.push(product)
       localStorage.setItem("wishlist", JSON.stringify(wishlist))
+    }
+    if (user?.id) {
+      const { data: existing } = await supabase.from("wishlist").select("*").eq("user_id", user.id).eq("product_id", product.id).single()
+      if (!existing) {
+        await supabase.from("wishlist").insert({ user_id: user.id, product_id: product.id })
+      }
     }
   }
 

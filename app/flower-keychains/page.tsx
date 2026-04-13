@@ -43,13 +43,19 @@ export default function FlowerKeychainsPage() {
     }
   }
 
-  function addToWishlist() {
+  async function addToWishlist() {
     if (!isLoggedIn) { router.push("/login"); return }
     const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]")
     const name = "Flower Keychain - " + selected.name
     if (!wishlist.find((i: any) => i.name === name)) {
       wishlist.push({ name, price: 25, img: selected.img })
       localStorage.setItem("wishlist", JSON.stringify(wishlist))
+    }
+    if (user?.id) {
+      const { data: existing } = await supabase.from("wishlist").select("*").eq("user_id", user.id).eq("product_id", selected.id).single()
+      if (!existing) {
+        await supabase.from("wishlist").insert({ user_id: user.id, product_id: selected.id })
+      }
     }
   }
 

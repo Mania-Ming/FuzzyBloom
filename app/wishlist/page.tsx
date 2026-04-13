@@ -6,19 +6,47 @@ import { useState, useEffect } from "react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
+import { supabase } from "@/lib/supabase"
+import { useMe } from "@/lib/hooks/useMe"
 
 export default function WishlistPage() {
   const [wishlist, setWishlist] = useState<any[]>([])
+  const { data: user } = useMe()
 
   useEffect(() => {
-    try { setWishlist(JSON.parse(localStorage.getItem("wishlist") || "[]")) }
-    catch { setWishlist([]) }
-  }, [])
+    if (!user?.id) return
+    supabase
+      .from("wishlist")
+      .select("*, products(*)")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const items = data.map((item: any) => ({
+            product_id: item.product_id,
+            name: item.products?.name ?? "",
+            price: item.products?.price ?? 0,
+            img: item.products?.image_url ?? "",
+          }))
+          setWishlist(items)
+          localStorage.setItem("wishlist", JSON.stringify(items))
+        } else {
+          // fallback to localStorage if Supabase returns empty
+          try { setWishlist(JSON.parse(localStorage.getItem("wishlist") || "[]")) }
+          catch { setWishlist([]) }
+        }
+      })
+  }, [user?.id])
 
-  function removeItem(i: number) {
+  async function removeItem(i: number) {
+    const item = wishlist[i]
     const updated = wishlist.filter((_, idx) => idx !== i)
     setWishlist(updated)
     localStorage.setItem("wishlist", JSON.stringify(updated))
+    if (user?.id && item.product_id) {
+      await supabase.from("wishlist").delete()
+        .eq("user_id", user.id)
+        .eq("product_id", item.product_id)
+    }
   }
 
   function addToCart(item: any) {
