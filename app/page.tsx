@@ -37,9 +37,9 @@ export default function Home() {
 
           {/* LEFT */}
           <div className="max-w-sm">
-            <span className="inline-block text-xs font-semibold text-[#4b2e2e] bg-[#4b2e2e]/10 px-3 py-1 rounded-full mb-3 tracking-wide uppercase">
+            <p className="text-xs font-semibold text-[#4b2e2e] tracking-widest uppercase mb-3">
               Handmade with Love
-            </span>
+            </p>
             <h1 className="text-4xl md:text-5xl mb-2 text-[#2a1515] leading-tight" style={{ fontFamily: "var(--font-pacifico)" }}>
               Fuzzy Bloom
             </h1>
@@ -54,9 +54,7 @@ export default function Home() {
                 About Us
               </Link>
             </div>
-            <span className="inline-flex items-center gap-1.5 bg-white/80 border border-white/60 text-gray-600 text-xs px-3 py-1.5 rounded-full shadow-sm">
-              Made with love in the Philippines 🇵🇭
-            </span>
+            <p className="text-xs text-gray-500 mt-1">Made with love in the Philippines 🇵🇭</p>
           </div>
 
           {/* RIGHT — 2x2 equal rectangle collage */}
@@ -86,22 +84,17 @@ export default function Home() {
             <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: "var(--font-pacifico)" }}>Hot Handicrafts</h2>
             <p className="text-gray-500 text-xs mt-0.5">Our most-loved pieces</p>
           </div>
-          <Link href="/login" className="text-sm text-[#4b2e2e] font-medium hover:underline">
-            Login to shop →
-          </Link>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {products.map((product, i) => (
-            <div key={i} className="bg-white/80 rounded-2xl shadow-sm border border-white/60 p-4 relative group card-hover">
+            <div key={i} className="bg-white/80 rounded-2xl shadow-sm border border-white/60 p-4 relative group card-hover hover:scale-[1.02] hover:shadow-md transition-all duration-200">
               <div className="h-[140px] flex items-center justify-center bg-gray-50/50 rounded-xl mb-3">
                 <Image src={product.img} alt={product.name} width={120} height={120} className="object-contain w-full h-auto max-h-[120px]" />
               </div>
               <p className="font-semibold text-sm text-gray-800">{product.name}</p>
-              <p className="text-[#4b2e2e] font-bold mt-0.5 text-sm">₱{product.price}</p>
-              <div className="absolute inset-0 bg-[#2a1515]/50 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <Link href="/login" className="bg-white text-gray-800 text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-gray-50 transition shadow-lg">
-                  Login to Purchase
-                </Link>
+              <p className="text-[#4b2e2e] font-bold mt-0.5 text-sm group-hover:text-[#7a2e2e] transition-colors">₱{product.price}</p>
+              <div className="absolute inset-0 bg-[#2a1515]/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <span className="bg-white text-gray-800 text-xs font-semibold px-5 py-2.5 rounded-full shadow-lg">View Product</span>
               </div>
             </div>
           ))}
