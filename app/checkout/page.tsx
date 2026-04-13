@@ -71,6 +71,8 @@ export default function CheckoutPage() {
         subtotal,
         shipping,
         total,
+        total_amount: total,
+        full_name: user.full_name,
         payment,
         status: "Pending",
       })

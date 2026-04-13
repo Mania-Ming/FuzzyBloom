@@ -82,6 +82,8 @@ export async function insertOrder(order: {
   subtotal: number
   shipping: number
   total: number
+  total_amount: number
+  full_name: string
   payment: string
   status: string
 }) {
