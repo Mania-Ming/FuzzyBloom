@@ -28,12 +28,6 @@ export default function ProfilePage() {
 
   // load existing profile data into fields
   useEffect(() => {
-    if (user) {
-      setFullName((user as any).full_name ?? "")
-      setAddress((user as any).address ?? "")
-      setContactNumber((user as any).contact_number ?? "")
-    }
-
     async function fetchProfile() {
       if (!user?.id) return
       const { data } = await supabase
@@ -45,10 +39,16 @@ export default function ProfilePage() {
         setAddress(data.address ?? "")
         setContactNumber(data.contact_number ?? "")
         setFullName(data.full_name ?? "")
+        queryClient.setQueryData(["me"], (old: any) => ({
+          ...old,
+          full_name: data.full_name ?? "",
+          address: data.address ?? "",
+          contact_number: data.contact_number ?? "",
+        }))
       }
     }
     fetchProfile()
-  }, [user])
+  }, [user?.id])
 
   const initials = user?.full_name
     ? user.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -162,10 +162,10 @@ export default function ProfilePage() {
               {!editMode && (
                 <div className="space-y-3 mb-6">
                   {[
-                    { icon: "👤", label: "Full Name", value: user?.full_name },
+                    { icon: "👤", label: "Full Name", value: fullName },
                     { icon: "✉️", label: "Email", value: user?.email },
-                    { icon: "📍", label: "Address", value: (user as any)?.address },
-                    { icon: "📞", label: "Contact Number", value: (user as any)?.contact_number },
+                    { icon: "📍", label: "Address", value: address },
+                    { icon: "📞", label: "Contact Number", value: contactNumber },
                   ].map((field) => (
                     <div key={field.label} className="flex items-center gap-4 p-4 bg-gray-50/80 rounded-2xl">
                       <span className="text-lg shrink-0">{field.icon}</span>
