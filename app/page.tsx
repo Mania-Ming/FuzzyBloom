@@ -38,9 +38,11 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* HERO — compact */}
+      {/* HERO */}
       <section className="bg-gradient-to-br from-[#e8d5e8] via-[#f0e0ec] to-[#ddd0dd]">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-8 flex flex-wrap items-center justify-between gap-6">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 py-10 flex flex-wrap items-center justify-between gap-8">
+
+          {/* LEFT */}
           <div className="max-w-md">
             <span className="inline-block text-xs font-semibold text-[#4b2e2e] bg-[#4b2e2e]/10 px-3 py-1 rounded-full mb-3 tracking-wide uppercase">
               Handmade with Love
@@ -48,7 +50,7 @@ export default function Home() {
             <h1 className="text-4xl md:text-5xl mb-2 text-[#2a1515] leading-tight" style={{ fontFamily: "var(--font-pacifico)" }}>
               Fuzzy Bloom
             </h1>
-            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+            <p className="text-sm text-gray-600 mb-5 leading-relaxed">
               Handmade floral crafts and decorative pieces inspired by nature, creativity, and the joy of meaningful gifts.
             </p>
             <div className="flex gap-3 flex-wrap">
@@ -60,7 +62,24 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <Image src="/kate.jpg" alt="Kate Dorraine Ceniza" width={200} height={200} className="rounded-2xl object-cover shadow-2xl ring-4 ring-white/60" />
+
+          {/* RIGHT — 2x2 category grid */}
+          <div className="grid grid-cols-2 gap-3 shrink-0">
+            {[
+              { name: "Bouquet", icon: "🌸", link: "/bouquets", bg: "bg-purple-100 hover:bg-purple-200" },
+              { name: "Flower", icon: "🌼", link: "/flower-keychains", bg: "bg-pink-100 hover:bg-pink-200" },
+              { name: "Ribbon", icon: "🎀", link: "/ribbon-keychains", bg: "bg-orange-50 hover:bg-orange-100" },
+              { name: "Headband", icon: "👑", link: "/headbands", bg: "bg-emerald-50 hover:bg-emerald-100" },
+            ].map((cat, i) => (
+              <Link key={i} href={cat.link}>
+                <div className={`${cat.bg} w-32 h-32 rounded-2xl flex flex-col items-center justify-center gap-2 border border-white/60 shadow-sm hover:scale-105 hover:shadow-md transition-all duration-200 cursor-pointer`}>
+                  <span className="text-3xl">{cat.icon}</span>
+                  <p className="text-xs font-semibold text-gray-700">{cat.name}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+
         </div>
       </section>
 
