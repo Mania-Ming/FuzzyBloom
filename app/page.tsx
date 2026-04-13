@@ -33,10 +33,10 @@ export default function Home() {
 
       {/* HERO */}
       <section className="bg-gradient-to-br from-[#e8d5e8] via-[#f0e0ec] to-[#ddd0dd]">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-10 flex flex-wrap items-center justify-between gap-8">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 py-10 flex flex-wrap items-center justify-between gap-4">
 
           {/* LEFT */}
-          <div className="max-w-md">
+          <div className="flex-1 min-w-[260px] max-w-md">
             <span className="inline-block text-xs font-semibold text-[#4b2e2e] bg-[#4b2e2e]/10 px-3 py-1 rounded-full mb-3 tracking-wide uppercase">
               Handmade with Love
             </span>
