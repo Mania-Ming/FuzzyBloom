@@ -7,11 +7,11 @@ import Footer from "@/components/Footer"
 import { useAuth } from "@/lib/hooks/useAuth"
 
 const products = [
-  { name: "Lavender Grace", desc: "Soft pink pom-pom flowers, sweet & cute", price: 350, img: "/p1.png" },
-  { name: "Ruby & Sky", desc: "Red and baby blue tulips, bold but balanced", price: 420, img: "/p2.png" },
-  { name: "Mint Serenity", desc: "Mint green tulips, clean and modern look", price: 380, img: "/p3.png" },
-  { name: "Baby Blue Bliss", desc: "Sky-blue flowers, fresh and minimalist", price: 360, img: "/p4.png" },
-  { name: "Golden Sun", desc: "Yellow blossoms bright and cheerful bouquet", price: 400, img: "/p5.png" },
+  { id: "bouquet-lavender-grace", name: "Lavender Grace", desc: "Soft pink pom-pom flowers, sweet & cute", price: 350, img: "/p1.png" },
+  { id: "bouquet-ruby-sky", name: "Ruby & Sky", desc: "Red and baby blue tulips, bold but balanced", price: 420, img: "/p2.png" },
+  { id: "bouquet-mint-serenity", name: "Mint Serenity", desc: "Mint green tulips, clean and modern look", price: 380, img: "/p3.png" },
+  { id: "bouquet-baby-blue-bliss", name: "Baby Blue Bliss", desc: "Sky-blue flowers, fresh and minimalist", price: 360, img: "/p4.png" },
+  { id: "bouquet-golden-sun", name: "Golden Sun", desc: "Yellow blossoms bright and cheerful bouquet", price: 400, img: "/p5.png" },
 ]
 
 export default function BouquetsPage() {
@@ -22,7 +22,7 @@ export default function BouquetsPage() {
     if (!isLoggedIn) { router.push("/login"); return }
     const cart = JSON.parse(localStorage.getItem("cart") || "[]")
     const exist = cart.find((i: any) => i.name === product.name)
-    if (exist) { exist.qty += 1 } else { cart.push({ ...product, qty: 1 }) }
+    if (exist) { exist.qty += 1 } else { cart.push({ product_id: product.id, name: product.name, price: product.price, img: product.img, qty: 1 }) }
     localStorage.setItem("cart", JSON.stringify(cart))
   }
 

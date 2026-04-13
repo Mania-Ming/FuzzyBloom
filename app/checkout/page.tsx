@@ -10,8 +10,9 @@ import ProtectedRoute from "@/components/ProtectedRoute"
 import { useMe } from "@/lib/hooks/useMe"
 import { useInsertOrder } from "@/lib/hooks/useInsertOrder"
 import { supabase } from "@/lib/supabase"
+import { insertOrderItems } from "@/lib/api/auth"
 
-type CartItem = { name: string; price: number; img?: string; qty: number }
+type CartItem = { product_id: string; name: string; price: number; img?: string; qty: number }
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -65,7 +66,7 @@ export default function CheckoutPage() {
         await supabase.storage.from("proofs").upload(fileName, gcashProof)
       }
 
-      await saveOrder({
+      const order = await saveOrder({
         user_id: user.id,
         items: cartItems,
         subtotal,
@@ -74,6 +75,15 @@ export default function CheckoutPage() {
         payment,
         status: "Pending",
       })
+
+      // insert each cart item into order_items table
+      const orderItems = cartItems.map((item) => ({
+        order_id: order.id,
+        product_id: item.product_id || item.name,
+        quantity: Number(item.qty) || 1,
+        price: Number(item.price) || 0,
+      }))
+      await insertOrderItems(orderItems)
 
       localStorage.removeItem("cart")
       alert("Order placed successfully! 🎉")

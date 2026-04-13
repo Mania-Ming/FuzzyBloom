@@ -27,7 +27,7 @@ export default function HeadbandsPage() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]")
     const name = "Headband - " + selected.name
     const exist = cart.find((i: any) => i.name === name)
-    if (exist) { exist.qty += 1 } else { cart.push({ name, price: 150, img: selected.img, qty: 1 }) }
+    if (exist) { exist.qty += 1 } else { cart.push({ product_id: "headband-" + selected.name.toLowerCase(), name, price: 150, img: selected.img, qty: 1 }) }
     localStorage.setItem("cart", JSON.stringify(cart))
   }
 

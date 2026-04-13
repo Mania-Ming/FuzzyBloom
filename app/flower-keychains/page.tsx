@@ -27,7 +27,7 @@ export default function FlowerKeychainsPage() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]")
     const name = "Flower Keychain - " + selected.name
     const exist = cart.find((i: any) => i.name === name)
-    if (exist) { exist.qty += 1 } else { cart.push({ name, price: 25, img: selected.img, qty: 1 }) }
+    if (exist) { exist.qty += 1 } else { cart.push({ product_id: "flower-keychain-" + selected.name.toLowerCase(), name, price: 25, img: selected.img, qty: 1 }) }
     localStorage.setItem("cart", JSON.stringify(cart))
   }
 

@@ -8,7 +8,7 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 
-type CartItem = { name: string; price: number; img?: string; qty: number }
+type CartItem = { product_id: string; name: string; price: number; img?: string; qty: number }
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
