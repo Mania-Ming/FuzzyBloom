@@ -84,6 +84,8 @@ export async function insertOrder(order: {
   total: number
   total_amount: number
   full_name: string
+  address: string | null
+  contact_number: string | null
   payment: string
   status: string
 }) {

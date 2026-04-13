@@ -73,6 +73,8 @@ export default function CheckoutPage() {
         total,
         total_amount: total,
         full_name: user.full_name,
+        address: profile?.address ?? null,
+        contact_number: profile?.contact_number ?? null,
         payment,
         status: "Pending",
       })
