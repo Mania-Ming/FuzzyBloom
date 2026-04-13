@@ -7,12 +7,15 @@ import { useRouter } from "next/navigation"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
+import { supabase } from "@/lib/supabase"
+import { useMe } from "@/lib/hooks/useMe"
 
 type CartItem = { product_id: string; name: string; price: number; img?: string; qty: number }
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const router = useRouter()
+  const { data: user } = useMe()
   const shipping = 20
 
   useEffect(() => {
@@ -26,7 +29,18 @@ export default function CartPage() {
 
   function increaseQty(i: number) { const u = [...cartItems]; u[i].qty += 1; saveCart(u) }
   function decreaseQty(i: number) { const u = [...cartItems]; if (u[i].qty > 1) u[i].qty -= 1; saveCart(u) }
-  function removeItem(i: number) { const u = [...cartItems]; u.splice(i, 1); saveCart(u) }
+
+  async function removeItem(i: number) {
+    const u = [...cartItems]
+    const removed = u[i]
+    u.splice(i, 1)
+    saveCart(u)
+    if (removed.product_id && user?.id) {
+      await supabase.from("cart_items").delete()
+        .eq("user_id", user.id)
+        .eq("product_id", removed.product_id)
+    }
+  }
 
   const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.qty) || 1), 0)
   const total = subtotal + (cartItems.length > 0 ? shipping : 0)

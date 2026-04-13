@@ -4,7 +4,9 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import SmartNavbar from "@/components/SmartNavbar"
 import Footer from "@/components/Footer"
+import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/hooks/useAuth"
+import { useMe } from "@/lib/hooks/useMe"
 
 const products = [
   { id: "393d5726-d16e-425e-87b4-0a42659ee327", name: "Lavender Grace", desc: "Soft pink pom-pom flowers, sweet & cute", price: 350, img: "/p1.png" },
@@ -16,14 +18,23 @@ const products = [
 
 export default function BouquetsPage() {
   const { isLoggedIn } = useAuth()
+  const { data: user } = useMe()
   const router = useRouter()
 
-  function addToCart(product: any) {
+  async function addToCart(product: any) {
     if (!isLoggedIn) { router.push("/login"); return }
     const cart = JSON.parse(localStorage.getItem("cart") || "[]")
     const exist = cart.find((i: any) => i.name === product.name)
     if (exist) { exist.qty += 1 } else { cart.push({ product_id: product.id, name: product.name, price: product.price, img: product.img, qty: 1 }) }
     localStorage.setItem("cart", JSON.stringify(cart))
+    if (user?.id) {
+      const { data: existing } = await supabase.from("cart_items").select("*").eq("user_id", user.id).eq("product_id", product.id).single()
+      if (existing) {
+        await supabase.from("cart_items").update({ quantity: existing.quantity + 1 }).eq("id", existing.id)
+      } else {
+        await supabase.from("cart_items").insert({ user_id: user.id, product_id: product.id, quantity: 1 })
+      }
+    }
   }
 
   function addToWishlist(product: any) {

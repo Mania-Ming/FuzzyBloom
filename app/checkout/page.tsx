@@ -89,6 +89,9 @@ export default function CheckoutPage() {
       if (itemsError) throw itemsError
 
       localStorage.removeItem("cart")
+      if (user?.id) {
+        await supabase.from("cart_items").delete().eq("user_id", user.id)
+      }
       alert("Order placed successfully! 🎉")
       router.push("/orders")
     } catch (err: any) {

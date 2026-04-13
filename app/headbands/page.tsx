@@ -5,7 +5,9 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import SmartNavbar from "@/components/SmartNavbar"
 import Footer from "@/components/Footer"
+import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/hooks/useAuth"
+import { useMe } from "@/lib/hooks/useMe"
 
 type Product = { id: string; name: string; img: string }
 
@@ -20,15 +22,24 @@ const colors: Product[] = [
 export default function HeadbandsPage() {
   const [selected, setSelected] = useState<Product>(colors[0])
   const { isLoggedIn } = useAuth()
+  const { data: user } = useMe()
   const router = useRouter()
 
-  function addToCart() {
+  async function addToCart() {
     if (!isLoggedIn) { router.push("/login"); return }
     const cart = JSON.parse(localStorage.getItem("cart") || "[]")
     const name = "Headband - " + selected.name
     const exist = cart.find((i: any) => i.name === name)
     if (exist) { exist.qty += 1 } else { cart.push({ product_id: selected.id, name, price: 150, img: selected.img, qty: 1 }) }
     localStorage.setItem("cart", JSON.stringify(cart))
+    if (user?.id) {
+      const { data: existing } = await supabase.from("cart_items").select("*").eq("user_id", user.id).eq("product_id", selected.id).single()
+      if (existing) {
+        await supabase.from("cart_items").update({ quantity: existing.quantity + 1 }).eq("id", existing.id)
+      } else {
+        await supabase.from("cart_items").insert({ user_id: user.id, product_id: selected.id, quantity: 1 })
+      }
+    }
   }
 
   function addToWishlist() {
