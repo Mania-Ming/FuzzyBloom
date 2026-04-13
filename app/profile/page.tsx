@@ -33,6 +33,21 @@ export default function ProfilePage() {
       setAddress((user as any).address ?? "")
       setContactNumber((user as any).contact_number ?? "")
     }
+
+    async function fetchProfile() {
+      if (!user?.id) return
+      const { data } = await supabase
+        .from("profiles")
+        .select("address, contact_number, full_name")
+        .eq("id", user.id)
+        .single()
+      if (data) {
+        setAddress(data.address ?? "")
+        setContactNumber(data.contact_number ?? "")
+        setFullName(data.full_name ?? "")
+      }
+    }
+    fetchProfile()
   }, [user])
 
   const initials = user?.full_name
