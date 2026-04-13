@@ -2,13 +2,6 @@ import Image from "next/image"
 import Link from "next/link"
 import Footer from "@/components/Footer"
 
-const categories = [
-  { name: "Bouquets", icon: "🌸", link: "/bouquets", bg: "from-pink-100 to-rose-200" },
-  { name: "Flower Keychains", icon: "🌼", link: "/flower-keychains", bg: "from-yellow-100 to-amber-200" },
-  { name: "Ribbon Keychains", icon: "🎀", link: "/ribbon-keychains", bg: "from-purple-100 to-violet-200" },
-  { name: "Headbands", icon: "👑", link: "/headbands", bg: "from-rose-100 to-pink-200" },
-]
-
 const products = [
   { name: "Lavender Grace", img: "/p1.png", price: 350 },
   { name: "Rose Romance", img: "/p2.png", price: 420 },
@@ -80,24 +73,6 @@ export default function Home() {
             ))}
           </div>
 
-        </div>
-      </section>
-
-      {/* CATEGORIES — visible immediately */}
-      <section className="px-6 md:px-12 py-6 max-w-7xl mx-auto w-full">
-        <div className="text-center mb-5">
-          <h2 className="text-xl font-bold text-gray-800">Shop by Category</h2>
-          <p className="text-gray-500 text-xs mt-1">Explore our handcrafted collections</p>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {categories.map((cat, i) => (
-            <Link key={i} href={cat.link}>
-              <div className={`bg-gradient-to-br ${cat.bg} rounded-2xl p-5 flex flex-col items-center justify-center gap-2 card-hover cursor-pointer h-28 border border-white/60`}>
-                <span className="text-3xl">{cat.icon}</span>
-                <p className="font-semibold text-xs text-center text-gray-700">{cat.name}</p>
-              </div>
-            </Link>
-          ))}
         </div>
       </section>
 
