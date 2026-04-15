@@ -7,9 +7,9 @@ import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 
 const categories = [
-  { name: "Bouquets", icon: <img src="/bouquet.jpg" alt="Bouquet" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }} />, link: "/bouquets", bg: "from-pink-100 to-rose-200" },
-  { name: "Flower Keychains", icon: <img src="/flower.jpg" alt="Flower" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }} />, link: "/flower-keychains", bg: "from-yellow-100 to-amber-200" },
-  { name: "Ribbon Keychains", icon: <img src="/ribbon.jpg" alt="Ribbon" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }} />, link: "/ribbon-keychains", bg: "from-purple-100 to-violet-200" },
+  { name: "Bouquets", icon: <img src="/bouquet.png" alt="Bouquet" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }} />, link: "/bouquets", bg: "from-pink-100 to-rose-200" },
+  { name: "Flower Keychains", icon: <img src="/flower.png" alt="Flower" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }} />, link: "/flower-keychains", bg: "from-yellow-100 to-amber-200" },
+  { name: "Ribbon Keychains", icon: <img src="/ribbon.png" alt="Ribbon" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }} />, link: "/ribbon-keychains", bg: "from-purple-100 to-violet-200" },
   { name: "Headbands", icon: null, link: "/headbands", bg: "from-rose-100 to-pink-200" },
 ]
 
@@ -59,7 +59,7 @@ export default function Dashboard() {
             ))}
             <Link href="/headbands">
               <div className="bg-gradient-to-br from-rose-100 to-pink-200 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 card-hover cursor-pointer h-36 border border-white/60">
-                <img src="/headband.jpg" alt="Headband" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }} />
+                <img src="/headband.png" alt="Headband" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }} />
                 <p className="font-semibold text-sm text-center text-gray-700">Headbands</p>
               </div>
             </Link>

@@ -13,10 +13,10 @@ const products = [
 ]
 
 const categories = [
-  { name: "Bouquet", link: "/bouquets", bg: "#fce4ec", icon: <img src="/bouquet.jpg" alt="Bouquet" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} /> },
-  { name: "Flower", link: "/flower-keychains", bg: "#f3e5f5", icon: <img src="/flower.jpg" alt="Flower" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} /> },
-  { name: "Ribbon", link: "/ribbon-keychains", bg: "#fff3e0", icon: <img src="/ribbon.jpg" alt="Ribbon" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} /> },
-  { name: "Headband", link: "/headbands", bg: "#e8f5e9", icon: <img src="/headband.jpg" alt="Headband" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} /> },
+  { name: "Bouquet", link: "/bouquets", bg: "#fce4ec", icon: <img src="/bouquet.png" alt="Bouquet" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} /> },
+  { name: "Flower", link: "/flower-keychains", bg: "#f3e5f5", icon: <img src="/flower.png" alt="Flower" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} /> },
+  { name: "Ribbon", link: "/ribbon-keychains", bg: "#fff3e0", icon: <img src="/ribbon.png" alt="Ribbon" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} /> },
+  { name: "Headband", link: "/headbands", bg: "#e8f5e9", icon: <img src="/headband.png" alt="Headband" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} /> },
 ]
 
 const carouselImages = ["/p1.png", "/p2.png", "/p3.png", "/p4.png", "/p5.png"]
