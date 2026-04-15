@@ -43,18 +43,18 @@ export default function Home() {
         style={{
           backgroundImage: "url('/hero_background.png')",
           backgroundSize: "cover",
-          backgroundPosition: "center right",
+          backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-          minHeight: "520px",
+          minHeight: "600px",
         }}
         className="relative w-full flex items-center"
       >
-        {/* GRADIENT OVERLAY */}
+        {/* GRADIENT OVERLAY — strong left, fades to transparent right */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(to right, rgba(255,240,245,0.97) 0%, rgba(255,240,245,0.85) 45%, rgba(255,240,245,0.2) 75%, rgba(255,240,245,0) 100%)",
+            background: "linear-gradient(to right, rgba(255,240,245,0.98) 0%, rgba(255,240,245,0.92) 35%, rgba(255,240,245,0.5) 55%, rgba(255,240,245,0.0) 75%)",
           }}
         />
 
