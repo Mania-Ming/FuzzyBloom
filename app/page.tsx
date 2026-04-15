@@ -9,6 +9,13 @@ const products = [
   { name: "Ribbon Keychain", img: "/r1.png", price: 20 },
 ]
 
+const categories = [
+  { name: "Bouquet", icon: "💐", link: "/bouquets", bg: "from-pink-50 to-rose-100", border: "border-rose-200" },
+  { name: "Flower", icon: "🌼", link: "/flower-keychains", bg: "from-purple-50 to-violet-100", border: "border-violet-200" },
+  { name: "Ribbon", icon: "🎀", link: "/ribbon-keychains", bg: "from-amber-50 to-orange-100", border: "border-orange-200" },
+  { name: "Headband", icon: "🌿", link: "/headbands", bg: "from-emerald-50 to-teal-100", border: "border-teal-200" },
+]
+
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col text-gray-800 scroll-smooth">
@@ -32,79 +39,79 @@ export default function Home() {
       </nav>
 
       {/* HERO */}
-      <section className="bg-gradient-to-br from-[#e8d5e8] via-[#f0e0ec] to-[#ddd0dd] w-full">
-        <div className="w-full px-8 md:px-16 py-12 flex flex-wrap items-center justify-between gap-6">
+      <section className="w-full bg-gradient-to-br from-[#fce4ec] via-[#f8d7e8] to-[#ede0f0] py-14 px-6 md:px-16">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white/40 backdrop-blur-sm rounded-[24px] shadow-xl border border-white/60 px-10 md:px-16 py-12 flex flex-wrap items-center justify-between gap-10">
 
-          {/* LEFT */}
-          <div className="max-w-sm">
-            <p className="text-xs font-semibold text-[#4b2e2e] tracking-widest uppercase mb-3">
-              Handmade with Love
-            </p>
-            <h1 className="text-4xl md:text-5xl mb-2 text-[#2a1515] leading-tight" style={{ fontFamily: "var(--font-pacifico)" }}>
-              Fuzzy Bloom
-            </h1>
-            <p className="text-sm text-gray-600 mb-5 leading-relaxed">
-              Handmade floral crafts and decorative pieces inspired by nature, creativity, and the joy of meaningful gifts.
-            </p>
-            <div className="flex gap-3 flex-wrap mb-4">
-              <Link href="/login" className="bg-[#4b2e2e] text-white px-6 py-2.5 rounded-full hover:bg-[#3a2323] transition font-medium shadow-md shadow-[#4b2e2e]/20 text-sm">
-                Shop Now
-              </Link>
-              <Link href="/about" className="border border-[#4b2e2e]/30 text-[#4b2e2e] px-6 py-2.5 rounded-full hover:bg-[#4b2e2e] hover:text-white transition font-medium text-sm">
-                About Us
-              </Link>
+            {/* LEFT */}
+            <div className="flex-1 min-w-[260px] max-w-lg">
+              <p className="text-xs font-bold text-[#b06080] tracking-[0.2em] uppercase mb-4">
+                ✦ Handmade with Love
+              </p>
+              <h1 className="text-5xl md:text-6xl mb-4 text-[#2a1515] leading-tight" style={{ fontFamily: "var(--font-pacifico)" }}>
+                Fuzzy Bloom
+              </h1>
+              <p className="text-sm text-gray-500 mb-7 leading-relaxed max-w-sm">
+                Handmade floral crafts and decorative pieces inspired by nature, creativity, and the joy of meaningful gifts.
+              </p>
+              <div className="flex gap-3 flex-wrap mb-5">
+                <Link href="/login" className="bg-[#4b2e2e] text-white px-7 py-3 rounded-full hover:bg-[#3a2323] transition font-semibold shadow-lg shadow-[#4b2e2e]/25 text-sm">
+                  Shop Now
+                </Link>
+                <Link href="/about" className="border-2 border-[#4b2e2e]/30 text-[#4b2e2e] px-7 py-3 rounded-full hover:bg-[#4b2e2e] hover:text-white transition font-semibold text-sm">
+                  About Us
+                </Link>
+              </div>
+              <p className="text-xs text-gray-400">Made with love in the Philippines 🇵🇭</p>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Made with love in the Philippines 🇵🇭</p>
-          </div>
 
-          {/* RIGHT — 2x2 equal rectangle collage */}
-          <div className="grid grid-cols-2 gap-3 w-80">
-            <Link href="/bouquets">
-              <div className="bg-purple-100 hover:bg-purple-200 h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer">
-                <span className="text-3xl">💐</span>
-                <p className="text-xs font-semibold text-gray-700">Bouquet</p>
-              </div>
-            </Link>
-            <Link href="/flower-keychains">
-              <div className="bg-pink-100 hover:bg-pink-200 h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer">
-                <span className="text-3xl">🌼</span>
-                <p className="text-xs font-semibold text-gray-700">Flower</p>
-              </div>
-            </Link>
-            <Link href="/ribbon-keychains">
-              <div className="bg-orange-50 hover:bg-orange-100 h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer">
-                <span className="text-3xl">🎀</span>
-                <p className="text-xs font-semibold text-gray-700">Ribbon</p>
-              </div>
-            </Link>
-            <Link href="/headbands">
-              <div className="bg-emerald-50 hover:bg-emerald-100 h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
-                  <path d="M3 12 C3 6.5 7 3 12 3 C17 3 21 6.5 21 12" />
-                  <path d="M5 14 C5 13 4 12 3 12" />
-                  <path d="M19 14 C19 13 20 12 21 12" />
-                  <path d="M5 14 Q5 17 7 17 Q9 17 9 14" />
-                  <path d="M19 14 Q19 17 17 17 Q15 17 15 14" />
-                </svg>
-                <p className="text-xs font-semibold text-gray-700">Headband</p>
-              </div>
-            </Link>
-          </div>
+            {/* RIGHT — bouquet image */}
+            <div className="relative shrink-0 flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-200/40 to-purple-200/40 rounded-full blur-3xl scale-110" />
+              <Image
+                src="/p1.png"
+                alt="Fuzzy Bloom Bouquet"
+                width={320}
+                height={320}
+                className="relative object-contain drop-shadow-2xl"
+              />
+            </div>
 
+          </div>
         </div>
       </section>
 
-      {/* PRODUCTS PREVIEW */}
-      <section className="px-6 md:px-12 py-4 pb-12 max-w-7xl mx-auto w-full">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: "var(--font-pacifico)" }}>Hot Handicrafts</h2>
-            <p className="text-gray-500 text-xs mt-0.5">Our most-loved pieces</p>
+      {/* CATEGORIES */}
+      <section className="w-full py-12 px-6 md:px-16 bg-white/30">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-800">Explore Categories</h2>
+            <p className="text-gray-400 text-sm mt-1">Find the perfect handmade item</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {categories.map((cat, i) => (
+              <Link key={i} href={cat.link}>
+                <div
+                  className={`bg-gradient-to-br ${cat.bg} border ${cat.border} rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg`}
+                >
+                  <span className="text-4xl">{cat.icon}</span>
+                  <p className="font-semibold text-sm text-gray-700">{cat.name}</p>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      </section>
+
+      {/* HOT HANDICRAFTS */}
+      <section className="px-6 md:px-16 py-10 pb-14 max-w-7xl mx-auto w-full">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-800" style={{ fontFamily: "var(--font-pacifico)" }}>Hot Handicrafts</h2>
+          <p className="text-gray-400 text-xs mt-0.5">Our most-loved pieces</p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
           {products.map((product, i) => (
-            <div key={i} className="bg-white/80 rounded-2xl shadow-sm border border-white/60 p-4 relative group card-hover hover:scale-[1.02] hover:shadow-md transition-all duration-200">
+            <div key={i} className="bg-white/80 rounded-2xl shadow-sm border border-white/60 p-4 relative group hover:scale-[1.02] hover:shadow-md transition-all duration-200">
               <div className="h-[140px] flex items-center justify-center bg-gray-50/50 rounded-xl mb-3">
                 <Image src={product.img} alt={product.name} width={120} height={120} className="object-contain w-full h-auto max-h-[120px]" />
               </div>
