@@ -65,9 +65,16 @@ export default function BouquetsPage() {
           onClick={() => setZoomedImg(null)}
         >
           <div
-            style={{ maxHeight: "calc(100vh - 160px)", maxWidth: "400px", width: "90vw", overflow: "hidden", borderRadius: "16px", background: "white", padding: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}
+            style={{ position: "relative", maxHeight: "calc(100vh - 160px)", maxWidth: "400px", width: "90vw", overflow: "hidden", borderRadius: "16px", background: "white", padding: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* X BUTTON */}
+            <button
+              onClick={() => setZoomedImg(null)}
+              style={{ position: "absolute", top: "10px", right: "10px", width: "32px", height: "32px", borderRadius: "50%", background: "white", border: "1.5px solid #ccc", fontSize: "16px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10 }}
+            >
+              ×
+            </button>
             <img
               src={zoomedImg.src}
               alt={zoomedImg.name}
