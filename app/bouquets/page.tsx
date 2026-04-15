@@ -61,13 +61,28 @@ export default function BouquetsPage() {
       {/* ZOOM MODAL */}
       {zoomedImg && (
         <div
-          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-6"
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
           onClick={() => setZoomedImg(null)}
         >
-          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <Image src={zoomedImg.src} alt={zoomedImg.name} width={480} height={480} className="mx-auto object-contain rounded-xl" />
-            <p className="text-center font-semibold text-gray-800 mt-4">{zoomedImg.name}</p>
-            <button onClick={() => setZoomedImg(null)} className="mt-4 w-full py-2 rounded-full border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition">Close</button>
+          <div
+            className="bg-white rounded-3xl p-5 shadow-2xl overflow-hidden flex flex-col items-center"
+            style={{ maxHeight: "85vh", maxWidth: "min(500px, 90vw)", width: "100%" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-center w-full" style={{ maxHeight: "70vh" }}>
+              <img
+                src={zoomedImg.src}
+                alt={zoomedImg.name}
+                style={{ maxHeight: "70vh", maxWidth: "100%", objectFit: "contain", borderRadius: "12px" }}
+              />
+            </div>
+            <p className="text-center font-semibold text-gray-800 mt-4 text-sm">{zoomedImg.name}</p>
+            <button
+              onClick={() => setZoomedImg(null)}
+              className="mt-3 w-full py-2 rounded-full border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
