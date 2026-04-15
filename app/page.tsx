@@ -1,6 +1,9 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
 import Footer from "@/components/Footer"
+import { useState, useEffect } from "react"
 
 const products = [
   { name: "Lavender Grace", img: "/p1.png", price: 350 },
@@ -16,7 +19,26 @@ const categories = [
   { name: "Headband", icon: "👑", link: "/headbands", bg: "#e8f5e9" },
 ]
 
+const carouselImages = ["/p1.png", "/p2.png", "/p3.png", "/p4.png", "/p5.png"]
+
 export default function Home() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % carouselImages.length)
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [])
+
+  function nextSlide() {
+    setCurrentIndex((prev) => (prev + 1) % carouselImages.length)
+  }
+
+  function prevSlide() {
+    setCurrentIndex((prev) => (prev - 1 + carouselImages.length) % carouselImages.length)
+  }
+
   return (
     <div className="min-h-screen flex flex-col text-gray-800 scroll-smooth">
 
@@ -46,39 +68,30 @@ export default function Home() {
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
           minHeight: "600px",
+          position: "relative",
         }}
-        className="relative w-full flex items-center"
+        className="w-full flex items-center"
       >
-        {/* GRADIENT OVERLAY — strong left, fades to transparent right */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(to right, rgba(255,240,245,0.98) 0%, rgba(255,240,245,0.92) 35%, rgba(255,240,245,0.5) 55%, rgba(255,240,245,0.0) 75%)",
-          }}
-        />
+        {/* OVERLAY */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.75) 40%, rgba(255,255,255,0.3) 70%, rgba(255,255,255,0.1) 100%)" }} />
 
         {/* CONTENT */}
-        <div className="relative z-10 w-full px-8 md:px-16 py-20">
-          <div className="max-w-lg">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-8 md:px-16 py-16 flex flex-wrap items-center justify-between gap-10">
 
-            {/* LABEL */}
+          {/* LEFT */}
+          <div className="flex-1 min-w-[280px] max-w-lg">
             <p className="text-xs font-bold text-[#b06080] tracking-[0.2em] uppercase mb-4">
               ✦ Handmade with Love
             </p>
-
-            {/* TITLE */}
             <h1 className="text-5xl md:text-6xl mb-4 text-[#2a1515] leading-tight" style={{ fontFamily: "var(--font-pacifico)" }}>
               Fuzzy Bloom
             </h1>
-
-            {/* DESCRIPTION */}
             <p className="text-sm text-gray-600 mb-7 leading-relaxed max-w-sm">
               Handmade floral crafts and decorative pieces inspired by nature, creativity, and the joy of meaningful gifts.
             </p>
 
             {/* BUTTONS */}
-            <div className="flex gap-3 flex-wrap mb-8">
+            <div className="flex gap-3 flex-wrap mb-7">
               <Link href="/login" className="bg-[#4b2e2e] text-white px-7 py-3 rounded-full hover:bg-[#3a2323] transition font-semibold shadow-lg shadow-[#4b2e2e]/25 text-sm">
                 Shop Now
               </Link>
@@ -87,29 +100,139 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* CATEGORY SHORTCUTS */}
-            <div className="flex gap-3 flex-wrap">
+            {/* CATEGORY PILLS */}
+            <div className="flex gap-2.5 flex-wrap mb-5">
               {categories.map((cat, i) => (
                 <Link key={i} href={cat.link}>
                   <div
                     style={{
                       backgroundColor: cat.bg,
-                      borderRadius: "12px",
+                      borderRadius: "20px",
                       boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                       transition: "transform 0.2s ease, box-shadow 0.2s ease",
                       cursor: "pointer",
                     }}
-                    className="px-4 py-2.5 flex items-center gap-2 border border-white/80 hover:-translate-y-1 hover:shadow-md"
+                    className="px-4 py-2 flex items-center gap-1.5 border border-white/80 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.1)]"
                   >
-                    <span className="text-lg">{cat.icon}</span>
+                    <span className="text-base">{cat.icon}</span>
                     <span className="text-xs font-semibold text-gray-700">{cat.name}</span>
                   </div>
                 </Link>
               ))}
             </div>
 
-            <p className="text-xs text-gray-400 mt-5">Made with love in the Philippines 🇵🇭</p>
+            <p className="text-xs text-gray-400">Made with love in the Philippines 🇵🇭</p>
           </div>
+
+          {/* RIGHT — GLASS CAROUSEL */}
+          <div
+            style={{
+              width: "420px",
+              height: "380px",
+              borderRadius: "20px",
+              background: "rgba(255,255,255,0.2)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: "1px solid rgba(255,255,255,0.5)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+              position: "relative",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            {/* CAROUSEL IMAGE */}
+            <img
+              src={carouselImages[currentIndex]}
+              alt="product"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                borderRadius: "20px",
+                transition: "opacity 0.4s ease",
+              }}
+            />
+
+            {/* PREV BUTTON */}
+            <button
+              onClick={prevSlide}
+              style={{
+                position: "absolute",
+                left: "10px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                background: "white",
+                border: "none",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                cursor: "pointer",
+                fontSize: "16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "transform 0.2s ease",
+                zIndex: 10,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-50%) scale(1.1)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(-50%) scale(1)")}
+            >
+              ←
+            </button>
+
+            {/* NEXT BUTTON */}
+            <button
+              onClick={nextSlide}
+              style={{
+                position: "absolute",
+                right: "10px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                background: "white",
+                border: "none",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                cursor: "pointer",
+                fontSize: "16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "transform 0.2s ease",
+                zIndex: 10,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-50%) scale(1.1)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(-50%) scale(1)")}
+            >
+              →
+            </button>
+
+            {/* DOTS */}
+            <div style={{ position: "absolute", bottom: "12px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px", zIndex: 10 }}>
+              {carouselImages.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentIndex(i)}
+                  style={{
+                    width: i === currentIndex ? "20px" : "8px",
+                    height: "8px",
+                    borderRadius: "4px",
+                    background: i === currentIndex ? "#4b2e2e" : "rgba(255,255,255,0.7)",
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                    padding: 0,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
         </div>
       </section>
 
