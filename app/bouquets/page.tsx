@@ -61,17 +61,17 @@ export default function BouquetsPage() {
       {/* ZOOM MODAL */}
       {zoomedImg && (
         <div
-          style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, background: "rgba(0,0,0,0.7)" }}
+          style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "80px", paddingBottom: "80px", zIndex: 9999, overflowY: "auto", background: "rgba(0,0,0,0.7)" }}
           onClick={() => setZoomedImg(null)}
         >
           <div
-            style={{ maxHeight: "75vh", maxWidth: "80vw", width: "fit-content", overflow: "hidden", borderRadius: "16px", background: "white", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "16px", gap: "12px" }}
+            style={{ maxHeight: "calc(100vh - 160px)", maxWidth: "400px", width: "90vw", overflow: "hidden", borderRadius: "16px", background: "white", padding: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={zoomedImg.src}
               alt={zoomedImg.name}
-              style={{ maxHeight: "65vh", maxWidth: "70vw", width: "auto", height: "auto", objectFit: "contain", display: "block", borderRadius: "8px" }}
+              style={{ width: "100%", height: "auto", maxHeight: "calc(100vh - 220px)", objectFit: "contain", borderRadius: "8px", display: "block" }}
             />
             <p style={{ fontWeight: 600, fontSize: "14px", color: "#2a1515", textAlign: "center" }}>{zoomedImg.name}</p>
             <button
