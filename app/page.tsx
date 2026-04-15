@@ -59,19 +59,36 @@ export default function Home() {
 
           {/* RIGHT — 2x2 equal rectangle collage */}
           <div className="grid grid-cols-2 gap-3 w-80">
-            {[
-              { name: "Bouquet", icon: "🌸", link: "/bouquets", bg: "bg-purple-100 hover:bg-purple-200" },
-              { name: "Flower", icon: "🌼", link: "/flower-keychains", bg: "bg-pink-100 hover:bg-pink-200" },
-              { name: "Ribbon", icon: "🎀", link: "/ribbon-keychains", bg: "bg-orange-50 hover:bg-orange-100" },
-              { name: "Headband", icon: "👑", link: "/headbands", bg: "bg-emerald-50 hover:bg-emerald-100" },
-            ].map((cat, i) => (
-              <Link key={i} href={cat.link}>
-                <div className={`${cat.bg} h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer`}>
-                  <span className="text-3xl">{cat.icon}</span>
-                  <p className="text-xs font-semibold text-gray-700">{cat.name}</p>
-                </div>
-              </Link>
-            ))}
+            <Link href="/bouquets">
+              <div className="bg-purple-100 hover:bg-purple-200 h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer">
+                <span className="text-3xl">💐</span>
+                <p className="text-xs font-semibold text-gray-700">Bouquet</p>
+              </div>
+            </Link>
+            <Link href="/flower-keychains">
+              <div className="bg-pink-100 hover:bg-pink-200 h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer">
+                <span className="text-3xl">🌼</span>
+                <p className="text-xs font-semibold text-gray-700">Flower</p>
+              </div>
+            </Link>
+            <Link href="/ribbon-keychains">
+              <div className="bg-orange-50 hover:bg-orange-100 h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer">
+                <span className="text-3xl">🎀</span>
+                <p className="text-xs font-semibold text-gray-700">Ribbon</p>
+              </div>
+            </Link>
+            <Link href="/headbands">
+              <div className="bg-emerald-50 hover:bg-emerald-100 h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                  <path d="M3 12 C3 6.5 7 3 12 3 C17 3 21 6.5 21 12" />
+                  <path d="M5 14 C5 13 4 12 3 12" />
+                  <path d="M19 14 C19 13 20 12 21 12" />
+                  <path d="M5 14 Q5 17 7 17 Q9 17 9 14" />
+                  <path d="M19 14 Q19 17 17 17 Q15 17 15 14" />
+                </svg>
+                <p className="text-xs font-semibold text-gray-700">Headband</p>
+              </div>
+            </Link>
           </div>
 
         </div>
