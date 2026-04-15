@@ -16,7 +16,7 @@ const categories = [
   { name: "Bouquet", icon: "💐", link: "/bouquets", bg: "#fce4ec" },
   { name: "Flower", icon: "🌼", link: "/flower-keychains", bg: "#f3e5f5" },
   { name: "Ribbon", icon: "🎀", link: "/ribbon-keychains", bg: "#fff3e0" },
-  { name: "Headband", icon: "👑", link: "/headbands", bg: "#e8f5e9" },
+  { name: "Headband", icon: "🎧", link: "/headbands", bg: "#e8f5e9" },
 ]
 
 const carouselImages = ["/p1.png", "/p2.png", "/p3.png", "/p4.png", "/p5.png"]
@@ -252,7 +252,7 @@ export default function Home() {
       <section className="px-6 md:px-12 py-10 pb-14 max-w-7xl mx-auto w-full">
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-800" style={{ fontFamily: "var(--font-pacifico)" }}>Hot Handicrafts</h2>
-          <p className="text-gray-400 text-xs mt-0.5">Our most-loved pieces</p>
+          <p className="text-xs mt-0.5" style={{ color: "#3E2C2C" }}>Our most-loved pieces</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
           {products.map((product, i) => (

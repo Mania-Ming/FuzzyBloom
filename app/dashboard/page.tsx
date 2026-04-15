@@ -10,7 +10,7 @@ const categories = [
   { name: "Bouquets", icon: "💐", link: "/bouquets", bg: "from-pink-100 to-rose-200" },
   { name: "Flower Keychains", icon: "🌼", link: "/flower-keychains", bg: "from-yellow-100 to-amber-200" },
   { name: "Ribbon Keychains", icon: "🎀", link: "/ribbon-keychains", bg: "from-purple-100 to-violet-200" },
-  { name: "Headbands", icon: "👑", link: "/headbands", bg: "from-rose-100 to-pink-200" },
+  { name: "Headbands", icon: "🎧", link: "/headbands", bg: "from-rose-100 to-pink-200" },
 ]
 
 const products = [
@@ -74,12 +74,9 @@ export default function Dashboard() {
 
         {/* PRODUCTS */}
         <section className="max-w-7xl mx-auto w-full px-6 md:px-12 pb-14">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: "var(--font-pacifico)" }}>Hot Handicrafts</h2>
-              <p className="text-gray-500 text-sm mt-0.5">Our most-loved pieces</p>
-            </div>
-            <Link href="/bouquets" className="text-sm text-[#4b2e2e] font-medium hover:underline">View All →</Link>
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: "var(--font-pacifico)" }}>Hot Handicrafts</h2>
+            <p className="text-sm mt-0.5" style={{ color: "#3E2C2C" }}>Our most-loved pieces</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
             {products.map((product, i) => (
