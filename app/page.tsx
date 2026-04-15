@@ -13,10 +13,21 @@ const products = [
 ]
 
 const categories = [
-  { name: "Bouquet", icon: "💐", link: "/bouquets", bg: "#fce4ec" },
-  { name: "Flower", icon: "🌼", link: "/flower-keychains", bg: "#f3e5f5" },
-  { name: "Ribbon", icon: "🎀", link: "/ribbon-keychains", bg: "#fff3e0" },
-  { name: "Headband", icon: "🎧", link: "/headbands", bg: "#e8f5e9" },
+  { name: "Bouquet", link: "/bouquets", bg: "#fce4ec", icon: <i className="fa-solid fa-seedling" style={{ fontSize: 18, color: "#e57373" }} /> },
+  { name: "Flower", link: "/flower-keychains", bg: "#f3e5f5", icon: <i className="fa-solid fa-leaf" style={{ fontSize: 18, color: "#ab47bc" }} /> },
+  { name: "Ribbon", link: "/ribbon-keychains", bg: "#fff3e0", icon: <i className="fa-solid fa-ribbon" style={{ fontSize: 18, color: "#ffa726" }} /> },
+  {
+    name: "Headband", link: "/headbands", bg: "#e8f5e9",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#43a047" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 12 C3 6.5 7 3 12 3 C17 3 21 6.5 21 12" />
+        <path d="M5 14 C5 13 4 12 3 12" />
+        <path d="M19 14 C19 13 20 12 21 12" />
+        <path d="M5 14 Q5 17 7 17 Q9 17 9 14" />
+        <path d="M19 14 Q19 17 17 17 Q15 17 15 14" />
+      </svg>
+    )
+  },
 ]
 
 const carouselImages = ["/p1.png", "/p2.png", "/p3.png", "/p4.png", "/p5.png"]
@@ -123,7 +134,7 @@ export default function Home() {
                     }}
                     className="px-4 py-2 flex items-center gap-1.5 border border-white/80 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.1)]"
                   >
-                    <span className="text-base">{cat.icon}</span>
+                  <div className="flex items-center justify-center w-5 h-5">{cat.icon}</div>
                     <span className="text-xs font-semibold text-gray-700">{cat.name}</span>
                   </div>
                 </Link>

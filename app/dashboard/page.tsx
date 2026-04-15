@@ -7,10 +7,10 @@ import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 
 const categories = [
-  { name: "Bouquets", icon: "💐", link: "/bouquets", bg: "from-pink-100 to-rose-200" },
-  { name: "Flower Keychains", icon: "🌼", link: "/flower-keychains", bg: "from-yellow-100 to-amber-200" },
-  { name: "Ribbon Keychains", icon: "🎀", link: "/ribbon-keychains", bg: "from-purple-100 to-violet-200" },
-  { name: "Headbands", icon: "🎧", link: "/headbands", bg: "from-rose-100 to-pink-200" },
+  { name: "Bouquets", icon: <i className="fa-solid fa-seedling text-3xl text-rose-400" />, link: "/bouquets", bg: "from-pink-100 to-rose-200" },
+  { name: "Flower Keychains", icon: <i className="fa-solid fa-leaf text-3xl text-amber-400" />, link: "/flower-keychains", bg: "from-yellow-100 to-amber-200" },
+  { name: "Ribbon Keychains", icon: <i className="fa-solid fa-ribbon text-3xl text-violet-400" />, link: "/ribbon-keychains", bg: "from-purple-100 to-violet-200" },
+  { name: "Headbands", icon: null, link: "/headbands", bg: "from-rose-100 to-pink-200" },
 ]
 
 const products = [
@@ -52,7 +52,7 @@ export default function Dashboard() {
             {categories.slice(0, 3).map((cat, i) => (
               <Link key={i} href={cat.link}>
                 <div className={`bg-gradient-to-br ${cat.bg} rounded-2xl p-6 flex flex-col items-center justify-center gap-3 card-hover cursor-pointer h-36 border border-white/60`}>
-                  <span className="text-4xl">{cat.icon}</span>
+                  {cat.icon}
                   <p className="font-semibold text-sm text-center text-gray-700">{cat.name}</p>
                 </div>
               </Link>
