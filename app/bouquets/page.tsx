@@ -61,25 +61,22 @@ export default function BouquetsPage() {
       {/* ZOOM MODAL */}
       {zoomedImg && (
         <div
-          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+          style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, background: "rgba(0,0,0,0.7)" }}
           onClick={() => setZoomedImg(null)}
         >
           <div
-            className="bg-white rounded-3xl p-5 shadow-2xl overflow-hidden flex flex-col items-center"
-            style={{ maxHeight: "85vh", maxWidth: "min(500px, 90vw)", width: "100%" }}
+            style={{ maxHeight: "75vh", maxWidth: "80vw", width: "fit-content", overflow: "hidden", borderRadius: "16px", background: "white", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "16px", gap: "12px" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-center w-full" style={{ maxHeight: "70vh" }}>
-              <img
-                src={zoomedImg.src}
-                alt={zoomedImg.name}
-                style={{ maxHeight: "70vh", maxWidth: "100%", objectFit: "contain", borderRadius: "12px" }}
-              />
-            </div>
-            <p className="text-center font-semibold text-gray-800 mt-4 text-sm">{zoomedImg.name}</p>
+            <img
+              src={zoomedImg.src}
+              alt={zoomedImg.name}
+              style={{ maxHeight: "65vh", maxWidth: "70vw", width: "auto", height: "auto", objectFit: "contain", display: "block", borderRadius: "8px" }}
+            />
+            <p style={{ fontWeight: 600, fontSize: "14px", color: "#2a1515", textAlign: "center" }}>{zoomedImg.name}</p>
             <button
               onClick={() => setZoomedImg(null)}
-              className="mt-3 w-full py-2 rounded-full border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition"
+              style={{ width: "100%", padding: "8px", borderRadius: "999px", border: "1px solid #e5e7eb", fontSize: "13px", color: "#6b7280", background: "white", cursor: "pointer" }}
             >
               Close
             </button>
