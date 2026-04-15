@@ -7,7 +7,7 @@ import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 
 const categories = [
-  { name: "Bouquets", icon: "🌸", link: "/bouquets", bg: "from-pink-100 to-rose-200" },
+  { name: "Bouquets", icon: "💐", link: "/bouquets", bg: "from-pink-100 to-rose-200" },
   { name: "Flower Keychains", icon: "🌼", link: "/flower-keychains", bg: "from-yellow-100 to-amber-200" },
   { name: "Ribbon Keychains", icon: "🎀", link: "/ribbon-keychains", bg: "from-purple-100 to-violet-200" },
   { name: "Headbands", icon: "👑", link: "/headbands", bg: "from-rose-100 to-pink-200" },
@@ -49,7 +49,7 @@ export default function Dashboard() {
             <p className="text-gray-500 text-sm mt-0.5">Browse our handcrafted collections</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {categories.map((cat, i) => (
+            {categories.slice(0, 3).map((cat, i) => (
               <Link key={i} href={cat.link}>
                 <div className={`bg-gradient-to-br ${cat.bg} rounded-2xl p-6 flex flex-col items-center justify-center gap-3 card-hover cursor-pointer h-36 border border-white/60`}>
                   <span className="text-4xl">{cat.icon}</span>
@@ -57,6 +57,18 @@ export default function Dashboard() {
                 </div>
               </Link>
             ))}
+            <Link href="/headbands">
+              <div className="bg-gradient-to-br from-rose-100 to-pink-200 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 card-hover cursor-pointer h-36 border border-white/60">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                  <path d="M3 12 C3 6.5 7 3 12 3 C17 3 21 6.5 21 12" />
+                  <path d="M5 14 C5 13 4 12 3 12" />
+                  <path d="M19 14 C19 13 20 12 21 12" />
+                  <path d="M5 14 Q5 17 7 17 Q9 17 9 14" />
+                  <path d="M19 14 Q19 17 17 17 Q15 17 15 14" />
+                </svg>
+                <p className="font-semibold text-sm text-center text-gray-700">Headbands</p>
+              </div>
+            </Link>
           </div>
         </section>
 
