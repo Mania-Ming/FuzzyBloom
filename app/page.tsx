@@ -86,48 +86,44 @@ export default function Home() {
 
           {/* LEFT */}
           <div style={{ maxWidth: "500px" }}>
-            <p className="text-xs font-bold text-[#b06080] tracking-[0.2em] uppercase mb-4">
+            <p style={{ fontSize: 14, fontWeight: 700, color: "#b06080", letterSpacing: "2px", textTransform: "uppercase" as const, marginBottom: 12 }}>
               ✦ Handmade with Love
             </p>
-            <h1 className="text-5xl md:text-6xl mb-4 text-[#2a1515] leading-tight" style={{ fontFamily: "var(--font-pacifico)" }}>
+            <h1 style={{ fontFamily: "var(--font-pacifico)", fontSize: 64, fontWeight: 700, color: "#2a1515", lineHeight: 1.1, marginBottom: 16 }}>
               Fuzzy Bloom
             </h1>
-            <p className="text-sm text-gray-600 mb-7 leading-relaxed max-w-sm">
+            <p style={{ fontSize: 18, color: "#555", lineHeight: 1.7, marginBottom: 24, maxWidth: 520 }}>
               Handmade floral crafts and decorative pieces inspired by nature, creativity, and the joy of meaningful gifts.
             </p>
 
             {/* BUTTONS */}
-            <div className="flex gap-3 flex-wrap mb-7">
-              <Link href="/login" className="bg-[#4b2e2e] text-white px-7 py-3 rounded-full hover:bg-[#3a2323] transition font-semibold shadow-lg shadow-[#4b2e2e]/25 text-sm">
+            <div className="flex flex-wrap" style={{ gap: 15, marginBottom: 20 }}>
+              <Link href="/login" style={{ padding: "12px 26px", fontSize: 16, fontWeight: 600, color: "white", background: "#4b2e2e", borderRadius: 999, boxShadow: "0 6px 16px rgba(75,46,46,0.25)", transition: "background 0.2s" }}
+                className="hover:bg-[#3a2323]">
                 Shop Now
               </Link>
-              <Link href="/about" className="border-2 border-[#4b2e2e]/40 text-[#4b2e2e] px-7 py-3 rounded-full hover:bg-[#4b2e2e] hover:text-white transition font-semibold text-sm">
+              <Link href="/about" style={{ padding: "12px 26px", fontSize: 16, fontWeight: 600, color: "#4b2e2e", border: "2px solid rgba(75,46,46,0.35)", borderRadius: 999, transition: "all 0.2s" }}
+                className="hover:bg-[#4b2e2e] hover:text-white">
                 About Us
               </Link>
             </div>
 
             {/* CATEGORY PILLS */}
-            <div className="flex gap-2.5 flex-wrap mb-5">
+            <div className="flex flex-wrap" style={{ gap: 10, marginTop: 20, marginBottom: 16 }}>
               {categories.map((cat, i) => (
                 <Link key={i} href={cat.link}>
                   <div
-                    style={{
-                      backgroundColor: cat.bg,
-                      borderRadius: "20px",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                      transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                      cursor: "pointer",
-                    }}
-                    className="px-4 py-2 flex items-center gap-1.5 border border-white/80 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.1)]"
+                    style={{ backgroundColor: cat.bg, borderRadius: 999, padding: "10px 18px", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid rgba(255,255,255,0.8)", cursor: "pointer", transition: "transform 0.2s ease, box-shadow 0.2s ease" }}
+                    className="hover:-translate-y-1 hover:shadow-md"
                   >
-                    <div className="flex items-center justify-center w-5 h-5">{cat.icon}</div>
-                    <span className="text-xs font-semibold text-gray-700">{cat.name}</span>
+                    <div style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center" }}>{cat.icon}</div>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: "#444" }}>{cat.name}</span>
                   </div>
                 </Link>
               ))}
             </div>
 
-            <p className="text-xs text-gray-400">Made with love in the Philippines 🇵🇭</p>
+            <p style={{ fontSize: 12, color: "#aaa" }}>Made with love in the Philippines 🇵🇭</p>
           </div>
 
           {/* RIGHT — GLASS CAROUSEL */}
