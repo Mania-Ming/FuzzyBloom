@@ -22,16 +22,16 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body
-        className={`${pacifico.variable} ${inter.variable}`}
+      <body className={`${pacifico.variable} ${inter.variable}`}
         style={{
           backgroundImage: "url('/bg.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
+          backgroundRepeat: "no-repeat",
         }}
       >
-        <div className="min-h-screen bg-white/65 backdrop-blur-sm">
+        <div style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
           <QueryProvider>{children}</QueryProvider>
         </div>
       </body>
