@@ -9,6 +9,13 @@ const products = [
   { name: "Ribbon Keychain", img: "/r1.png", price: 20 },
 ]
 
+const categories = [
+  { name: "Bouquet", icon: "💐", link: "/bouquets", bg: "#fce4ec" },
+  { name: "Flower", icon: "🌼", link: "/flower-keychains", bg: "#f3e5f5" },
+  { name: "Ribbon", icon: "🎀", link: "/ribbon-keychains", bg: "#fff3e0" },
+  { name: "Headband", icon: "👑", link: "/headbands", bg: "#e8f5e9" },
+]
+
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col text-gray-800 scroll-smooth">
@@ -32,79 +39,89 @@ export default function Home() {
       </nav>
 
       {/* HERO */}
-      <section className="bg-gradient-to-br from-[#e8d5e8] via-[#f0e0ec] to-[#ddd0dd] w-full">
-        <div className="w-full px-8 md:px-16 py-12 flex flex-wrap items-center justify-between gap-6">
+      <section
+        style={{
+          backgroundImage: "url('/hero_background.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center right",
+          backgroundRepeat: "no-repeat",
+          minHeight: "520px",
+        }}
+        className="relative w-full flex items-center"
+      >
+        {/* GRADIENT OVERLAY */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(to right, rgba(255,240,245,0.97) 0%, rgba(255,240,245,0.85) 45%, rgba(255,240,245,0.2) 75%, rgba(255,240,245,0) 100%)",
+          }}
+        />
 
-          {/* LEFT */}
-          <div className="max-w-sm">
-            <p className="text-xs font-semibold text-[#4b2e2e] tracking-widest uppercase mb-3">
-              Handmade with Love
+        {/* CONTENT */}
+        <div className="relative z-10 w-full px-8 md:px-16 py-20">
+          <div className="max-w-lg">
+
+            {/* LABEL */}
+            <p className="text-xs font-bold text-[#b06080] tracking-[0.2em] uppercase mb-4">
+              ✦ Handmade with Love
             </p>
-            <h1 className="text-4xl md:text-5xl mb-2 text-[#2a1515] leading-tight" style={{ fontFamily: "var(--font-pacifico)" }}>
+
+            {/* TITLE */}
+            <h1 className="text-5xl md:text-6xl mb-4 text-[#2a1515] leading-tight" style={{ fontFamily: "var(--font-pacifico)" }}>
               Fuzzy Bloom
             </h1>
-            <p className="text-sm text-gray-600 mb-5 leading-relaxed">
+
+            {/* DESCRIPTION */}
+            <p className="text-sm text-gray-600 mb-7 leading-relaxed max-w-sm">
               Handmade floral crafts and decorative pieces inspired by nature, creativity, and the joy of meaningful gifts.
             </p>
-            <div className="flex gap-3 flex-wrap mb-4">
-              <Link href="/login" className="bg-[#4b2e2e] text-white px-6 py-2.5 rounded-full hover:bg-[#3a2323] transition font-medium shadow-md shadow-[#4b2e2e]/20 text-sm">
+
+            {/* BUTTONS */}
+            <div className="flex gap-3 flex-wrap mb-8">
+              <Link href="/login" className="bg-[#4b2e2e] text-white px-7 py-3 rounded-full hover:bg-[#3a2323] transition font-semibold shadow-lg shadow-[#4b2e2e]/25 text-sm">
                 Shop Now
               </Link>
-              <Link href="/about" className="border border-[#4b2e2e]/30 text-[#4b2e2e] px-6 py-2.5 rounded-full hover:bg-[#4b2e2e] hover:text-white transition font-medium text-sm">
+              <Link href="/about" className="border-2 border-[#4b2e2e]/40 text-[#4b2e2e] px-7 py-3 rounded-full hover:bg-[#4b2e2e] hover:text-white transition font-semibold text-sm">
                 About Us
               </Link>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Made with love in the Philippines 🇵🇭</p>
-          </div>
 
-          {/* RIGHT — 2x2 equal rectangle collage */}
-          <div className="grid grid-cols-2 gap-3 w-80">
-            <Link href="/bouquets">
-              <div className="bg-purple-100 hover:bg-purple-200 h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer">
-                <span className="text-3xl">💐</span>
-                <p className="text-xs font-semibold text-gray-700">Bouquet</p>
-              </div>
-            </Link>
-            <Link href="/flower-keychains">
-              <div className="bg-pink-100 hover:bg-pink-200 h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer">
-                <span className="text-3xl">🌼</span>
-                <p className="text-xs font-semibold text-gray-700">Flower</p>
-              </div>
-            </Link>
-            <Link href="/ribbon-keychains">
-              <div className="bg-orange-50 hover:bg-orange-100 h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer">
-                <span className="text-3xl">🎀</span>
-                <p className="text-xs font-semibold text-gray-700">Ribbon</p>
-              </div>
-            </Link>
-            <Link href="/headbands">
-              <div className="bg-emerald-50 hover:bg-emerald-100 h-28 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-white/60 shadow-sm hover:scale-[1.03] hover:shadow-md transition-all duration-200 cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
-                  <path d="M3 12 C3 6.5 7 3 12 3 C17 3 21 6.5 21 12" />
-                  <path d="M5 14 C5 13 4 12 3 12" />
-                  <path d="M19 14 C19 13 20 12 21 12" />
-                  <path d="M5 14 Q5 17 7 17 Q9 17 9 14" />
-                  <path d="M19 14 Q19 17 17 17 Q15 17 15 14" />
-                </svg>
-                <p className="text-xs font-semibold text-gray-700">Headband</p>
-              </div>
-            </Link>
-          </div>
+            {/* CATEGORY SHORTCUTS */}
+            <div className="flex gap-3 flex-wrap">
+              {categories.map((cat, i) => (
+                <Link key={i} href={cat.link}>
+                  <div
+                    style={{
+                      backgroundColor: cat.bg,
+                      borderRadius: "12px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                      transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                      cursor: "pointer",
+                    }}
+                    className="px-4 py-2.5 flex items-center gap-2 border border-white/80 hover:-translate-y-1 hover:shadow-md"
+                  >
+                    <span className="text-lg">{cat.icon}</span>
+                    <span className="text-xs font-semibold text-gray-700">{cat.name}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
 
+            <p className="text-xs text-gray-400 mt-5">Made with love in the Philippines 🇵🇭</p>
+          </div>
         </div>
       </section>
 
-      {/* PRODUCTS PREVIEW */}
-      <section className="px-6 md:px-12 py-4 pb-12 max-w-7xl mx-auto w-full">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: "var(--font-pacifico)" }}>Hot Handicrafts</h2>
-            <p className="text-gray-500 text-xs mt-0.5">Our most-loved pieces</p>
-          </div>
+      {/* HOT HANDICRAFTS */}
+      <section className="px-6 md:px-12 py-10 pb-14 max-w-7xl mx-auto w-full">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-800" style={{ fontFamily: "var(--font-pacifico)" }}>Hot Handicrafts</h2>
+          <p className="text-gray-400 text-xs mt-0.5">Our most-loved pieces</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
           {products.map((product, i) => (
-            <div key={i} className="bg-white/80 rounded-2xl shadow-sm border border-white/60 p-4 relative group card-hover hover:scale-[1.02] hover:shadow-md transition-all duration-200">
+            <div key={i} className="bg-white/80 rounded-2xl shadow-sm border border-white/60 p-4 relative group hover:scale-[1.02] hover:shadow-md transition-all duration-200">
               <div className="h-[140px] flex items-center justify-center bg-gray-50/50 rounded-xl mb-3">
                 <Image src={product.img} alt={product.name} width={120} height={120} className="object-contain w-full h-auto max-h-[120px]" />
               </div>
