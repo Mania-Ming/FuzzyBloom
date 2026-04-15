@@ -13,21 +13,10 @@ const products = [
 ]
 
 const categories = [
-  { name: "Bouquet", link: "/bouquets", bg: "#fce4ec", icon: <i className="fa-solid fa-seedling" style={{ fontSize: 18, color: "#e57373" }} /> },
-  { name: "Flower", link: "/flower-keychains", bg: "#f3e5f5", icon: <i className="fa-solid fa-leaf" style={{ fontSize: 18, color: "#ab47bc" }} /> },
-  { name: "Ribbon", link: "/ribbon-keychains", bg: "#fff3e0", icon: <i className="fa-solid fa-ribbon" style={{ fontSize: 18, color: "#ffa726" }} /> },
-  {
-    name: "Headband", link: "/headbands", bg: "#e8f5e9",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#43a047" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 12 C3 6.5 7 3 12 3 C17 3 21 6.5 21 12" />
-        <path d="M5 14 C5 13 4 12 3 12" />
-        <path d="M19 14 C19 13 20 12 21 12" />
-        <path d="M5 14 Q5 17 7 17 Q9 17 9 14" />
-        <path d="M19 14 Q19 17 17 17 Q15 17 15 14" />
-      </svg>
-    )
-  },
+  { name: "Bouquet", link: "/bouquets", bg: "#fce4ec", icon: <img src="/bouquet.jpg" alt="Bouquet" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} /> },
+  { name: "Flower", link: "/flower-keychains", bg: "#f3e5f5", icon: <img src="/flower.jpg" alt="Flower" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} /> },
+  { name: "Ribbon", link: "/ribbon-keychains", bg: "#fff3e0", icon: <img src="/ribbon.jpg" alt="Ribbon" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} /> },
+  { name: "Headband", link: "/headbands", bg: "#e8f5e9", icon: <img src="/headband.jpg" alt="Headband" style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} /> },
 ]
 
 const carouselImages = ["/p1.png", "/p2.png", "/p3.png", "/p4.png", "/p5.png"]

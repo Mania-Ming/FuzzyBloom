@@ -7,9 +7,9 @@ import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 
 const categories = [
-  { name: "Bouquets", icon: <i className="fa-solid fa-seedling text-3xl text-rose-400" />, link: "/bouquets", bg: "from-pink-100 to-rose-200" },
-  { name: "Flower Keychains", icon: <i className="fa-solid fa-leaf text-3xl text-amber-400" />, link: "/flower-keychains", bg: "from-yellow-100 to-amber-200" },
-  { name: "Ribbon Keychains", icon: <i className="fa-solid fa-ribbon text-3xl text-violet-400" />, link: "/ribbon-keychains", bg: "from-purple-100 to-violet-200" },
+  { name: "Bouquets", icon: <img src="/bouquet.jpg" alt="Bouquet" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }} />, link: "/bouquets", bg: "from-pink-100 to-rose-200" },
+  { name: "Flower Keychains", icon: <img src="/flower.jpg" alt="Flower" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }} />, link: "/flower-keychains", bg: "from-yellow-100 to-amber-200" },
+  { name: "Ribbon Keychains", icon: <img src="/ribbon.jpg" alt="Ribbon" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }} />, link: "/ribbon-keychains", bg: "from-purple-100 to-violet-200" },
   { name: "Headbands", icon: null, link: "/headbands", bg: "from-rose-100 to-pink-200" },
 ]
 
@@ -59,13 +59,7 @@ export default function Dashboard() {
             ))}
             <Link href="/headbands">
               <div className="bg-gradient-to-br from-rose-100 to-pink-200 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 card-hover cursor-pointer h-36 border border-white/60">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
-                  <path d="M3 12 C3 6.5 7 3 12 3 C17 3 21 6.5 21 12" />
-                  <path d="M5 14 C5 13 4 12 3 12" />
-                  <path d="M19 14 C19 13 20 12 21 12" />
-                  <path d="M5 14 Q5 17 7 17 Q9 17 9 14" />
-                  <path d="M19 14 Q19 17 17 17 Q15 17 15 14" />
-                </svg>
+                <img src="/headband.jpg" alt="Headband" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8 }} />
                 <p className="font-semibold text-sm text-center text-gray-700">Headbands</p>
               </div>
             </Link>
