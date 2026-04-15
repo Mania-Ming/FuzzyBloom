@@ -76,10 +76,23 @@ export default function Home() {
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.75) 40%, rgba(255,255,255,0.3) 70%, rgba(255,255,255,0.1) 100%)" }} />
 
         {/* CONTENT */}
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-8 md:px-16 py-16 flex flex-wrap items-center justify-between gap-10">
+        <div
+          style={{
+            position: "relative",
+            zIndex: 10,
+            width: "100%",
+            maxWidth: "1280px",
+            margin: "0 auto",
+            padding: "60px 80px",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            alignItems: "center",
+            gap: "40px",
+          }}
+        >
 
           {/* LEFT */}
-          <div className="flex-1 min-w-[280px] max-w-lg">
+          <div style={{ maxWidth: "500px" }}>
             <p className="text-xs font-bold text-[#b06080] tracking-[0.2em] uppercase mb-4">
               ✦ Handmade with Love
             </p>
@@ -127,19 +140,22 @@ export default function Home() {
           {/* RIGHT — GLASS CAROUSEL */}
           <div
             style={{
-              width: "420px",
-              height: "380px",
-              borderRadius: "20px",
-              background: "rgba(255,255,255,0.2)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
+              width: "100%",
+              maxWidth: "550px",
+              height: "420px",
+              marginLeft: "auto",
+              borderRadius: "25px",
+              background: "rgba(255,255,255,0.25)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
               border: "1px solid rgba(255,255,255,0.5)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
               position: "relative",
               overflow: "hidden",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              padding: 0,
               flexShrink: 0,
             }}
           >
@@ -150,7 +166,7 @@ export default function Home() {
               style={{
                 width: "100%",
                 height: "100%",
-                objectFit: "cover",
+                objectFit: "contain",
                 borderRadius: "20px",
                 transition: "opacity 0.4s ease",
               }}
@@ -161,7 +177,7 @@ export default function Home() {
               onClick={prevSlide}
               style={{
                 position: "absolute",
-                left: "10px",
+                left: "15px",
                 top: "50%",
                 transform: "translateY(-50%)",
                 width: "40px",
@@ -189,7 +205,7 @@ export default function Home() {
               onClick={nextSlide}
               style={{
                 position: "absolute",
-                right: "10px",
+                right: "15px",
                 top: "50%",
                 transform: "translateY(-50%)",
                 width: "40px",
