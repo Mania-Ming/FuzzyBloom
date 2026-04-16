@@ -13,7 +13,7 @@ type Order = {
   created_at: string
   address: string
   contact_number: string
-  profiles: { full_name: string; email: string } | null
+  profiles: { full_name: string; email: string }[] | null
 }
 
 type ActionConfirm = { orderId: string; action: "Approved" | "Completed" | "Cancelled" } | null
@@ -122,8 +122,8 @@ export default function OrdersPage() {
             <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-4 flex-wrap">
                 <div>
-                  <p className="font-semibold text-gray-800 text-sm">{order.profiles?.full_name ?? "Unknown"}</p>
-                  <p className="text-xs text-gray-400">{order.profiles?.email}</p>
+                  <p className="font-semibold text-gray-800 text-sm">{order.profiles?.[0]?.full_name ?? "Unknown"}</p>
+                  <p className="text-xs text-gray-400">{order.profiles?.[0]?.email}</p>
                 </div>
                 <div className="text-xs text-gray-400 space-y-0.5">
                   <p>📍 {order.address || "—"}</p>
