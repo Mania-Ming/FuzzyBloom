@@ -35,14 +35,38 @@ function LoginForm() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setErrorMsg("Invalid email or password.")
+      setErrorMsg(error.message)
+      setIsPending(false)
+      return
+    }
+
+    if (!data.user) {
+      setErrorMsg("No user returned. Please try again.")
       setIsPending(false)
       return
     }
 
     localStorage.setItem("isLoggedIn", "true")
 
-    const role = await getUserRole(data.user.id)
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single()
+
+    if (profileError) {
+      setErrorMsg("Profile error: " + profileError.message)
+      setIsPending(false)
+      return
+    }
+
+    const role = profileData?.role
+
+    if (!role) {
+      setErrorMsg("No role found for this account. Contact admin.")
+      setIsPending(false)
+      return
+    }
 
     if (role === "admin") {
       window.location.href = "/admin"
