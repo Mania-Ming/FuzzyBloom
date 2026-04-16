@@ -7,7 +7,6 @@ import { supabase } from "@/lib/supabase"
 import { useMe } from "@/lib/hooks/useMe"
 
 export default function Navbar() {
-  const router = useRouter()
   const { data: user } = useMe()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [cartCount, setCartCount] = useState(0)
