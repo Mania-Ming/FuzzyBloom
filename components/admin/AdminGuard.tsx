@@ -21,11 +21,11 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
 
       if (role === "admin") {
         setAllowed(true)
+        setLoading(false)
       } else {
         window.location.href = "/dashboard"
+        // don't setLoading(false) — keep spinner while redirecting
       }
-
-      setLoading(false)
     }
 
     checkAdmin()
