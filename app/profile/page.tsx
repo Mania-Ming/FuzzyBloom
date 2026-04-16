@@ -67,7 +67,7 @@ export default function ProfilePage() {
     if (sessionError || !session) {
       await supabase.auth.signOut()
       localStorage.setItem("isLoggedIn", "false")
-      router.replace("/login?message=Your session has expired. Please log in again.")
+      window.location.replace("/login?message=Your session has expired. Please log in again.")
       return
     }
 
