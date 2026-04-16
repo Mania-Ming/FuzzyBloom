@@ -1,28 +1,40 @@
 "use client"
 
-import { useMe } from "@/lib/hooks/useMe"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { getUserRole } from "@/lib/getUserRole"
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { data: user, isLoading, isError, isFetching } = useMe()
   const router = useRouter()
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    if (!isLoading && !isFetching && isError) {
-      router.replace("/login")
+    async function check() {
+      const role = await getUserRole()
+
+      if (!role) {
+        // Not logged in
+        localStorage.setItem("isLoggedIn", "false")
+        router.replace("/login")
+        return
+      }
+
+      if (role === "admin") {
+        // Admin should not be on user pages
+        router.replace("/admin")
+        return
+      }
+
+      setChecking(false)
     }
-  }, [isLoading, isFetching, isError, router])
+    check()
+  }, [router])
 
-  if (isLoading || isFetching) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  if (!user) return null
+  if (checking) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
 
   return <>{children}</>
 }

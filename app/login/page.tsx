@@ -4,22 +4,25 @@ import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
-import { useQueryClient } from "@tanstack/react-query"
+import { getUserRole } from "@/lib/getUserRole"
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const queryClient = useQueryClient()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isPending, setIsPending] = useState(false)
   const [errorMsg, setErrorMsg] = useState(searchParams.get("message") ?? "")
   const [showPassword, setShowPassword] = useState(false)
 
+  // On mount: if already logged in, redirect based on role
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace("/dashboard")
-    })
+    async function checkExistingSession() {
+      const role = await getUserRole()
+      if (role === "admin") router.replace("/admin")
+      else if (role) router.replace("/dashboard")
+    }
+    checkExistingSession()
   }, [router])
 
   async function handleLogin(e: React.FormEvent) {
@@ -37,13 +40,7 @@ function LoginForm() {
     }
 
     localStorage.setItem("isLoggedIn", "true")
-    queryClient.setQueryData(["me"], {
-      id: data.user.id,
-      full_name: data.user.user_metadata?.full_name ?? "",
-      email: data.user.email ?? "",
-    })
 
-    // Fetch role and redirect accordingly
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
@@ -51,9 +48,9 @@ function LoginForm() {
       .single()
 
     if (profile?.role === "admin") {
-      router.push("/admin")
+      router.replace("/admin")
     } else {
-      router.push("/dashboard")
+      router.replace("/dashboard")
     }
   }
 

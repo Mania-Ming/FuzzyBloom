@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+import { getUserRole } from "@/lib/getUserRole"
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -10,16 +10,18 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     async function check() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace("/admin/login"); return }
+      const role = await getUserRole()
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single()
+      if (!role) {
+        router.replace("/admin/login")
+        return
+      }
 
-      if (profile?.role !== "admin") { router.replace("/dashboard"); return }
+      if (role !== "admin") {
+        router.replace("/dashboard")
+        return
+      }
+
       setChecking(false)
     }
     check()
