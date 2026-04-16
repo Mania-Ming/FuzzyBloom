@@ -13,7 +13,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
       const role = await getUserRole()
 
       if (!role) {
-        router.replace("/admin/login")
+        router.replace("/login")
         return
       }
 
