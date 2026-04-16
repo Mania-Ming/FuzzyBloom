@@ -102,8 +102,8 @@ export default function Home() {
                 className="hover:bg-[#3a2323]">
                 Shop Now
               </Link>
-              <Link href="/about" style={{ padding: "12px 26px", fontSize: 16, fontWeight: 600, color: "#4b2e2e", border: "2px solid rgba(75,46,46,0.35)", borderRadius: 999, transition: "all 0.2s" }}
-                className="hover:bg-[#4b2e2e] hover:text-white">
+              <Link href="/about" style={{ padding: "12px 26px", fontSize: 16, fontWeight: 600, border: "2px solid rgba(75,46,46,0.35)", borderRadius: 999, transition: "all 0.2s" }}
+                className="text-[#4b2e2e] hover:bg-[#4b2e2e] hover:text-white hover:border-[#4b2e2e]">
                 About Us
               </Link>
             </div>
