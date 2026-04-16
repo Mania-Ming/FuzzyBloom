@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 
 const navItems = [
@@ -19,7 +19,8 @@ export default function Sidebar() {
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    router.push("/admin/login")
+    localStorage.setItem("isLoggedIn", "false")
+    window.location.replace("/")
   }
 
   return (

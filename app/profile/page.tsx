@@ -3,9 +3,7 @@
 import Navbar from "@/components/Navbar"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { useMe } from "@/lib/hooks/useMe"
-import { useLogout } from "@/lib/hooks/useLogout"
 import { useQueryClient } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { useState, useEffect } from "react"
@@ -13,8 +11,6 @@ import { supabase } from "@/lib/supabase"
 
 export default function ProfilePage() {
   const { data: user, isLoading } = useMe()
-  const { mutate: logout } = useLogout()
-  const router = useRouter()
   const queryClient = useQueryClient()
 
   const [editMode, setEditMode] = useState(false)
@@ -54,11 +50,10 @@ export default function ProfilePage() {
     ? user.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?"
 
-  function handleLogout() {
-    logout(undefined, {
-      onSuccess: () => router.push("/"),
-      onError: () => router.push("/"),
-    })
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    localStorage.setItem("isLoggedIn", "false")
+    window.location.replace("/")
   }
 
   async function handleSave() {

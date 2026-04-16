@@ -3,14 +3,12 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useState, useRef, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
 import { useMe } from "@/lib/hooks/useMe"
-import { useLogout } from "@/lib/hooks/useLogout"
 
 export default function Navbar() {
   const router = useRouter()
   const { data: user } = useMe()
-  const { mutate: logout } = useLogout()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [cartCount, setCartCount] = useState(0)
   const [wishlistCount, setWishlistCount] = useState(0)
@@ -38,11 +36,10 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  function handleLogout() {
-    logout(undefined, {
-      onSuccess: () => router.push("/"),
-      onError: () => router.push("/"),
-    })
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    localStorage.setItem("isLoggedIn", "false")
+    window.location.replace("/")
   }
 
   const initials = user?.full_name
