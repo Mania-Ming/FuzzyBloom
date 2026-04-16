@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
 import { getUserRole } from "@/lib/getUserRole"
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
@@ -8,12 +9,14 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     async function check() {
-      const role = await getUserRole()
+      const { data: { user }, error } = await supabase.auth.getUser()
 
-      if (!role) {
+      if (error || !user) {
         window.location.href = "/login"
         return
       }
+
+      const role = await getUserRole(user.id)
 
       if (role !== "admin") {
         window.location.href = "/dashboard"

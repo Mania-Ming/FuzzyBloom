@@ -1,13 +1,18 @@
 import { supabase } from "@/lib/supabase"
 
-export async function getUserRole(): Promise<string | null> {
-  const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) return null
+export async function getUserRole(userId?: string): Promise<string | null> {
+  let uid = userId
+
+  if (!uid) {
+    const { data: { user }, error } = await supabase.auth.getUser()
+    if (error || !user) return null
+    uid = user.id
+  }
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", user.id)
+    .eq("id", uid)
     .single()
 
   if (profileError) return null
