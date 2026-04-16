@@ -1,13 +1,12 @@
 "use client"
 
 import { useEffect, useState, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { getUserRole } from "@/lib/getUserRole"
 
 function LoginForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -18,7 +17,9 @@ function LoginForm() {
   // On mount: if already logged in, redirect based on role
   useEffect(() => {
     async function checkExistingSession() {
-      const role = await getUserRole()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const role = await getUserRole(user.id)
       if (role === "admin") window.location.href = "/admin"
       else if (role) window.location.href = "/dashboard"
     }
@@ -41,13 +42,9 @@ function LoginForm() {
 
     localStorage.setItem("isLoggedIn", "true")
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .single()
+    const role = await getUserRole(data.user.id)
 
-    if (profile?.role === "admin") {
+    if (role === "admin") {
       window.location.href = "/admin"
     } else {
       window.location.href = "/dashboard"

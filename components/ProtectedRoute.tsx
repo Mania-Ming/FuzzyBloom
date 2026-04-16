@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
 import { getUserRole } from "@/lib/getUserRole"
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -8,10 +9,17 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   useEffect(() => {
     async function check() {
-      const role = await getUserRole()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        localStorage.setItem("isLoggedIn", "false")
+        window.location.href = "/login"
+        return
+      }
+
+      const role = await getUserRole(user.id)
 
       if (!role) {
-        localStorage.setItem("isLoggedIn", "false")
         window.location.href = "/login"
         return
       }

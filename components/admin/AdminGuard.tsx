@@ -5,34 +5,41 @@ import { supabase } from "@/lib/supabase"
 import { getUserRole } from "@/lib/getUserRole"
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
-  const [checking, setChecking] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [allowed, setAllowed] = useState(false)
 
   useEffect(() => {
-    async function check() {
-      const { data: { user }, error } = await supabase.auth.getUser()
+    const checkAdmin = async () => {
+      const { data } = await supabase.auth.getUser()
 
-      if (error || !user) {
+      if (!data.user) {
         window.location.href = "/login"
         return
       }
 
-      const role = await getUserRole(user.id)
+      const role = await getUserRole(data.user.id)
 
-      if (role !== "admin") {
+      if (role === "admin") {
+        setAllowed(true)
+      } else {
         window.location.href = "/dashboard"
-        return
       }
 
-      setChecking(false)
+      setLoading(false)
     }
-    check()
+
+    checkAdmin()
   }, [])
 
-  if (checking) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#fdf6f0]">
-      <div className="w-8 h-8 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
-    </div>
-  )
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#fdf6f0]">
+        <div className="w-8 h-8 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!allowed) return null
 
   return <>{children}</>
 }
