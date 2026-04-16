@@ -19,7 +19,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
         .eq("id", user.id)
         .single()
 
-      if (profile?.role !== "admin") { router.replace("/"); return }
+      if (profile?.role !== "admin") { router.replace("/dashboard"); return }
       setChecking(false)
     }
     check()
