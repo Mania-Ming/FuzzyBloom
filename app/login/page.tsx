@@ -19,11 +19,11 @@ function LoginForm() {
   useEffect(() => {
     async function checkExistingSession() {
       const role = await getUserRole()
-      if (role === "admin") router.replace("/admin")
-      else if (role) router.replace("/dashboard")
+      if (role === "admin") window.location.href = "/admin"
+      else if (role) window.location.href = "/dashboard"
     }
     checkExistingSession()
-  }, [router])
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -48,9 +48,9 @@ function LoginForm() {
       .single()
 
     if (profile?.role === "admin") {
-      router.replace("/admin")
+      window.location.href = "/admin"
     } else {
-      router.replace("/dashboard")
+      window.location.href = "/dashboard"
     }
   }
 

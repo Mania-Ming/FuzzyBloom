@@ -1,11 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { getUserRole } from "@/lib/getUserRole"
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
@@ -13,19 +11,19 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
       const role = await getUserRole()
 
       if (!role) {
-        router.replace("/login")
+        window.location.href = "/login"
         return
       }
 
       if (role !== "admin") {
-        router.replace("/dashboard")
+        window.location.href = "/dashboard"
         return
       }
 
       setChecking(false)
     }
     check()
-  }, [router])
+  }, [])
 
   if (checking) return (
     <div className="min-h-screen flex items-center justify-center bg-[#fdf6f0]">

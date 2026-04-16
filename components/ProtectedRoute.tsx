@@ -1,11 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { getUserRole } from "@/lib/getUserRole"
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
@@ -13,22 +11,20 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       const role = await getUserRole()
 
       if (!role) {
-        // Not logged in
         localStorage.setItem("isLoggedIn", "false")
-        router.replace("/login")
+        window.location.href = "/login"
         return
       }
 
       if (role === "admin") {
-        // Admin should not be on user pages
-        router.replace("/admin")
+        window.location.href = "/admin"
         return
       }
 
       setChecking(false)
     }
     check()
-  }, [router])
+  }, [])
 
   if (checking) return (
     <div className="min-h-screen flex items-center justify-center">
