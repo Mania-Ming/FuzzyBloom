@@ -22,7 +22,7 @@ export default function CheckoutPage() {
   const [gcashPreview, setGcashPreview] = useState<string | null>(null)
   const { mutateAsync: saveOrder } = useInsertOrder()
   const shipping = 20
-  const [profile, setProfile] = useState<{ address: string; contact_number: string } | null>(null)
+  const [profile, setProfile] = useState<{ address: string; phone: string } | null>(null)
 
   useEffect(() => {
     setCartItems(JSON.parse(localStorage.getItem("cart") || "[]"))
@@ -32,7 +32,7 @@ export default function CheckoutPage() {
     if (!user?.id) return
     supabase
       .from("profiles")
-      .select("address, contact_number")
+      .select("address, phone")
       .eq("id", user.id)
       .single()
       .then(({ data }) => setProfile(data))
@@ -74,7 +74,7 @@ export default function CheckoutPage() {
         total_amount: total,
         full_name: user.full_name,
         address: profile?.address ?? null,
-        contact_number: profile?.contact_number ?? null,
+        contact_number: profile?.phone ?? null,
         payment,
         status: "Pending",
       })
@@ -196,16 +196,16 @@ export default function CheckoutPage() {
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    <span>{profile?.contact_number || "—"}</span>
+                    <span>{profile?.phone || "—"}</span>
                   </div>
                 </div>
-                {(!profile?.address || !profile?.contact_number) && (
+                {(!profile?.address || !profile?.phone) && (
                   <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 text-xs text-amber-700">
                     ⚠️ Please update your profile to add delivery information.{" "}
                     <Link href="/profile" className="font-semibold underline">Go to Profile →</Link>
                   </div>
                 )}
-                {(profile?.address && profile?.contact_number) && (
+                {(profile?.address && profile?.phone) && (
                   <Link href="/profile" className="text-xs text-[#4b2e2e] font-medium hover:underline mt-3 inline-block">Edit in Profile →</Link>
                 )}
               </div>
