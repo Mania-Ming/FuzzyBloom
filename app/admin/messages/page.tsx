@@ -6,6 +6,20 @@ import { MessageCircle, Send, Trash2 } from "lucide-react"
 import Toast, { ToastType } from "@/components/admin/Toast"
 import ConfirmModal from "@/components/admin/ConfirmModal"
 
+type SupabaseMessage = {
+  id: string
+  message: string
+  created_at: string
+  is_read: boolean
+  reply: string | null
+  user_reply?: string | null
+  user_reply_at?: string | null
+  sender_id: string
+  product_id: string | null
+  profiles: { full_name: string; email: string }[] | null
+  products: { name: string }[] | null
+}
+
 type Message = {
   id: string
   message: string
@@ -48,7 +62,12 @@ export default function MessagesPage() {
         .order("created_at", { ascending: false })
       setMessages((plain as Message[] | null) ?? [])
     } else {
-      setMessages((data as Message[] | null) ?? [])
+      const formatted: Message[] = ((data as SupabaseMessage[] | null) ?? []).map(msg => ({
+        ...msg,
+        profiles: Array.isArray(msg.profiles) ? (msg.profiles[0] ?? null) : msg.profiles,
+        products: Array.isArray(msg.products) ? (msg.products[0] ?? null) : msg.products,
+      }))
+      setMessages(formatted)
     }
     setLoading(false)
   }, [])
