@@ -16,7 +16,7 @@ export function useMe() {
       // fetch profile for full_name and profile_image
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, profile_image, address, contact_number")
+        .select("full_name, profile_image, address, phone")
         .eq("id", user.id)
         .single()
 
@@ -26,7 +26,7 @@ export function useMe() {
         email: user.email ?? "",
         profile_image: profile?.profile_image ?? undefined,
         address: profile?.address ?? "",
-        contact_number: profile?.contact_number ?? "",
+        contact_number: profile?.phone ?? "",
       }
     },
     retry: false,
