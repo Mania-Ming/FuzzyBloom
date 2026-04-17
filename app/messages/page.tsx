@@ -1,13 +1,14 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback } from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { supabase } from "@/lib/supabase"
 import { useMe } from "@/lib/hooks/useMe"
-import { MessageCircle, Send, Package, Trash2 } from "lucide-react"
+import { MessageCircle, Send, Package, Trash2, ChevronDown, ChevronUp } from "lucide-react"
 import Toast, { ToastType } from "@/components/admin/Toast"
 import ConfirmModal from "@/components/admin/ConfirmModal"
 
@@ -25,26 +26,19 @@ type Thread = {
   product_id: string | null
   product: { name: string; image_url: string | null } | null
   messages: Message[]
+  hasUnread: boolean
 }
-
-type DeleteAction =
-  | { type: "message"; msg: Message }
-  | { type: "conversation"; productId: string | null; threadKey: string }
 
 export default function MessagesPage() {
   const { data: user } = useMe()
+  const router = useRouter()
   const [threads, setThreads] = useState<Thread[]>([])
   const [loading, setLoading] = useState(true)
-  const [toastMsg, setToastMsg] = useState("")
   const [toast, setToast] = useState<ToastType>(null)
-  const [replyTarget, setReplyTarget] = useState<string | null>(null)
+  const [openThread, setOpenThread] = useState<string | null>(null)
   const [replyText, setReplyText] = useState("")
   const [sending, setSending] = useState(false)
-  const [deleteAction, setDeleteAction] = useState<DeleteAction | null>(null)
-  const [deleting, setDeleting] = useState(false)
-  const [fadingMsgId, setFadingMsgId] = useState<string | null>(null)
-  const [fadingThreadKey, setFadingThreadKey] = useState<string | null>(null)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{ threadKey: string; productId: string | null } | null>(null)
 
   const load = useCallback(async (userId: string) => {
     const { data, error } = await supabase
@@ -53,25 +47,32 @@ export default function MessagesPage() {
       .eq("sender_id", userId)
       .order("created_at", { ascending: true })
 
-    if (error) { setLoading(false); return }
+    if (error) { console.error("Messages error:", error.message); setLoading(false); return }
 
-    const msgs = (data as Message[] | null) ?? []
+    const msgs = (data as any[]) ?? []
     const threadMap = new Map<string, Thread>()
     for (const msg of msgs) {
       const key = msg.product_id ?? "no-product"
       if (!threadMap.has(key)) {
-        threadMap.set(key, { product_id: msg.product_id, product: msg.products, messages: [] })
+        threadMap.set(key, { product_id: msg.product_id, product: msg.products, messages: [], hasUnread: false })
       }
-      threadMap.get(key)!.messages.push(msg)
+      const t = threadMap.get(key)!
+      t.messages.push(msg)
+      if (msg.reply && !msg.is_read) t.hasUnread = true
     }
-    setThreads(Array.from(threadMap.values()))
+    const threadList = Array.from(threadMap.values())
+    setThreads(threadList)
     setLoading(false)
 
-    const newReplies = msgs.filter((m: Message) => m.reply && !m.is_read)
-    if (newReplies.length > 0) {
-      setToastMsg(`You have ${newReplies.length} new repl${newReplies.length > 1 ? "ies" : "y"} from the seller!`)
-      setTimeout(() => setToastMsg(""), 4000)
-      await supabase.from("messages").update({ is_read: true }).in("id", newReplies.map((m: Message) => m.id))
+    // Auto-open first thread with unread
+    const unreadThread = threadList.find(t => t.hasUnread)
+    if (unreadThread) setOpenThread(unreadThread.product_id ?? "no-product")
+
+    // Mark unread as read
+    const unreadIds = msgs.filter((m: Message) => m.reply && !m.is_read).map((m: Message) => m.id)
+    if (unreadIds.length > 0) {
+      setToast({ message: `${unreadIds.length} new repl${unreadIds.length > 1 ? "ies" : "y"} from the seller!`, type: "success" })
+      await supabase.from("messages").update({ is_read: true }).in("id", unreadIds)
     }
   }, [])
 
@@ -80,14 +81,11 @@ export default function MessagesPage() {
     load(user.id)
     const channel = supabase
       .channel("user-messages-" + user.id)
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `sender_id=eq.${user.id}` }, () => load(user.id))
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `sender_id=eq.${user.id}` },
+        () => load(user.id))
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [user?.id, load])
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [threads])
 
   async function sendReply(productId: string | null) {
     if (!replyText.trim() || !user?.id) return
@@ -98,70 +96,37 @@ export default function MessagesPage() {
       message: replyText.trim(),
       is_read: false,
     })
-    if (!error) { setReplyText(""); setReplyTarget(null); load(user.id) }
+    if (!error) { setReplyText(""); load(user.id) }
     setSending(false)
   }
 
-  async function handleConfirmDelete() {
-    if (!deleteAction || !user?.id) return
-    const action = deleteAction
-    setDeleteAction(null)
-    setDeleting(true)
+  async function handleDeleteConversation() {
+    if (!deleteTarget || !user?.id) return
+    const { productId } = deleteTarget
+    setDeleteTarget(null)
 
-    if (action.type === "message") {
-      setFadingMsgId(action.msg.id)
-      await new Promise(r => setTimeout(r, 300))
-      const { error } = await supabase.from("messages").delete().eq("id", action.msg.id).eq("sender_id", user.id)
-      setFadingMsgId(null)
-      if (error) {
-        setToast({ message: "Failed to delete message.", type: "error" })
-      } else {
-        if (replyTarget === (action.msg.product_id ?? "no-product")) { setReplyTarget(null); setReplyText("") }
-        setToast({ message: "Message deleted.", type: "success" })
-        load(user.id)
-      }
-    } else {
-      setFadingThreadKey(action.threadKey)
-      await new Promise(r => setTimeout(r, 300))
-      const { error } = await supabase
-        .from("messages")
-        .delete()
-        .eq("sender_id", user.id)
-        .eq("product_id", action.productId)
-      setFadingThreadKey(null)
-      if (error) {
-        setToast({ message: "Failed to delete conversation.", type: "error" })
-      } else {
-        if (replyTarget === action.threadKey) { setReplyTarget(null); setReplyText("") }
-        setToast({ message: "Conversation deleted.", type: "success" })
-        load(user.id)
-      }
-    }
+    const query = productId
+      ? supabase.from("messages").delete().eq("sender_id", user.id).eq("product_id", productId)
+      : supabase.from("messages").delete().eq("sender_id", user.id).is("product_id", null)
 
-    setDeleting(false)
+    const { error } = await query
+    if (error) { setToast({ message: "Failed to delete conversation.", type: "error" }); return }
+    setToast({ message: "Conversation deleted.", type: "success" })
+    setOpenThread(null)
+    load(user.id)
   }
-
-  const confirmMessage = deleteAction?.type === "conversation"
-    ? "Delete this entire conversation? All messages will be permanently removed."
-    : `Delete this message${deleteAction?.type === "message" && deleteAction.msg.reply ? " and the seller reply attached to it" : ""}? This cannot be undone.`
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen flex flex-col text-gray-800">
         <Navbar />
         <Toast toast={toast} onClose={() => setToast(null)} />
-        {deleteAction && (
+        {deleteTarget && (
           <ConfirmModal
-            message={confirmMessage}
-            onConfirm={handleConfirmDelete}
-            onCancel={() => setDeleteAction(null)}
+            message="Delete this entire conversation? All messages will be permanently removed."
+            onConfirm={handleDeleteConversation}
+            onCancel={() => setDeleteTarget(null)}
           />
-        )}
-
-        {toastMsg && (
-          <div className="fixed bottom-6 right-6 z-50 bg-[#2a1515] text-white px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium fade-up flex items-center gap-2">
-            <MessageCircle size={15} /> {toastMsg}
-          </div>
         )}
 
         <main className="flex-1 max-w-2xl mx-auto w-full px-4 md:px-8 py-8">
@@ -171,7 +136,7 @@ export default function MessagesPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-[#2a1515]">My Messages</h1>
-              <p className="text-gray-400 text-xs mt-0.5">Conversations with Fuzzy Bloom</p>
+              <p className="text-gray-400 text-xs mt-0.5">{threads.length} conversation{threads.length !== 1 ? "s" : ""} with Fuzzy Bloom</p>
             </div>
           </div>
 
@@ -189,66 +154,65 @@ export default function MessagesPage() {
             </div>
           )}
 
-          <div className="space-y-6">
+          {/* ACCORDION THREADS */}
+          <div className="space-y-3">
             {threads.map((thread) => {
-              const product = thread.product
+              const product = thread.product as any
               const threadKey = thread.product_id ?? "no-product"
-              const isFadingThread = fadingThreadKey === threadKey
+              const isOpen = openThread === threadKey
+              const lastMsg = thread.messages[thread.messages.length - 1]
+
               return (
-                <div
-                  key={threadKey}
-                  className={`bg-white/90 rounded-3xl border border-white/60 shadow-sm overflow-hidden transition-all duration-300 ${isFadingThread ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
-                >
-                  {/* Thread header */}
-                  <div className="flex items-center justify-between gap-3 px-5 py-3 bg-[#fdf6f0] border-b border-[#e8d5d5]">
-                    <div className="flex items-center gap-3">
+                <div key={threadKey} className={`bg-white/90 rounded-2xl border shadow-sm overflow-hidden transition-all duration-200 ${thread.hasUnread ? "border-[#4b2e2e]/30" : "border-white/60"}`}>
+
+                  {/* ACCORDION HEADER — click to open/close */}
+                  <button
+                    onClick={() => setOpenThread(isOpen ? null : threadKey)}
+                    className="w-full flex items-center justify-between gap-3 px-5 py-3.5 bg-[#fdf6f0] hover:bg-[#f5ece6] transition text-left"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
                       {product?.image_url ? (
-                        <Image src={product.image_url} alt={product.name} width={36} height={36} className="rounded-xl object-cover border border-white shadow-sm shrink-0" />
+                        <Image src={product.image_url} alt={product.name} width={34} height={34}
+                          className="rounded-xl object-cover border border-white shadow-sm shrink-0" />
                       ) : (
                         <div className="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center shrink-0">
-                          <Package size={16} className="text-pink-300" />
+                          <Package size={15} className="text-pink-300" />
                         </div>
                       )}
-                      <div>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">About</p>
-                        <p className="text-sm font-semibold text-[#2a1515] leading-tight">{product?.name ?? "General Inquiry"}</p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[#2a1515] truncate">{product?.name ?? "General Inquiry"}</p>
+                        <p className="text-[10px] text-gray-400 truncate">{lastMsg?.message?.slice(0, 50)}{(lastMsg?.message?.length ?? 0) > 50 ? "..." : ""}</p>
                       </div>
                     </div>
-                    {/* Delete Conversation button */}
-                    <button
-                      onClick={() => setDeleteAction({ type: "conversation", productId: thread.product_id, threadKey })}
-                      disabled={deleting}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-xs font-semibold text-red-500 hover:bg-red-50 transition disabled:opacity-50 shrink-0"
-                    >
-                      <Trash2 size={11} /> Delete Conversation
-                    </button>
-                  </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {thread.hasUnread && (
+                        <span className="w-2 h-2 rounded-full bg-[#4b2e2e]" />
+                      )}
+                      <span className="text-xs text-gray-400">{thread.messages.length} msg{thread.messages.length !== 1 ? "s" : ""}</span>
+                      {isOpen ? <ChevronUp size={15} className="text-gray-400" /> : <ChevronDown size={15} className="text-gray-400" />}
+                    </div>
+                  </button>
 
-                  <div className="px-4 py-4 space-y-3">
-                    {thread.messages.map((msg) => {
-                      const isFading = fadingMsgId === msg.id
-                      return (
-                        <div key={msg.id} className={`space-y-3 transition-all duration-300 ${isFading ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}>
+                  {/* EXPANDED CHAT */}
+                  {isOpen && (
+                    <div className="px-4 py-4 space-y-3">
+
+                      {/* CHAT BUBBLES */}
+                      {thread.messages.map((msg) => (
+                        <div key={msg.id} className="space-y-2">
+                          {/* User message — right */}
                           <div className="flex justify-end">
                             <div className="max-w-[78%]">
                               <div className="bg-[#4b2e2e] text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-relaxed shadow-sm">
                                 {msg.message}
                               </div>
-                              <div className="mt-1 flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => setDeleteAction({ type: "message", msg })}
-                                  disabled={deleting}
-                                  className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-400 hover:text-red-500 transition disabled:opacity-50"
-                                >
-                                  <Trash2 size={10} /> {deleting && fadingMsgId === msg.id ? "Deleting..." : "Delete"}
-                                </button>
-                                <p className="text-[10px] text-gray-400 text-right">
-                                  You · {new Date(msg.created_at).toLocaleString()}
-                                </p>
-                              </div>
+                              <p className="text-[10px] text-gray-400 mt-1 text-right">
+                                You · {new Date(msg.created_at).toLocaleString()}
+                              </p>
                             </div>
                           </div>
 
+                          {/* Admin reply — left */}
                           {msg.reply ? (
                             <div className="flex justify-start items-end gap-2">
                               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] flex items-center justify-center shrink-0 mb-4">
@@ -274,45 +238,40 @@ export default function MessagesPage() {
                             )
                           )}
                         </div>
-                      )
-                    })}
+                      ))}
 
-                    {replyTarget === threadKey ? (
-                      <div className="pt-2 space-y-2">
+                      {/* REPLY INPUT */}
+                      <div className="pt-2 space-y-2 border-t border-gray-100 mt-2">
                         <textarea
                           value={replyText}
                           onChange={e => setReplyText(e.target.value)}
                           placeholder="Write your message..."
-                          rows={3}
-                          autoFocus
+                          rows={2}
                           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(thread.product_id) } }}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#4b2e2e]/20 resize-none"
+                          className="w-full px-4 py-2.5 border border-gray-200 rounded-2xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#4b2e2e]/20 resize-none"
                         />
-                        <div className="flex gap-2 justify-end">
-                          <button onClick={() => { setReplyTarget(null); setReplyText("") }} className="px-4 py-2 rounded-full border border-gray-200 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition">
-                            Cancel
+                        <div className="flex items-center justify-between">
+                          <button
+                            onClick={() => setDeleteTarget({ threadKey, productId: thread.product_id })}
+                            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-500 transition font-medium"
+                          >
+                            <Trash2 size={11} /> Delete Conversation
                           </button>
-                          <button onClick={() => sendReply(thread.product_id)} disabled={sending || !replyText.trim()}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#4b2e2e] text-white text-xs font-semibold hover:bg-[#3a2323] transition disabled:opacity-60">
+                          <button
+                            onClick={() => sendReply(thread.product_id)}
+                            disabled={sending || !replyText.trim()}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#4b2e2e] text-white text-xs font-semibold hover:bg-[#3a2323] transition disabled:opacity-60"
+                          >
                             <Send size={11} /> {sending ? "Sending..." : "Send"}
                           </button>
                         </div>
                       </div>
-                    ) : (
-                      <div className="flex justify-end pt-1">
-                        <button onClick={() => { setReplyTarget(threadKey); setReplyText("") }}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#4b2e2e]/20 text-xs font-semibold text-[#4b2e2e] hover:bg-[#4b2e2e]/5 transition">
-                          <Send size={11} /> Reply
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
-
-          <div ref={bottomRef} />
         </main>
 
         <Footer />

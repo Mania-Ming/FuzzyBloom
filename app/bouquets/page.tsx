@@ -85,6 +85,7 @@ export default function BouquetsPage() {
   }
 
   async function sendMessage() {
+    if (!isLoggedIn) { router.push("/login?redirect=/bouquets"); return }
     if (!msgText.trim() || !msgModal || !user?.id) return
     setSending(true)
     await supabase.from("messages").insert({
