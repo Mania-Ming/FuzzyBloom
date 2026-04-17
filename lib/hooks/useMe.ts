@@ -5,34 +5,31 @@ export function useMe() {
   return useQuery({
     queryKey: ["me"],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+      if (authError || !user) {
         localStorage.setItem("isLoggedIn", "false")
-        throw new Error("No session")
+        throw new Error("Not authenticated")
       }
-      const user = session.user
+
       localStorage.setItem("isLoggedIn", "true")
 
-      const { data: profile, error } = await supabase
+      const { data: profile } = await supabase
         .from("profiles")
         .select("full_name, address, contact_number")
         .eq("id", user.id)
         .single()
 
-      console.log("[useMe v2] user.id:", user.id)
-      console.log("[useMe v2] profile:", profile)
-      console.log("[useMe v2] error:", error)
-
       return {
         id: user.id,
-        full_name: profile?.full_name ?? user.user_metadata?.full_name ?? "",
         email: user.email ?? "",
+        full_name: profile?.full_name ?? user.user_metadata?.full_name ?? "",
         address: profile?.address ?? "",
         contact_number: profile?.contact_number ?? "",
       }
     },
     retry: false,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
     refetchOnWindowFocus: false,
   })
 }
