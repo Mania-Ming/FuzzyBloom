@@ -26,20 +26,21 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       if (!user?.id) return
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
-        .select("address, phone, full_name")
+        .select("full_name, address, contact_number")
         .eq("id", user.id)
         .single()
+      if (error) console.error("Profile fetch error:", error.message)
       if (data) {
-        setAddress(data.address ?? "")
-        setContactNumber(data.phone ?? "")
         setFullName(data.full_name ?? "")
+        setAddress(data.address ?? "")
+        setContactNumber(data.contact_number ?? "")
         queryClient.setQueryData(["me"], (old: any) => ({
           ...old,
           full_name: data.full_name ?? "",
           address: data.address ?? "",
-          contact_number: data.phone ?? "",
+          contact_number: data.contact_number ?? "",
         }))
       }
     }
@@ -73,11 +74,12 @@ export default function ProfilePage() {
 
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: fullName, address, phone: contactNumber })
+      .update({ full_name: fullName, address, contact_number: contactNumber })
       .eq("id", user.id)
 
     if (error) {
-      setErrorMsg("Failed to save. Please try again.")
+      console.error("Profile update error:", error.message)
+      setErrorMsg("Failed to save: " + error.message)
       setSaving(false)
       return
     }
@@ -111,13 +113,9 @@ export default function ProfilePage() {
 
               {/* AVATAR + EDIT BUTTON */}
               <div className="-mt-12 mb-5 flex items-end justify-between">
-                {user?.profile_image ? (
-                  <Image src={user.profile_image} alt="profile" width={80} height={80} className="rounded-full object-cover border-4 border-white shadow-lg" />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] text-white flex items-center justify-center text-xl font-bold border-4 border-white shadow-lg">
-                    {initials}
-                  </div>
-                )}
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] text-white flex items-center justify-center text-xl font-bold border-4 border-white shadow-lg">
+                  {initials}
+                </div>
                 {!editMode && (
                   <button
                     onClick={() => { setEditMode(true); setSuccessMsg(""); setErrorMsg("") }}

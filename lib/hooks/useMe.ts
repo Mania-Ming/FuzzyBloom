@@ -13,20 +13,20 @@ export function useMe() {
       const user = session.user
       localStorage.setItem("isLoggedIn", "true")
 
-      // fetch profile for full_name and profile_image
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from("profiles")
-        .select("full_name, profile_image, address, phone")
+        .select("full_name, address, contact_number")
         .eq("id", user.id)
         .single()
 
-     return {
+      if (error) console.error("Profile fetch error:", error.message)
+
+      return {
         id: user.id,
         full_name: profile?.full_name ?? user.user_metadata?.full_name ?? "",
         email: user.email ?? "",
-        profile_image: profile?.profile_image ?? undefined,
         address: profile?.address ?? "",
-        contact_number: profile?.phone ?? "",
+        contact_number: profile?.contact_number ?? "",
       }
     },
     retry: false,
