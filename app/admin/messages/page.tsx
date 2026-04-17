@@ -28,11 +28,25 @@ export default function MessagesPage() {
   const load = useCallback(async () => {
     const { data, error } = await supabase
       .from("messages")
-      .select("id, message, created_at, is_read, reply, sender_id, product_id, profiles!messages_sender_id_fkey(full_name, email), products!messages_product_id_fkey(name)")
+      .select(`
+        id, message, created_at, is_read, reply, sender_id, product_id,
+        profiles:sender_id ( full_name, email ),
+        products:product_id ( name )
+      `)
       .order("created_at", { ascending: false })
 
-    if (error) console.error("Messages fetch error:", error.message)
-    setMessages((data as any) ?? [])
+    if (error) {
+      console.error("Messages fetch error:", error.message)
+      // Fallback: fetch without joins if FK not yet set up
+      const { data: plain } = await supabase
+        .from("messages")
+        .select("id, message, created_at, is_read, reply, sender_id, product_id")
+        .order("created_at", { ascending: false })
+      setMessages((plain as any) ?? [])
+    } else {
+      console.log("Messages loaded:", data?.length)
+      setMessages((data as any) ?? [])
+    }
     setLoading(false)
   }, [])
 
