@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase"
 // TYPES
 export type RegisterPayload = { full_name: string; email: string; password: string }
 export type LoginPayload = { email: string; password: string }
-export type MeResponse = { id: string; full_name: string; email: string; profile_image?: string; address?: string; contact_number?: string }
+export type MeResponse = { id: string; full_name: string; email: string; address?: string; contact_number?: string }
 
 // REGISTER
 export async function registerUser(payload: RegisterPayload): Promise<MeResponse> {

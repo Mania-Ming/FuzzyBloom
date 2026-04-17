@@ -128,13 +128,9 @@ export default function Navbar() {
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl hover:bg-gray-100 transition focus:outline-none"
             >
-              {user?.profile_image ? (
-                <Image src={user.profile_image} alt="profile" width={32} height={32} className="rounded-full object-cover" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] text-white flex items-center justify-center text-xs font-bold">
-                  {initials}
-                </div>
-              )}
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] text-white flex items-center justify-center text-xs font-bold">
+                {initials}
+              </div>
               <span className="hidden md:block text-sm font-medium text-gray-700 max-w-[90px] truncate">{user?.full_name ?? "Profile"}</span>
               <svg xmlns="http://www.w3.org/2000/svg" className={`w-3.5 h-3.5 text-gray-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
