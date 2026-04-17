@@ -13,20 +13,26 @@ type Message = {
   id: string
   message: string
   reply: string | null
-  user_reply: string | null
-  user_reply_at: string | null
   is_read: boolean
   created_at: string
   product_id: string | null
+  parent_id: string | null
   products: { name: string; image_url: string | null } | null
+}
+
+// Group messages into threads by product_id
+type Thread = {
+  product_id: string | null
+  product: { name: string; image_url: string | null } | null
+  messages: Message[]
 }
 
 export default function MessagesPage() {
   const { data: user } = useMe()
-  const [messages, setMessages] = useState<Message[]>([])
+  const [threads, setThreads] = useState<Thread[]>([])
   const [loading, setLoading] = useState(true)
   const [toastMsg, setToastMsg] = useState("")
-  const [replyTarget, setReplyTarget] = useState<string | null>(null)
+  const [replyTarget, setReplyTarget] = useState<string | null>(null) // product_id
   const [replyText, setReplyText] = useState("")
   const [sending, setSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -34,25 +40,37 @@ export default function MessagesPage() {
   const load = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from("messages")
-      .select("id, message, reply, user_reply, user_reply_at, is_read, created_at, product_id, products:product_id(name, image_url)")
+      .select("id, message, reply, is_read, created_at, product_id, parent_id, products:product_id(name, image_url)")
       .eq("sender_id", userId)
       .order("created_at", { ascending: true })
 
     if (error) { console.error("Messages error:", error.message); setLoading(false); return }
 
-    const msgs = (data as any) ?? []
-    setMessages(msgs)
+    const msgs = (data as any[]) ?? []
+
+    // Group by product_id into threads
+    const threadMap = new Map<string, Thread>()
+    for (const msg of msgs) {
+      const key = msg.product_id ?? "no-product"
+      if (!threadMap.has(key)) {
+        threadMap.set(key, {
+          product_id: msg.product_id,
+          product: msg.products,
+          messages: [],
+        })
+      }
+      threadMap.get(key)!.messages.push(msg)
+    }
+    setThreads(Array.from(threadMap.values()))
     setLoading(false)
 
-    // Toast for new unread replies
+    // Toast + mark read for new replies
     const newReplies = msgs.filter((m: Message) => m.reply && !m.is_read)
     if (newReplies.length > 0) {
       setToastMsg(`You have ${newReplies.length} new repl${newReplies.length > 1 ? "ies" : "y"} from the seller!`)
       setTimeout(() => setToastMsg(""), 4000)
-      // Mark as read
       const ids = newReplies.map((m: Message) => m.id)
       await supabase.from("messages").update({ is_read: true }).in("id", ids)
-      setMessages(prev => prev.map(m => ids.includes(m.id) ? { ...m, is_read: true } : m))
     }
   }, [])
 
@@ -61,32 +79,30 @@ export default function MessagesPage() {
     load(user.id)
     const channel = supabase
       .channel("user-messages-" + user.id)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `sender_id=eq.${user.id}` },
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `sender_id=eq.${user.id}` },
         () => load(user.id))
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [user?.id, load])
 
-  // Scroll to bottom when messages update
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+  }, [threads])
 
-  async function sendUserReply(msgId: string) {
-    if (!replyText.trim()) return
+  async function sendReply(productId: string | null) {
+    if (!replyText.trim() || !user?.id) return
     setSending(true)
-    const { error } = await supabase
-      .from("messages")
-      .update({ user_reply: replyText.trim(), user_reply_at: new Date().toISOString(), is_read: false })
-      .eq("id", msgId)
+    const { error } = await supabase.from("messages").insert({
+      sender_id: user.id,
+      product_id: productId,
+      message: replyText.trim(),
+      is_read: false,
+    })
     if (!error) {
-      setMessages(prev => prev.map(m => m.id === msgId
-        ? { ...m, user_reply: replyText.trim(), user_reply_at: new Date().toISOString() }
-        : m
-      ))
+      setReplyText("")
+      setReplyTarget(null)
+      load(user.id)
     }
-    setReplyText("")
-    setReplyTarget(null)
     setSending(false)
   }
 
@@ -103,7 +119,6 @@ export default function MessagesPage() {
 
         <main className="flex-1 max-w-2xl mx-auto w-full px-4 md:px-8 py-8">
 
-          {/* HEADER */}
           <div className="flex items-center gap-2.5 mb-7">
             <div className="w-10 h-10 rounded-2xl bg-[#4b2e2e]/10 flex items-center justify-center">
               <MessageCircle size={20} className="text-[#4b2e2e]" />
@@ -120,7 +135,7 @@ export default function MessagesPage() {
             </div>
           )}
 
-          {!loading && messages.length === 0 && (
+          {!loading && threads.length === 0 && (
             <div className="bg-white/80 rounded-3xl border border-white/60 py-20 text-center">
               <MessageCircle size={40} className="text-gray-200 mx-auto mb-3" />
               <p className="text-gray-500 font-medium">No messages yet</p>
@@ -128,115 +143,106 @@ export default function MessagesPage() {
             </div>
           )}
 
-          <div className="space-y-5">
-            {messages.map(msg => {
-              const product = msg.products as any
+          <div className="space-y-6">
+            {threads.map((thread) => {
+              const product = thread.product as any
+              const threadKey = thread.product_id ?? "no-product"
               return (
-                <div key={msg.id} className="bg-white/90 rounded-3xl border border-white/60 shadow-sm overflow-hidden">
+                <div key={threadKey} className="bg-white/90 rounded-3xl border border-white/60 shadow-sm overflow-hidden">
 
                   {/* PRODUCT HEADER */}
-                  {product && (
-                    <div className="flex items-center gap-3 px-5 py-3 bg-[#fdf6f0] border-b border-[#e8d5d5]">
-                      {product.image_url ? (
-                        <Image src={product.image_url} alt={product.name} width={36} height={36}
-                          className="rounded-xl object-cover border border-white shadow-sm" />
-                      ) : (
-                        <div className="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center shrink-0">
-                          <Package size={16} className="text-pink-300" />
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">About</p>
-                        <p className="text-sm font-semibold text-[#2a1515] leading-tight">{product.name}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* CHAT THREAD */}
-                  <div className="px-4 py-4 space-y-3">
-
-                    {/* USER ORIGINAL MESSAGE — right */}
-                    <div className="flex justify-end">
-                      <div className="max-w-[78%]">
-                        <div className="bg-[#4b2e2e] text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-relaxed shadow-sm">
-                          {msg.message}
-                        </div>
-                        <p className="text-[10px] text-gray-400 mt-1 text-right">
-                          You · {new Date(msg.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* ADMIN REPLY — left */}
-                    {msg.reply ? (
-                      <div className="flex justify-start items-end gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] flex items-center justify-center shrink-0 mb-4">
-                          <span className="text-[8px] text-white font-bold">FB</span>
-                        </div>
-                        <div className="max-w-[78%]">
-                          <p className="text-[10px] font-semibold text-gray-400 mb-1 ml-1">Fuzzy Bloom</p>
-                          <div className="bg-gray-100 text-gray-800 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm leading-relaxed">
-                            {msg.reply}
-                          </div>
-                        </div>
-                      </div>
+                  <div className="flex items-center gap-3 px-5 py-3 bg-[#fdf6f0] border-b border-[#e8d5d5]">
+                    {product?.image_url ? (
+                      <Image src={product.image_url} alt={product.name} width={36} height={36}
+                        className="rounded-xl object-cover border border-white shadow-sm shrink-0" />
                     ) : (
-                      <div className="flex justify-start">
-                        <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                          <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                          <span className="text-xs text-gray-400 ml-1">Waiting for reply...</span>
-                        </div>
+                      <div className="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center shrink-0">
+                        <Package size={16} className="text-pink-300" />
                       </div>
                     )}
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">About</p>
+                      <p className="text-sm font-semibold text-[#2a1515] leading-tight">{product?.name ?? "General Inquiry"}</p>
+                    </div>
+                  </div>
 
-                    {/* USER FOLLOW-UP REPLY — right */}
-                    {msg.user_reply && (
-                      <div className="flex justify-end">
-                        <div className="max-w-[78%]">
-                          <div className="bg-[#4b2e2e] text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-relaxed shadow-sm">
-                            {msg.user_reply}
+                  {/* CHAT BUBBLES */}
+                  <div className="px-4 py-4 space-y-3">
+                    {thread.messages.map((msg) => (
+                      <div key={msg.id} className="space-y-3">
+
+                        {/* USER MESSAGE — right */}
+                        <div className="flex justify-end">
+                          <div className="max-w-[78%]">
+                            <div className="bg-[#4b2e2e] text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-relaxed shadow-sm">
+                              {msg.message}
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1 text-right">
+                              You · {new Date(msg.created_at).toLocaleString()}
+                            </p>
                           </div>
-                          <p className="text-[10px] text-gray-400 mt-1 text-right">
-                            You · {msg.user_reply_at ? new Date(msg.user_reply_at).toLocaleString() : ""}
-                          </p>
                         </div>
-                      </div>
-                    )}
 
-                    {/* REPLY INPUT — only show after admin replied and no user_reply yet */}
-                    {msg.reply && !msg.user_reply && replyTarget !== msg.id && (
-                      <div className="flex justify-end pt-1">
-                        <button
-                          onClick={() => { setReplyTarget(msg.id); setReplyText("") }}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#4b2e2e]/20 text-xs font-semibold text-[#4b2e2e] hover:bg-[#4b2e2e]/5 transition"
-                        >
-                          <Send size={11} /> Reply
-                        </button>
+                        {/* ADMIN REPLY — left */}
+                        {msg.reply ? (
+                          <div className="flex justify-start items-end gap-2">
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] flex items-center justify-center shrink-0 mb-4">
+                              <span className="text-[8px] text-white font-bold">FB</span>
+                            </div>
+                            <div className="max-w-[78%]">
+                              <p className="text-[10px] font-semibold text-gray-400 mb-1 ml-1">Fuzzy Bloom</p>
+                              <div className="bg-gray-100 text-gray-800 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm leading-relaxed">
+                                {msg.reply}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          // Only show "waiting" on the last message
+                          msg.id === thread.messages[thread.messages.length - 1].id && (
+                            <div className="flex justify-start">
+                              <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                                <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                                <span className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                                <span className="text-xs text-gray-400 ml-1">Waiting for reply...</span>
+                              </div>
+                            </div>
+                          )
+                        )}
                       </div>
-                    )}
+                    ))}
 
-                    {replyTarget === msg.id && (
-                      <div className="pt-1 space-y-2">
+                    {/* REPLY INPUT — always visible at bottom of thread */}
+                    {replyTarget === threadKey ? (
+                      <div className="pt-2 space-y-2">
                         <textarea
                           value={replyText}
                           onChange={e => setReplyText(e.target.value)}
-                          placeholder="Write your reply..."
+                          placeholder="Write your message..."
                           rows={3}
                           autoFocus
+                          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(thread.product_id) } }}
                           className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#4b2e2e]/20 resize-none"
                         />
                         <div className="flex gap-2 justify-end">
-                          <button onClick={() => setReplyTarget(null)}
+                          <button onClick={() => { setReplyTarget(null); setReplyText("") }}
                             className="px-4 py-2 rounded-full border border-gray-200 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition">
                             Cancel
                           </button>
-                          <button onClick={() => sendUserReply(msg.id)} disabled={sending || !replyText.trim()}
+                          <button onClick={() => sendReply(thread.product_id)} disabled={sending || !replyText.trim()}
                             className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#4b2e2e] text-white text-xs font-semibold hover:bg-[#3a2323] transition disabled:opacity-60">
                             <Send size={11} /> {sending ? "Sending..." : "Send"}
                           </button>
                         </div>
+                      </div>
+                    ) : (
+                      <div className="flex justify-end pt-1">
+                        <button
+                          onClick={() => { setReplyTarget(threadKey); setReplyText("") }}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#4b2e2e]/20 text-xs font-semibold text-[#4b2e2e] hover:bg-[#4b2e2e]/5 transition"
+                        >
+                          <Send size={11} /> Reply
+                        </button>
                       </div>
                     )}
                   </div>

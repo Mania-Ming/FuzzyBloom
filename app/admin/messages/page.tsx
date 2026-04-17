@@ -54,6 +54,7 @@ export default function MessagesPage() {
     load()
     const channel = supabase.channel("admin-messages")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => load())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, () => load())
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [load])
@@ -147,6 +148,12 @@ export default function MessagesPage() {
                   <button onClick={() => { setReplyTarget(msg.id); setReplyText("") }}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#4b2e2e] text-white text-xs font-semibold hover:bg-[#3a2323] transition">
                     <Send size={11} /> Reply
+                  </button>
+                )}
+                {msg.reply && (
+                  <button onClick={() => { setReplyTarget(msg.id); setReplyText("") }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#4b2e2e]/20 text-xs font-semibold text-[#4b2e2e] hover:bg-[#4b2e2e]/5 transition">
+                    <Send size={11} /> Reply Again
                   </button>
                 )}
               </div>
