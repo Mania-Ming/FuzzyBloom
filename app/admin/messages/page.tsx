@@ -66,7 +66,7 @@ export default function MessagesPage() {
   async function sendReply(msgId: string) {
     if (!replyText.trim()) return
     setSending(true)
-    const { error } = await supabase.from("messages").update({ reply: replyText.trim(), is_read: true }).eq("id", msgId)
+    const { error } = await supabase.from("messages").update({ reply: replyText.trim(), is_read: false }).eq("id", msgId)
     if (error) { setToast({ message: "Failed to send reply.", type: "error" }) }
     else { setToast({ message: "Reply sent!", type: "success" }); load() }
     setReplyText("")

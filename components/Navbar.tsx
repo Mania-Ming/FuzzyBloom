@@ -5,16 +5,37 @@ import Link from "next/link"
 import { useState, useRef, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { useMe } from "@/lib/hooks/useMe"
+import { MessageCircle } from "lucide-react"
 
 export default function Navbar() {
   const { data: user } = useMe()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [cartCount, setCartCount] = useState(0)
   const [wishlistCount, setWishlistCount] = useState(0)
+  const [unreadMessages, setUnreadMessages] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  // Fetch unread message count
   useEffect(() => {
-    function updateCounts() {
+    if (!user?.id) return
+    async function fetchUnread() {
+      const { count } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("sender_id", user!.id)
+        .eq("is_read", false)
+        .not("reply", "is", null)
+      setUnreadMessages(count ?? 0)
+    }
+    fetchUnread()
+    const channel = supabase.channel("navbar-unread-" + user.id)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `sender_id=eq.${user.id}` },
+        () => fetchUnread())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [user?.id])
+
+  useEffect(() => {
       const cart = JSON.parse(localStorage.getItem("cart") || "[]")
       const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]")
       setCartCount(cart.reduce((sum: number, i: any) => sum + (i.qty || 1), 0))
@@ -64,6 +85,16 @@ export default function Navbar() {
 
           <Link href="/orders" className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-[#4b2e2e] hover:bg-[#4b2e2e]/5 transition">
             Orders
+          </Link>
+
+          {/* MESSAGES */}
+          <Link href="/messages" className="relative p-2 rounded-lg text-gray-600 hover:text-[#4b2e2e] hover:bg-[#4b2e2e]/5 transition">
+            <MessageCircle size={18} strokeWidth={1.8} />
+            {unreadMessages > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 bg-[#4b2e2e] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold leading-none">
+                {unreadMessages}
+              </span>
+            )}
           </Link>
 
           {/* WISHLIST */}
@@ -120,6 +151,17 @@ export default function Navbar() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                   My Profile
+                </Link>
+                <Link href="/messages" onClick={() => setDropdownOpen(false)} className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                  <div className="flex items-center gap-2.5">
+                    <MessageCircle size={16} className="text-gray-400" />
+                    My Messages
+                  </div>
+                  {unreadMessages > 0 && (
+                    <span className="bg-[#4b2e2e] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                      {unreadMessages}
+                    </span>
+                  )}
                 </Link>
                 <button onClick={handleLogout} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
