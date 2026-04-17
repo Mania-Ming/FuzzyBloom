@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
-import { ShoppingBag, MapPin, Phone, ChevronDown, ChevronUp, Check, X } from "lucide-react"
+import { ShoppingBag, MapPin, Phone, ChevronDown, ChevronUp, Check, X, Package } from "lucide-react"
 import Toast, { ToastType } from "@/components/admin/Toast"
 import ConfirmModal from "@/components/admin/ConfirmModal"
 
