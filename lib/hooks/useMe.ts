@@ -19,7 +19,9 @@ export function useMe() {
         .eq("id", user.id)
         .single()
 
-      if (error) console.error("Profile fetch error:", error.message)
+      console.log("useMe - user.id:", user.id)
+      console.log("useMe - profile data:", profile)
+      console.log("useMe - profile error:", error)
 
       return {
         id: user.id,

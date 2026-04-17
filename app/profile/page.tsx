@@ -26,22 +26,22 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       if (!user?.id) return
+
+      console.log("Fetching profile for user ID:", user.id)
+
       const { data, error } = await supabase
         .from("profiles")
         .select("full_name, address, contact_number")
         .eq("id", user.id)
         .single()
-      if (error) console.error("Profile fetch error:", error.message)
+
+      console.log("Profile data:", data)
+      console.log("Profile error:", error)
+
       if (data) {
         setFullName(data.full_name ?? "")
         setAddress(data.address ?? "")
         setContactNumber(data.contact_number ?? "")
-        queryClient.setQueryData(["me"], (old: any) => ({
-          ...old,
-          full_name: data.full_name ?? "",
-          address: data.address ?? "",
-          contact_number: data.contact_number ?? "",
-        }))
       }
     }
     fetchProfile()
