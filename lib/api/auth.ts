@@ -53,7 +53,7 @@ export async function getMe(): Promise<MeResponse> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, profile_image, address, contact_number")
+    .select("full_name, profile_image, address, phone")
     .eq("id", user.id)
     .single()
 
@@ -63,7 +63,7 @@ export async function getMe(): Promise<MeResponse> {
     email: user.email ?? "",
     profile_image: profile?.profile_image ?? undefined,
     address: profile?.address ?? "",
-    contact_number: profile?.contact_number ?? "",
+    contact_number: profile?.phone ?? "",
   }
 }
 

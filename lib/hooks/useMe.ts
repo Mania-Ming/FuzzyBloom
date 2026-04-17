@@ -30,8 +30,7 @@ export function useMe() {
       }
     },
     retry: false,
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
   })
 }
