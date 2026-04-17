@@ -17,7 +17,10 @@ type Order = {
   contact_number: string
 }
 
-type ActionConfirm = { orderId: string; action: "Approved" | "Completed" | "Cancelled" } | null
+type ActionConfirm = 
+  | { orderId: string; action: "Approved" | "Completed" | "Cancelled" }
+  | { orderId: string; action: "Delete" }
+  | null
 
 const statusColor: Record<string, string> = {
   Pending: "bg-amber-50 text-amber-600 border-amber-100",
@@ -60,7 +63,7 @@ export default function OrdersPage() {
     }
     const { data, error } = await supabase
       .from("order_items")
-      .select("quantity, price, products(name, image_url)")
+      .select("quantity, price, product_id, products!order_items_product_id_fkey(name, image_url)")
       .eq("order_id", orderId)
 
     if (error) console.error("Order items error:", error.message)
@@ -72,6 +75,15 @@ export default function OrdersPage() {
     if (!confirm) return
     const { orderId, action } = confirm
     setConfirm(null)
+
+    if (action === "Delete") {
+      await supabase.from("order_items").delete().eq("order_id", orderId)
+      const { error } = await supabase.from("orders").delete().eq("id", orderId)
+      if (error) { setToast({ message: "Failed to delete order.", type: "error" }); return }
+      setToast({ message: "Order deleted.", type: "success" })
+      load()
+      return
+    }
 
     const { error } = await supabase.from("orders").update({ status: action }).eq("id", orderId)
     if (error) { setToast({ message: "Failed to update order.", type: "error" }); return }
@@ -99,7 +111,13 @@ export default function OrdersPage() {
       <Toast toast={toast} onClose={() => setToast(null)} />
       {confirm && (
         <ConfirmModal
-          message={`Are you sure you want to mark this order as "${confirm.action}"?${confirm.action === "Approved" ? " This will mark related products as Sold Out." : ""}`}
+          message={
+            confirm.action === "Delete"
+              ? "Are you sure you want to delete this cancelled order? This cannot be undone."
+              : `Are you sure you want to mark this order as "${confirm.action}"?${
+                  confirm.action === "Approved" ? " This will mark related products as Sold Out." : ""
+                }`
+          }
           onConfirm={handleAction}
           onCancel={() => setConfirm(null)}
         />
@@ -184,6 +202,12 @@ export default function OrdersPage() {
                     <X size={12} /> Cancel
                   </button>
                 </>
+              )}
+              {order.status === "Cancelled" && (
+                <button onClick={() => setConfirm({ orderId: order.id, action: "Delete" })}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition">
+                  <X size={12} /> Delete Order
+                </button>
               )}
               {order.status === "Approved" && (
                 <button onClick={() => setConfirm({ orderId: order.id, action: "Completed" })}
