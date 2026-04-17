@@ -16,7 +16,6 @@ type Message = {
   is_read: boolean
   created_at: string
   product_id: string | null
-  parent_id: string | null
   products: { name: string; image_url: string | null } | null
 }
 
@@ -40,11 +39,15 @@ export default function MessagesPage() {
   const load = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from("messages")
-      .select("id, message, reply, is_read, created_at, product_id, parent_id, products:product_id(name, image_url)")
+      .select("id, message, reply, is_read, created_at, product_id, products:product_id(name, image_url)")
       .eq("sender_id", userId)
       .order("created_at", { ascending: true })
 
-    if (error) { console.error("Messages error:", error.message); setLoading(false); return }
+    if (error) {
+      console.error("Messages error:", error.message)
+      setLoading(false)
+      return
+    }
 
     const msgs = (data as any[]) ?? []
 
