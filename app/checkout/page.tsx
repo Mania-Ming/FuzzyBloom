@@ -145,10 +145,16 @@ export default function CheckoutPage() {
 
               {/* GCASH QR CODE */}
               {payment === "gcash" && (
-                <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm text-center">
-                  <p className="text-sm font-semibold text-gray-700 mb-3">Scan to Pay via GCash</p>
-                  <Image src="/gcash-qr.png" alt="GCash QR Code" width={200} height={200} className="mx-auto rounded-xl object-contain" />
-                  <p className="text-xs text-gray-400 mt-2">Send payment then upload screenshot below</p>
+                <div className="bg-white border border-[#e8d5d5] rounded-2xl shadow-sm p-6 flex flex-col items-center text-center animate-fadeIn">
+                  <p className="text-sm font-bold text-[#2a1515] mb-1">Scan to Pay via GCash</p>
+                  <p className="text-xs text-gray-400 mb-4">Send payment then upload screenshot below</p>
+                  <Image
+                    src="/gcashqrcode.jpg"
+                    alt="GCash QR Code"
+                    width={250}
+                    height={250}
+                    className="rounded-xl object-contain shadow-sm"
+                  />
                 </div>
               )}
             </div>
