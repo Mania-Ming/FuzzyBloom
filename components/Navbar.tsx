@@ -36,6 +36,7 @@ export default function Navbar() {
   }, [user?.id])
 
   useEffect(() => {
+    function updateCounts() {
       const cart = JSON.parse(localStorage.getItem("cart") || "[]")
       const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]")
       setCartCount(cart.reduce((sum: number, i: any) => sum + (i.qty || 1), 0))
