@@ -7,7 +7,9 @@ import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { supabase } from "@/lib/supabase"
 import { useMe } from "@/lib/hooks/useMe"
-import { MessageCircle, Send, Package } from "lucide-react"
+import { MessageCircle, Send, Package, Trash2 } from "lucide-react"
+import Toast, { ToastType } from "@/components/admin/Toast"
+import ConfirmModal from "@/components/admin/ConfirmModal"
 
 type Message = {
   id: string
@@ -19,7 +21,6 @@ type Message = {
   products: { name: string; image_url: string | null } | null
 }
 
-// Group messages into threads by product_id
 type Thread = {
   product_id: string | null
   product: { name: string; image_url: string | null } | null
@@ -31,9 +32,11 @@ export default function MessagesPage() {
   const [threads, setThreads] = useState<Thread[]>([])
   const [loading, setLoading] = useState(true)
   const [toastMsg, setToastMsg] = useState("")
-  const [replyTarget, setReplyTarget] = useState<string | null>(null) // product_id
+  const [toast, setToast] = useState<ToastType>(null)
+  const [replyTarget, setReplyTarget] = useState<string | null>(null)
   const [replyText, setReplyText] = useState("")
   const [sending, setSending] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Message | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(async (userId: string) => {
@@ -49,9 +52,7 @@ export default function MessagesPage() {
       return
     }
 
-    const msgs = (data as any[]) ?? []
-
-    // Group by product_id into threads
+    const msgs = (data as Message[] | null) ?? []
     const threadMap = new Map<string, Thread>()
     for (const msg of msgs) {
       const key = msg.product_id ?? "no-product"
@@ -67,7 +68,6 @@ export default function MessagesPage() {
     setThreads(Array.from(threadMap.values()))
     setLoading(false)
 
-    // Toast + mark read for new replies
     const newReplies = msgs.filter((m: Message) => m.reply && !m.is_read)
     if (newReplies.length > 0) {
       setToastMsg(`You have ${newReplies.length} new repl${newReplies.length > 1 ? "ies" : "y"} from the seller!`)
@@ -79,13 +79,17 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!user?.id) return
-    load(user.id)
+    const initialLoad = setTimeout(() => {
+      void load(user.id)
+    }, 0)
     const channel = supabase
       .channel("user-messages-" + user.id)
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `sender_id=eq.${user.id}` },
-        () => load(user.id))
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `sender_id=eq.${user.id}` }, () => load(user.id))
       .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      clearTimeout(initialLoad)
+      supabase.removeChannel(channel)
+    }
   }, [user?.id, load])
 
   useEffect(() => {
@@ -109,10 +113,42 @@ export default function MessagesPage() {
     setSending(false)
   }
 
+  async function deleteMessage() {
+    if (!deleteTarget || !user?.id) return
+    const target = deleteTarget
+    setDeleteTarget(null)
+
+    const { error } = await supabase
+      .from("messages")
+      .delete()
+      .eq("id", target.id)
+      .eq("sender_id", user.id)
+
+    if (error) {
+      setToast({ message: "Failed to delete message.", type: "error" })
+      return
+    }
+
+    if (replyTarget === (target.product_id ?? "no-product")) {
+      setReplyTarget(null)
+      setReplyText("")
+    }
+    setToast({ message: "Message deleted.", type: "success" })
+    load(user.id)
+  }
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen flex flex-col text-gray-800">
         <Navbar />
+        <Toast toast={toast} onClose={() => setToast(null)} />
+        {deleteTarget && (
+          <ConfirmModal
+            message={`Delete this message${deleteTarget.reply ? " and the seller reply attached to it" : ""}? This cannot be undone.`}
+            onConfirm={deleteMessage}
+            onCancel={() => setDeleteTarget(null)}
+          />
+        )}
 
         {toastMsg && (
           <div className="fixed bottom-6 right-6 z-50 bg-[#2a1515] text-white px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium fade-up flex items-center gap-2">
@@ -121,7 +157,6 @@ export default function MessagesPage() {
         )}
 
         <main className="flex-1 max-w-2xl mx-auto w-full px-4 md:px-8 py-8">
-
           <div className="flex items-center gap-2.5 mb-7">
             <div className="w-10 h-10 rounded-2xl bg-[#4b2e2e]/10 flex items-center justify-center">
               <MessageCircle size={20} className="text-[#4b2e2e]" />
@@ -148,16 +183,19 @@ export default function MessagesPage() {
 
           <div className="space-y-6">
             {threads.map((thread) => {
-              const product = thread.product as any
+              const product = thread.product
               const threadKey = thread.product_id ?? "no-product"
               return (
                 <div key={threadKey} className="bg-white/90 rounded-3xl border border-white/60 shadow-sm overflow-hidden">
-
-                  {/* PRODUCT HEADER */}
                   <div className="flex items-center gap-3 px-5 py-3 bg-[#fdf6f0] border-b border-[#e8d5d5]">
                     {product?.image_url ? (
-                      <Image src={product.image_url} alt={product.name} width={36} height={36}
-                        className="rounded-xl object-cover border border-white shadow-sm shrink-0" />
+                      <Image
+                        src={product.image_url}
+                        alt={product.name}
+                        width={36}
+                        height={36}
+                        className="rounded-xl object-cover border border-white shadow-sm shrink-0"
+                      />
                     ) : (
                       <div className="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center shrink-0">
                         <Package size={16} className="text-pink-300" />
@@ -169,24 +207,28 @@ export default function MessagesPage() {
                     </div>
                   </div>
 
-                  {/* CHAT BUBBLES */}
                   <div className="px-4 py-4 space-y-3">
                     {thread.messages.map((msg) => (
                       <div key={msg.id} className="space-y-3">
-
-                        {/* USER MESSAGE — right */}
                         <div className="flex justify-end">
                           <div className="max-w-[78%]">
                             <div className="bg-[#4b2e2e] text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-relaxed shadow-sm">
                               {msg.message}
                             </div>
-                            <p className="text-[10px] text-gray-400 mt-1 text-right">
-                              You · {new Date(msg.created_at).toLocaleString()}
-                            </p>
+                            <div className="mt-1 flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => setDeleteTarget(msg)}
+                                className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-400 hover:text-red-500 transition"
+                              >
+                                <Trash2 size={10} /> Delete
+                              </button>
+                              <p className="text-[10px] text-gray-400 text-right">
+                                You · {new Date(msg.created_at).toLocaleString()}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
-                        {/* ADMIN REPLY — left */}
                         {msg.reply ? (
                           <div className="flex justify-start items-end gap-2">
                             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] flex items-center justify-center shrink-0 mb-4">
@@ -200,7 +242,6 @@ export default function MessagesPage() {
                             </div>
                           </div>
                         ) : (
-                          // Only show "waiting" on the last message
                           msg.id === thread.messages[thread.messages.length - 1].id && (
                             <div className="flex justify-start">
                               <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
@@ -215,7 +256,6 @@ export default function MessagesPage() {
                       </div>
                     ))}
 
-                    {/* REPLY INPUT — always visible at bottom of thread */}
                     {replyTarget === threadKey ? (
                       <div className="pt-2 space-y-2">
                         <textarea
@@ -228,12 +268,17 @@ export default function MessagesPage() {
                           className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#4b2e2e]/20 resize-none"
                         />
                         <div className="flex gap-2 justify-end">
-                          <button onClick={() => { setReplyTarget(null); setReplyText("") }}
-                            className="px-4 py-2 rounded-full border border-gray-200 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition">
+                          <button
+                            onClick={() => { setReplyTarget(null); setReplyText("") }}
+                            className="px-4 py-2 rounded-full border border-gray-200 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition"
+                          >
                             Cancel
                           </button>
-                          <button onClick={() => sendReply(thread.product_id)} disabled={sending || !replyText.trim()}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#4b2e2e] text-white text-xs font-semibold hover:bg-[#3a2323] transition disabled:opacity-60">
+                          <button
+                            onClick={() => sendReply(thread.product_id)}
+                            disabled={sending || !replyText.trim()}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#4b2e2e] text-white text-xs font-semibold hover:bg-[#3a2323] transition disabled:opacity-60"
+                          >
                             <Send size={11} /> {sending ? "Sending..." : "Send"}
                           </button>
                         </div>
