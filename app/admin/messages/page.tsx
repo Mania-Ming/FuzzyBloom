@@ -28,6 +28,8 @@ export default function MessagesPage() {
   const [replyText, setReplyText] = useState("")
   const [sending, setSending] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Message | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [fadingId, setFadingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -40,14 +42,12 @@ export default function MessagesPage() {
       .order("created_at", { ascending: false })
 
     if (error) {
-      console.error("Messages fetch error:", error.message)
       const { data: plain } = await supabase
         .from("messages")
         .select("id, message, created_at, is_read, reply, sender_id, product_id")
         .order("created_at", { ascending: false })
       setMessages((plain as Message[] | null) ?? [])
     } else {
-      console.log("Messages loaded:", data?.length)
       setMessages((data as Message[] | null) ?? [])
     }
     setLoading(false)
@@ -87,19 +87,24 @@ export default function MessagesPage() {
     if (!deleteTarget) return
     const target = deleteTarget
     setDeleteTarget(null)
+    setDeleting(true)
+    setFadingId(target.id)
+
+    await new Promise(r => setTimeout(r, 300))
 
     const { error } = await supabase.from("messages").delete().eq("id", target.id)
     if (error) {
       setToast({ message: "Failed to delete message.", type: "error" })
+      setFadingId(null)
+      setDeleting(false)
       return
     }
 
-    setMessages(prev => prev.filter(message => message.id !== target.id))
-    if (replyTarget === target.id) {
-      setReplyTarget(null)
-      setReplyText("")
-    }
-    setToast({ message: "Message deleted.", type: "success" })
+    setMessages(prev => prev.filter(m => m.id !== target.id))
+    if (replyTarget === target.id) { setReplyTarget(null); setReplyText("") }
+    setFadingId(null)
+    setDeleting(false)
+    setToast({ message: "Message permanently deleted.", type: "success" })
   }
 
   const unread = messages.filter(m => !m.is_read).length
@@ -109,7 +114,7 @@ export default function MessagesPage() {
       <Toast toast={toast} onClose={() => setToast(null)} />
       {deleteTarget && (
         <ConfirmModal
-          message={`Delete this message${deleteTarget.reply ? " and its reply" : ""}? This cannot be undone.`}
+          message={`⚠️ Permanently delete this message? This cannot be undone.`}
           onConfirm={deleteMessage}
           onCancel={() => setDeleteTarget(null)}
         />
@@ -134,7 +139,10 @@ export default function MessagesPage() {
 
       <div className="space-y-4">
         {messages.map(msg => (
-          <div key={msg.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${!msg.is_read ? "border-[#4b2e2e]/30" : "border-[#e8d5d5]"}`}>
+          <div
+            key={msg.id}
+            className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all duration-300 ${fadingId === msg.id ? "opacity-0 scale-95" : "opacity-100 scale-100"} ${!msg.is_read ? "border-[#4b2e2e]/30" : "border-[#e8d5d5]"}`}
+          >
             <div className="px-6 py-4">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-3">
@@ -180,9 +188,10 @@ export default function MessagesPage() {
                 )}
                 <button
                   onClick={() => setDeleteTarget(msg)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-100 text-xs font-semibold text-red-500 hover:bg-red-50 transition"
+                  disabled={deleting && fadingId === msg.id}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition disabled:opacity-60"
                 >
-                  <Trash2 size={11} /> Delete
+                  <Trash2 size={11} /> {deleting && fadingId === msg.id ? "Deleting..." : "Delete"}
                 </button>
                 {!msg.reply && (
                   <button onClick={() => { setReplyTarget(msg.id); setReplyText("") }}
