@@ -29,7 +29,7 @@ export default function MessagesPage() {
     const { data, error } = await supabase
       .from("messages")
       .select(`
-        id, message, created_at, is_read, reply, sender_id, product_id,
+        id, message, created_at, is_read, reply, sender_id, product_id, user_reply, user_reply_at,
         profiles:sender_id ( full_name, email ),
         products:product_id ( name )
       `)
@@ -127,6 +127,13 @@ export default function MessagesPage() {
                 <div className="mt-3 bg-[#4b2e2e]/5 border border-[#4b2e2e]/10 rounded-xl px-4 py-3">
                   <p className="text-xs font-semibold text-[#4b2e2e] mb-1">Your reply:</p>
                   <p className="text-sm text-gray-700">{msg.reply}</p>
+                </div>
+              )}
+
+              {(msg as any).user_reply && (
+                <div className="mt-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                  <p className="text-xs font-semibold text-gray-500 mb-1">Customer follow-up:</p>
+                  <p className="text-sm text-gray-700">{(msg as any).user_reply}</p>
                 </div>
               )}
 
