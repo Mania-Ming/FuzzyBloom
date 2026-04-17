@@ -18,7 +18,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from("settings").select("*").eq("id", 1).single()
+      const { data, error } = await supabase.from("settings").select("*").maybeSingle()
+      if (error) console.error("Settings fetch error:", error.message)
       if (data) setForm({ shop_name: data.shop_name ?? "Fuzzy Bloom", footer_text: data.footer_text ?? "", logo_url: data.logo_url ?? "" })
       setLoading(false)
     }
@@ -28,9 +29,15 @@ export default function SettingsPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const { error } = await supabase.from("settings").upsert({ id: 1, ...form })
-    if (error) setToast({ message: "Failed to save settings.", type: "error" })
-    else setToast({ message: "Settings saved!", type: "success" })
+    const { error } = await supabase
+      .from("settings")
+      .upsert({ id: 1, ...form }, { onConflict: "id" })
+    if (error) {
+      console.error("Settings save error:", error.message)
+      setToast({ message: "Failed to save settings.", type: "error" })
+    } else {
+      setToast({ message: "Settings saved!", type: "success" })
+    }
     setSaving(false)
   }
 

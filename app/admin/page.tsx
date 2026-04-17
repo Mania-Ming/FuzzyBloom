@@ -49,7 +49,7 @@ export default function AdminDashboard() {
 
       const { data: recent, error: recentErr } = await supabase
         .from("orders")
-        .select("id, full_name, total_amount, status, payment_method, created_at")
+        .select("id, full_name, total_amount, status, payment, created_at")
         .order("created_at", { ascending: false })
         .limit(5)
 
@@ -132,7 +132,7 @@ export default function AdminDashboard() {
                   <td className="px-6 py-4 font-mono text-xs text-gray-500">#{String(order.id).slice(0, 8)}</td>
                   <td className="px-6 py-4 font-medium text-gray-800">{order.full_name ?? "—"}</td>
                   <td className="px-6 py-4 font-bold text-[#4b2e2e]">₱{Number(order.total_amount).toLocaleString()}</td>
-                  <td className="px-6 py-4 text-gray-500 uppercase text-xs">{order.payment_method}</td>
+                  <td className="px-6 py-4 text-gray-500 uppercase text-xs">{order.payment}</td>
                   <td className="px-6 py-4">
                     <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${statusColor[order.status] ?? statusColor.Pending}`}>
                       {order.status}

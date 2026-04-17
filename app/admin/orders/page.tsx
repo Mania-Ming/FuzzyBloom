@@ -10,7 +10,7 @@ type Order = {
   id: string
   full_name: string
   total_amount: number
-  payment_method: string
+  payment: string
   status: string
   created_at: string
   address: string
@@ -39,7 +39,7 @@ export default function OrdersPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from("orders")
-      .select("id, full_name, total_amount, payment_method, status, created_at, address, contact_number")
+      .select("id, full_name, total_amount, payment, status, created_at, address, contact_number")
       .order("created_at", { ascending: false })
 
     if (error) {
@@ -158,7 +158,7 @@ export default function OrdersPage() {
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="text-right">
                   <p className="font-bold text-[#4b2e2e]">₱{Number(order.total_amount).toLocaleString()}</p>
-                  <p className="text-xs text-gray-400 uppercase">{order.payment_method}</p>
+                  <p className="text-xs text-gray-400 uppercase">{order.payment}</p>
                 </div>
                 <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${statusColor[order.status] ?? statusColor.Pending}`}>
                   {order.status}
