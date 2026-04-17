@@ -4,13 +4,14 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut } from "lucide-react"
+import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut, MessageCircle } from "lucide-react"
 
 const navItems = [
   { label: "Dashboard", href: "/admin", Icon: LayoutDashboard },
   { label: "Products", href: "/admin/products", Icon: Package },
   { label: "Orders", href: "/admin/orders", Icon: ShoppingBag },
   { label: "Users", href: "/admin/users", Icon: Users },
+  { label: "Messages", href: "/admin/messages", Icon: MessageCircle },
   { label: "Settings", href: "/admin/settings", Icon: Settings },
 ]
 
