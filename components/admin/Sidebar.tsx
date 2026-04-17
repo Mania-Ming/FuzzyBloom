@@ -4,13 +4,14 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut } from "lucide-react"
 
 const navItems = [
-  { label: "Dashboard", href: "/admin", icon: "▦" },
-  { label: "Products", href: "/admin/products", icon: "🌸" },
-  { label: "Orders", href: "/admin/orders", icon: "📦" },
-  { label: "Users", href: "/admin/users", icon: "👤" },
-  { label: "Settings", href: "/admin/settings", icon: "⚙️" },
+  { label: "Dashboard", href: "/admin", Icon: LayoutDashboard },
+  { label: "Products", href: "/admin/products", Icon: Package },
+  { label: "Orders", href: "/admin/orders", Icon: ShoppingBag },
+  { label: "Users", href: "/admin/users", Icon: Users },
+  { label: "Settings", href: "/admin/settings", Icon: Settings },
 ]
 
 export default function Sidebar() {
@@ -35,21 +36,21 @@ export default function Sidebar() {
       </div>
 
       {/* NAV */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map((item) => {
-          const active = pathname === item.href
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
+        {navItems.map(({ label, href, Icon }) => {
+          const active = pathname === href
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={href}
+              href={href}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 active
                   ? "bg-white/15 text-white"
-                  : "text-white/60 hover:bg-white/8 hover:text-white"
+                  : "text-white/55 hover:bg-white/10 hover:text-white"
               }`}
             >
-              <span className="text-base">{item.icon}</span>
-              {item.label}
+              <Icon size={18} className={active ? "text-white" : "text-white/50"} />
+              {label}
             </Link>
           )
         })}
@@ -59,9 +60,10 @@ export default function Sidebar() {
       <div className="px-3 pb-5">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:bg-white/8 hover:text-white transition"
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:bg-white/10 hover:text-white transition"
         >
-          <span>🚪</span> Logout
+          <LogOut size={18} />
+          Logout
         </button>
       </div>
     </aside>

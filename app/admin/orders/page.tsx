@@ -2,18 +2,19 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
+import { ShoppingBag, MapPin, Phone, ChevronDown, ChevronUp, Check, X } from "lucide-react"
 import Toast, { ToastType } from "@/components/admin/Toast"
 import ConfirmModal from "@/components/admin/ConfirmModal"
 
 type Order = {
   id: string
+  full_name: string
   total_amount: number
   payment_method: string
   status: string
   created_at: string
   address: string
   contact_number: string
-  profiles: { full_name: string; email: string }[] | null
 }
 
 type ActionConfirm = { orderId: string; action: "Approved" | "Completed" | "Cancelled" } | null
@@ -35,10 +36,18 @@ export default function OrdersPage() {
   const [filterStatus, setFilterStatus] = useState("All")
 
   const load = useCallback(async () => {
-    const { data } = await supabase
+    setLoading(true)
+    const { data, error } = await supabase
       .from("orders")
-      .select("id, total_amount, payment_method, status, created_at, address, contact_number, profiles(full_name, email)")
+      .select("id, full_name, total_amount, payment_method, status, created_at, address, contact_number")
       .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error("Orders fetch error:", error.message)
+    } else {
+      console.log("Orders loaded:", data?.length, data)
+    }
+
     setOrders(data ?? [])
     setLoading(false)
   }, [])
@@ -46,11 +55,16 @@ export default function OrdersPage() {
   useEffect(() => { load() }, [load])
 
   async function loadItems(orderId: string) {
-    if (orderItems[orderId]) { setExpanded(expanded === orderId ? null : orderId); return }
-    const { data } = await supabase
+    if (orderItems[orderId]) {
+      setExpanded(expanded === orderId ? null : orderId)
+      return
+    }
+    const { data, error } = await supabase
       .from("order_items")
       .select("quantity, price, products(name, image_url)")
       .eq("order_id", orderId)
+
+    if (error) console.error("Order items error:", error.message)
     setOrderItems(prev => ({ ...prev, [orderId]: data ?? [] }))
     setExpanded(orderId)
   }
@@ -63,7 +77,6 @@ export default function OrdersPage() {
     const { error } = await supabase.from("orders").update({ status: action }).eq("id", orderId)
     if (error) { setToast({ message: "Failed to update order.", type: "error" }); return }
 
-    // When Approved → mark all related products as sold out
     if (action === "Approved") {
       const { data: items } = await supabase
         .from("order_items")
@@ -93,9 +106,12 @@ export default function OrdersPage() {
         />
       )}
 
-      <div>
-        <h1 className="text-2xl font-bold text-[#2a1515]">Orders</h1>
-        <p className="text-gray-400 text-sm mt-0.5">{orders.length} total orders</p>
+      <div className="flex items-center gap-2">
+        <ShoppingBag size={22} className="text-[#4b2e2e]" />
+        <div>
+          <h1 className="text-2xl font-bold text-[#2a1515]">Orders</h1>
+          <p className="text-gray-400 text-sm">{orders.length} total orders</p>
+        </div>
       </div>
 
       {/* STATUS FILTER */}
@@ -110,9 +126,17 @@ export default function OrdersPage() {
 
       {/* ORDERS LIST */}
       <div className="space-y-4">
-        {loading && <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" /></div>}
+        {loading && (
+          <div className="flex justify-center py-16">
+            <div className="w-8 h-8 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+
         {!loading && filtered.length === 0 && (
-          <div className="bg-white rounded-2xl border border-[#e8d5d5] py-16 text-center text-gray-400">No orders found</div>
+          <div className="bg-white rounded-2xl border border-[#e8d5d5] py-16 text-center">
+            <ShoppingBag size={36} className="text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-400 font-medium">No orders found</p>
+          </div>
         )}
 
         {filtered.map(order => (
@@ -122,12 +146,12 @@ export default function OrdersPage() {
             <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-4 flex-wrap">
                 <div>
-                  <p className="font-semibold text-gray-800 text-sm">{order.profiles?.[0]?.full_name ?? "Unknown"}</p>
-                  <p className="text-xs text-gray-400">{order.profiles?.[0]?.email}</p>
+                  <p className="font-semibold text-gray-800 text-sm">{order.full_name || "Unknown"}</p>
+                  <p className="text-xs text-gray-400 font-mono">#{String(order.id).slice(0, 8)}</p>
                 </div>
                 <div className="text-xs text-gray-400 space-y-0.5">
-                  <p>📍 {order.address || "—"}</p>
-                  <p>📞 {order.contact_number || "—"}</p>
+                  <p className="flex items-center gap-1"><MapPin size={11} /> {order.address || "—"}</p>
+                  <p className="flex items-center gap-1"><Phone size={11} /> {order.contact_number || "—"}</p>
                 </div>
               </div>
 
@@ -145,26 +169,27 @@ export default function OrdersPage() {
 
             {/* ACTION BUTTONS */}
             <div className="px-6 pb-4 flex items-center gap-2 flex-wrap border-t border-gray-50 pt-3">
-              <button onClick={() => loadItems(order.id)} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition">
-                {expanded === order.id ? "Hide Items ▲" : "View Items ▼"}
+              <button onClick={() => loadItems(order.id)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition">
+                {expanded === order.id ? <><ChevronUp size={12} /> Hide Items</> : <><ChevronDown size={12} /> View Items</>}
               </button>
 
               {order.status === "Pending" && (
                 <>
                   <button onClick={() => setConfirm({ orderId: order.id, action: "Approved" })}
-                    className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-semibold hover:bg-blue-600 transition">
-                    ✓ Approve
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-semibold hover:bg-blue-600 transition">
+                    <Check size={12} /> Approve
                   </button>
                   <button onClick={() => setConfirm({ orderId: order.id, action: "Cancelled" })}
-                    className="px-3 py-1.5 rounded-lg border border-red-100 text-xs font-semibold text-red-500 hover:bg-red-50 transition">
-                    ✕ Cancel
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-100 text-xs font-semibold text-red-500 hover:bg-red-50 transition">
+                    <X size={12} /> Cancel
                   </button>
                 </>
               )}
               {order.status === "Approved" && (
                 <button onClick={() => setConfirm({ orderId: order.id, action: "Completed" })}
-                  className="px-3 py-1.5 rounded-lg bg-green-500 text-white text-xs font-semibold hover:bg-green-600 transition">
-                  ✓ Mark Complete
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-500 text-white text-xs font-semibold hover:bg-green-600 transition">
+                  <Check size={12} /> Mark Complete
                 </button>
               )}
             </div>
@@ -172,11 +197,14 @@ export default function OrdersPage() {
             {/* ORDER ITEMS EXPANDED */}
             {expanded === order.id && orderItems[order.id] && (
               <div className="border-t border-gray-50 px-6 py-4 bg-gray-50/40 space-y-3">
+                {orderItems[order.id].length === 0 && (
+                  <p className="text-xs text-gray-400 text-center">No items found</p>
+                )}
                 {orderItems[order.id].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     {item.products?.image_url
                       ? <img src={item.products.image_url} alt={item.products?.name} className="w-10 h-10 rounded-xl object-cover bg-white" />
-                      : <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-lg">🌸</div>
+                      : <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center"><Package size={16} className="text-pink-300" /></div>
                     }
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-800">{item.products?.name ?? "Unknown"}</p>
