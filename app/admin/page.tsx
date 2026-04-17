@@ -43,13 +43,14 @@ export default function AdminDashboard() {
       // Fetch orders for sales total + recent list separately to isolate errors
       const { data: salesData, error: salesErr } = await supabase
         .from("orders")
-        .select("total_amount")
+        .select("*")
 
       if (salesErr) console.error("Sales fetch error:", salesErr.message)
+      console.log("Sales data:", salesData)
 
       const { data: recent, error: recentErr } = await supabase
         .from("orders")
-        .select("id, full_name, total_amount, status, payment, created_at")
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(5)
 

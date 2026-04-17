@@ -39,14 +39,13 @@ export default function OrdersPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from("orders")
-      .select("id, full_name, total_amount, payment, status, created_at, address, contact_number")
+      .select("*")
       .order("created_at", { ascending: false })
 
     if (error) {
-      console.error("Orders fetch error:", error.message)
-    } else {
-      console.log("Orders loaded:", data?.length, data)
+      console.error("Orders fetch error:", error.message, error)
     }
+    console.log("Orders data:", data, "length:", data?.length)
 
     setOrders(data ?? [])
     setLoading(false)
