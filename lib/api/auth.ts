@@ -88,6 +88,7 @@ export async function insertOrder(order: {
   contact_number: string | null
   payment: string
   status: string
+  receipt_url?: string | null
 }) {
   const { data, error } = await supabase.from("orders").insert([order]).select().single()
   if (error) throw error

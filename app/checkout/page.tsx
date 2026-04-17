@@ -63,9 +63,27 @@ export default function CheckoutPage() {
     }
 
     try {
+      let receiptUrl: string | null = null
+
+      // Upload GCash receipt and get public URL
       if (payment === "gcash" && gcashProof) {
-        const fileName = `gcash/${user.id}_${Date.now()}`
-        await supabase.storage.from("proofs").upload(fileName, gcashProof)
+        const fileName = `receipts/${user.id}_${Date.now()}.${gcashProof.name.split(".").pop()}`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("receipts")
+          .upload(fileName, gcashProof, { upsert: true })
+
+        if (uploadError) {
+          console.error("Receipt upload error:", uploadError.message)
+          alert("Failed to upload receipt. Please try again.")
+          return
+        }
+
+        const { data: urlData } = supabase.storage
+          .from("receipts")
+          .getPublicUrl(uploadData.path)
+
+        receiptUrl = urlData.publicUrl
+        console.log("Receipt uploaded:", receiptUrl)
       }
 
       const order = await saveOrder({
@@ -80,6 +98,7 @@ export default function CheckoutPage() {
         contact_number: profile?.contact_number ?? null,
         payment,
         status: "Pending",
+        receipt_url: receiptUrl,
       })
 
       const orderItems = cartItems.map((item) => {

@@ -15,7 +15,7 @@ type Order = {
   created_at: string
   address: string
   contact_number: string
-  gcash_receipt_url?: string | null
+  receipt_url?: string | null
 }
 
 type ActionConfirm = 
@@ -38,7 +38,8 @@ export default function OrdersPage() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [orderItems, setOrderItems] = useState<Record<string, any[]>>({})
   const [filterStatus, setFilterStatus] = useState("All")
-  const [receiptModal, setReceiptModal] = useState<string | null>(null)
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  const [receiptOpen, setReceiptOpen] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -126,15 +127,15 @@ export default function OrdersPage() {
       )}
 
       {/* GCASH RECEIPT MODAL */}
-      {receiptModal !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setReceiptModal(null)}>
+      {receiptOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setReceiptOpen(false)}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 fade-up" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-800">GCash Receipt</h3>
-              <button onClick={() => setReceiptModal(null)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+              <button onClick={() => setReceiptOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
             </div>
-            {receiptModal ? (
-              <img src={receiptModal} alt="GCash Receipt" className="w-full rounded-2xl object-contain max-h-96" />
+            {receiptUrl ? (
+              <img src={receiptUrl} alt="GCash Receipt" className="w-full rounded-2xl object-contain max-h-96" />
             ) : (
               <div className="py-10 text-center text-gray-400">
                 <p className="text-4xl mb-2">📎</p>
@@ -238,7 +239,7 @@ export default function OrdersPage() {
                 </button>
               )}
               {order.payment?.toLowerCase() === "gcash" && (
-                <button onClick={() => setReceiptModal(order.gcash_receipt_url ?? "")}
+                <button onClick={() => { setReceiptUrl(order.receipt_url || null); setReceiptOpen(true) }}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-blue-100 text-xs font-semibold text-blue-500 hover:bg-blue-50 transition">
                   📎 View Receipt
                 </button>
