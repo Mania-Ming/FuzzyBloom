@@ -14,10 +14,10 @@ const categories = [
 ]
 
 const products = [
-  { name: "Lavender Grace", img: "/p1.png", price: 350 },
-  { name: "Rose Romance", img: "/p2.png", price: 420 },
-  { name: "Flower Keychain", img: "/k1.png", price: 25 },
-  { name: "Ribbon Keychain", img: "/r1.png", price: 20 },
+  { id: "393d5726-d16e-425e-87b4-0a42659ee327", name: "Lavender Grace", img: "/p1.png", price: 350 },
+  { id: "6f71f609-c714-491f-ac3f-07803559262b", name: "Ruby & Sky", img: "/p2.png", price: 350 },
+  { id: "b7ed3194-9a79-448a-aaba-c0c0af2a7ca9", name: "Flower Keychain", img: "/k1.png", price: 25 },
+  { id: "3252c399-c743-4a2f-8b1f-e163c797fcfd", name: "Ribbon Keychain", img: "/r1.png", price: 20 },
 ]
 
 export default function Dashboard() {
@@ -25,7 +25,7 @@ export default function Dashboard() {
   function addToCart(product: any) {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]")
     const exist = cart.find((i: any) => i.name === product.name)
-    if (exist) { exist.qty += 1 } else { cart.push({ ...product, qty: 1 }) }
+    if (exist) { exist.qty += 1 } else { cart.push({ product_id: product.id, name: product.name, price: product.price, img: product.img, qty: 1 }) }
     localStorage.setItem("cart", JSON.stringify(cart))
   }
 

@@ -79,12 +79,19 @@ export default function CheckoutPage() {
         status: "Pending",
       })
 
-      const orderItems = cartItems.map((item) => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.qty,
-        price: item.price,
-      }))
+      const orderItems = cartItems.map((item) => {
+        if (!item.product_id) {
+          console.error("Missing product_id for item:", item)
+          throw new Error(`Product ID missing for "${item.name}". Cannot place order.`)
+        }
+        return {
+          order_id: order.id,
+          product_id: item.product_id,
+          quantity: item.qty,
+          price: item.price,
+        }
+      })
+      console.log("Inserting order items:", orderItems)
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
       if (itemsError) throw itemsError
 
