@@ -67,14 +67,16 @@ export default function CheckoutPage() {
 
       // Upload GCash receipt and get public URL
       if (payment === "gcash" && gcashProof) {
-        const fileName = `receipts/${user.id}_${Date.now()}.${gcashProof.name.split(".").pop()}`
+        const ext = gcashProof.name.split(".").pop() ?? "jpg"
+        const filePath = `public/${user.id}_${Date.now()}.${ext}`
+
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("receipts")
-          .upload(fileName, gcashProof, { upsert: true })
+          .upload(filePath, gcashProof, { cacheControl: "3600", upsert: true })
 
         if (uploadError) {
-          console.error("Receipt upload error:", uploadError.message)
-          alert("Failed to upload receipt. Please try again.")
+          console.error("Receipt upload error:", uploadError)
+          alert("Failed to upload receipt: " + uploadError.message)
           return
         }
 
@@ -83,7 +85,7 @@ export default function CheckoutPage() {
           .getPublicUrl(uploadData.path)
 
         receiptUrl = urlData.publicUrl
-        console.log("Receipt uploaded:", receiptUrl)
+        console.log("Receipt URL saved:", receiptUrl)
       }
 
       const order = await saveOrder({
