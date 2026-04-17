@@ -4,17 +4,34 @@ import Link from "next/link"
 import Image from "next/image"
 import Navbar from "@/components/Navbar"
 import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
 
 export default function SmartNavbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true")
-    setMounted(true)
+    async function check() {
+      // Check localStorage first (fast)
+      const local = localStorage.getItem("isLoggedIn") === "true"
+
+      if (local) {
+        setIsLoggedIn(true)
+        setMounted(true)
+        return
+      }
+
+      // Fallback: verify with Supabase session
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        localStorage.setItem("isLoggedIn", "true")
+        setIsLoggedIn(true)
+      }
+      setMounted(true)
+    }
+    check()
   }, [])
 
-  // Don't render anything until we've read localStorage to avoid flash
   if (!mounted) return (
     <div className="sticky top-0 w-full h-16 bg-white/70 backdrop-blur-xl border-b border-white/30 z-50" />
   )
