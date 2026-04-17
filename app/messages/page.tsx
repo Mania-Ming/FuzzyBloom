@@ -79,17 +79,12 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!user?.id) return
-    const initialLoad = setTimeout(() => {
-      void load(user.id)
-    }, 0)
+    load(user.id)
     const channel = supabase
       .channel("user-messages-" + user.id)
       .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `sender_id=eq.${user.id}` }, () => load(user.id))
       .subscribe()
-    return () => {
-      clearTimeout(initialLoad)
-      supabase.removeChannel(channel)
-    }
+    return () => { supabase.removeChannel(channel) }
   }, [user?.id, load])
 
   useEffect(() => {

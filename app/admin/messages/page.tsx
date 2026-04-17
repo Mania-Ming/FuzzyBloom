@@ -54,18 +54,13 @@ export default function MessagesPage() {
   }, [])
 
   useEffect(() => {
-    const initialLoad = setTimeout(() => {
-      void load()
-    }, 0)
+    load()
     const channel = supabase.channel("admin-messages")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => load())
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, () => load())
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "messages" }, () => load())
       .subscribe()
-    return () => {
-      clearTimeout(initialLoad)
-      supabase.removeChannel(channel)
-    }
+    return () => { supabase.removeChannel(channel) }
   }, [load])
 
   async function markRead(id: string) {
