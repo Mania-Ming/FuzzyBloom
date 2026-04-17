@@ -28,18 +28,18 @@ export default function ProfilePage() {
       if (!user?.id) return
       const { data } = await supabase
         .from("profiles")
-        .select("address, contact_number, full_name")
+        .select("address, phone, full_name")
         .eq("id", user.id)
         .single()
       if (data) {
         setAddress(data.address ?? "")
-        setContactNumber(data.contact_number ?? "")
+        setContactNumber(data.phone ?? "")
         setFullName(data.full_name ?? "")
         queryClient.setQueryData(["me"], (old: any) => ({
           ...old,
           full_name: data.full_name ?? "",
           address: data.address ?? "",
-          contact_number: data.contact_number ?? "",
+          contact_number: data.phone ?? "",
         }))
       }
     }
@@ -73,7 +73,7 @@ export default function ProfilePage() {
 
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: fullName, address, contact_number: contactNumber })
+      .update({ full_name: fullName, address, phone: contactNumber })
       .eq("id", user.id)
 
     if (error) {
