@@ -19,9 +19,9 @@ export function useMe() {
         .eq("id", user.id)
         .single()
 
-      console.log("useMe - user.id:", user.id)
-      console.log("useMe - profile data:", profile)
-      console.log("useMe - profile error:", error)
+      console.log("[useMe v2] user.id:", user.id)
+      console.log("[useMe v2] profile:", profile)
+      console.log("[useMe v2] error:", error)
 
       return {
         id: user.id,
