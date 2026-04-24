@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -15,6 +14,12 @@ import { insertDeliveryDetails } from "@/lib/api/auth"
 type CartItem = { product_id: string; name: string; price: number; img?: string; qty: number }
 
 const TIME_SLOTS = ["9:00 AM", "1:00 PM", "6:00 PM"]
+
+function resolveImage(src: string | null | undefined, fallback = "/p2.png"): string {
+  if (!src) return fallback
+  if (src.startsWith("http")) return src
+  return src.startsWith("/") ? src : `/${src}`
+}
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -195,8 +200,13 @@ export default function CheckoutPage() {
                 {cartItems.map((item, i) => (
                   <div key={i} className="bg-white/80 border border-white/60 p-4 rounded-2xl flex justify-between items-center shadow-sm">
                     <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
-                        <Image src={item.img || "/p2.png"} alt={item.name} width={52} height={52} className="rounded-lg object-cover" />
+                      <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+                        <img
+                          src={resolveImage(item.img)}
+                          alt={item.name}
+                          className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "/p2.png" }}
+                        />
                       </div>
                       <div>
                         <p className="font-semibold text-sm text-gray-800">{item.name}</p>
@@ -222,7 +232,12 @@ export default function CheckoutPage() {
                 <div className="bg-white border border-[#e8d5d5] rounded-2xl shadow-sm p-6 flex flex-col items-center text-center">
                   <p className="text-sm font-bold text-[#2a1515] mb-1">Scan to Pay via GCash</p>
                   <p className="text-xs text-gray-400 mb-4">Send payment then upload screenshot below</p>
-                  <Image src="/gcashqrcode.jpg" alt="GCash QR Code" width={250} height={250} className="rounded-xl object-contain shadow-sm" />
+                  <img
+                    src="/gcashqrcode.jpg"
+                    alt="GCash QR Code"
+                    className="w-[250px] h-[250px] rounded-xl object-contain shadow-sm"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                  />
                 </div>
               )}
             </div>

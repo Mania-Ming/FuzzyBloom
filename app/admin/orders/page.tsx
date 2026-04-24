@@ -9,7 +9,20 @@ import {
 import Toast, { ToastType } from "@/components/admin/Toast"
 import ConfirmModal from "@/components/admin/ConfirmModal"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function resolveImage(src: string | null | undefined, fallback = "/logo.jpg"): string {
+  if (!src) return fallback
+  if (src.startsWith("http")) return src
+  return src.startsWith("/") ? src : `/${src}`
+}
+
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "N/A"
+  const d = new Date(dateStr + "T00:00:00")
+  if (isNaN(d.getTime())) return "N/A"
+  return d.toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" })
+}
 
 type DeliveryDetails = {
   full_name: string
@@ -17,12 +30,6 @@ type DeliveryDetails = {
   address: string
   delivery_date: string
   delivery_time: string
-}
-
-type Profile = {
-  full_name: string
-  contact_number?: string
-  address?: string
 }
 
 type OrderItemRow = {
@@ -39,7 +46,6 @@ type Order = {
   created_at: string
   receipt_url?: string | null
   delivery_details?: DeliveryDetails | null
-  profiles?: Profile | null
 }
 
 type FullOrder = Order & {
@@ -66,13 +72,6 @@ function nextStatus(current: string): string | null {
   return idx === -1 || idx === STATUS_FLOW.length - 1 ? null : STATUS_FLOW[idx + 1]
 }
 
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return "N/A"
-  const d = new Date(dateStr + "T00:00:00")
-  if (isNaN(d.getTime())) return "N/A"
-  return d.toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" })
-}
-
 // ─── Order Detail Drawer ──────────────────────────────────────────────────────
 
 function OrderDrawer({
@@ -92,16 +91,17 @@ function OrderDrawer({
     async function fetchFull() {
       setLoading(true)
 
-      // Fetch order with delivery_details and profiles (user fallback)
-      const { data: orderData } = await supabase
+      // Fetch order with delivery_details only (profiles join causes 400 — not a direct FK)
+      const { data: orderData, error: orderErr } = await supabase
         .from("orders")
         .select(`
           id, total_amount, payment, status, created_at, receipt_url,
-          delivery_details ( full_name, phone, address, delivery_date, delivery_time ),
-          profiles ( full_name, contact_number, address )
+          delivery_details ( full_name, phone, address, delivery_date, delivery_time )
         `)
         .eq("id", orderId)
         .single()
+
+      if (orderErr) console.error("Order fetch error:", orderErr.message)
 
       // Fetch order items with product info
       const { data: itemsData } = await supabase
@@ -113,9 +113,6 @@ function OrderDrawer({
         const dd = Array.isArray(orderData.delivery_details)
           ? orderData.delivery_details[0] ?? null
           : orderData.delivery_details ?? null
-        const prof = Array.isArray(orderData.profiles)
-          ? orderData.profiles[0] ?? null
-          : orderData.profiles ?? null
 
         const items: OrderItemRow[] = (itemsData ?? []).map((i: any) => ({
           quantity: i.quantity,
@@ -123,7 +120,7 @@ function OrderDrawer({
           products: Array.isArray(i.products) ? (i.products[0] ?? null) : (i.products ?? null),
         }))
 
-        setOrder({ ...orderData, delivery_details: dd, profiles: prof, order_items: items })
+        setOrder({ ...orderData, delivery_details: dd, order_items: items })
       }
       setLoading(false)
     }
@@ -149,12 +146,10 @@ function OrderDrawer({
   const next = nextStatus(order.status)
   const isGcash = order.payment?.toLowerCase() === "gcash"
   const dd = order.delivery_details
-  const prof = order.profiles
 
-  // Resolve display values: delivery_details first, then profiles fallback, then N/A
-  const displayName    = dd?.full_name    || prof?.full_name    || "N/A"
-  const displayPhone   = dd?.phone        || prof?.contact_number || "N/A"
-  const displayAddress = dd?.address      || prof?.address      || "N/A"
+  const displayName    = dd?.full_name    || "N/A"
+  const displayPhone   = dd?.phone        || "N/A"
+  const displayAddress = dd?.address      || "N/A"
   const displayDate    = formatDate(dd?.delivery_date)
   const displayTime    = dd?.delivery_time || "N/A"
 
@@ -223,7 +218,7 @@ function OrderDrawer({
                   <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
                     {item.products?.image_url ? (
                       <img
-                        src={item.products.image_url}
+                        src={resolveImage(item.products.image_url)}
                         alt={item.products.name}
                         className="w-10 h-10 rounded-lg object-cover shrink-0"
                         onError={(e) => { (e.target as HTMLImageElement).src = "/logo.jpg" }}
@@ -366,20 +361,18 @@ export default function AdminOrdersPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    // Fetch orders with delivery_details only
     const { data } = await supabase
       .from("orders")
       .select(`
         id, total_amount, payment, status, created_at, receipt_url,
-        delivery_details ( full_name, phone, address, delivery_date, delivery_time ),
-        profiles ( full_name, contact_number, address )
+        delivery_details ( full_name, phone, address, delivery_date, delivery_time )
       `)
       .order("created_at", { ascending: false })
 
-    // Normalize nested objects (Supabase may return arrays for 1-to-1 joins)
     const normalized = (data ?? []).map((o: any) => ({
       ...o,
       delivery_details: Array.isArray(o.delivery_details) ? (o.delivery_details[0] ?? null) : (o.delivery_details ?? null),
-      profiles: Array.isArray(o.profiles) ? (o.profiles[0] ?? null) : (o.profiles ?? null),
     }))
 
     setOrders(normalized)
@@ -419,7 +412,7 @@ export default function AdminOrdersPage() {
     .filter(o => {
       if (!search.trim()) return true
       const q = search.toLowerCase()
-      const name = o.delivery_details?.full_name || o.profiles?.full_name || ""
+      const name = o.delivery_details?.full_name || ""
       return name.toLowerCase().includes(q) || String(o.id).toLowerCase().includes(q)
     })
 
@@ -493,10 +486,9 @@ export default function AdminOrdersPage() {
           const isGcash = order.payment?.toLowerCase() === "gcash"
           const hasReceipt = !!order.receipt_url
           const dd = order.delivery_details
-          const prof = order.profiles
-          const displayName = dd?.full_name || prof?.full_name || "No Name"
-          const displayPhone = dd?.phone || prof?.contact_number || "N/A"
-          const displayAddress = dd?.address || prof?.address || "N/A"
+          const displayName = dd?.full_name || "No Name"
+          const displayPhone = dd?.phone || "N/A"
+          const displayAddress = dd?.address || "N/A"
 
           return (
             <div key={order.id} className="bg-white rounded-2xl border border-[#e8d5d5] shadow-sm overflow-hidden">

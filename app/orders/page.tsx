@@ -52,6 +52,13 @@ type StatusHistory = {
   note?: string
 }
 
+// ─── Image helper ────────────────────────────────────────────────────────────
+function resolveImage(src: string | null | undefined, fallback = "/logo.jpg"): string {
+  if (!src) return fallback
+  if (src.startsWith("http")) return src
+  return src.startsWith("/") ? src : `/${src}`
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_STEPS = ["Pending", "Confirmed", "Preparing", "Out for Delivery", "Delivered"]
@@ -231,7 +238,7 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
                     <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
                       {item.products?.image_url ? (
                         <img
-                          src={item.products.image_url}
+                          src={resolveImage(item.products.image_url)}
                           alt={item.products.name}
                           className="w-full h-full object-cover rounded-xl"
                           onError={(e) => { (e.target as HTMLImageElement).src = "/logo.jpg" }}
