@@ -287,59 +287,57 @@ function OrderCard({ order, onTrack }: { order: Order; onTrack: () => void }) {
   const total = order.total_amount || order.total || 0
 
   return (
-    <div className="bg-white/90 rounded-3xl border border-white/80 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+    <div className="bg-white/90 rounded-2xl border border-white/80 shadow-sm hover:shadow-md transition-shadow overflow-hidden w-full">
 
       {/* Card Header */}
-      <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <p className="font-bold text-gray-800 text-sm">Order #{String(order.id).slice(0, 8)}</p>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {new Date(order.created_at).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}
-          </p>
+      <div className="px-5 pt-4 pb-3 flex items-center justify-between gap-3 flex-wrap border-b border-gray-50">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div>
+            <p className="font-bold text-gray-800 text-sm">Order #{String(order.id).slice(0, 8)}</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {new Date(order.created_at).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}
+            </p>
+          </div>
+          {/* Items inline preview */}
+          <div className="flex items-center gap-1.5">
+            {order.items?.slice(0, 4).map((item, i) => (
+              <div key={i} className="w-9 h-9 rounded-lg bg-[#fdf6f6] border border-[#f0e0e0] overflow-hidden shrink-0">
+                <Image src={item.img || "/logo.jpg"} alt={item.name} width={36} height={36} className="object-cover w-full h-full" />
+              </div>
+            ))}
+            {(order.items?.length ?? 0) > 4 && (
+              <span className="text-xs text-gray-400 font-semibold">+{order.items.length - 4}</span>
+            )}
+          </div>
         </div>
-        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${STATUS_BADGE[order.status] ?? STATUS_BADGE.Pending}`}>
-          {STATUS_ICON[order.status] ?? "📦"} {order.status || "Pending"}
-        </span>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="text-right">
+            <p className="font-bold text-[#4b2e2e] text-sm">₱{Number(total).toLocaleString()}</p>
+            <p className="text-[10px] text-gray-400 uppercase">{order.payment}</p>
+          </div>
+          <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${STATUS_BADGE[order.status] ?? STATUS_BADGE.Pending}`}>
+            {STATUS_ICON[order.status] ?? "📦"} {order.status || "Pending"}
+          </span>
+        </div>
       </div>
 
-      {/* Items preview */}
-      <div className="px-5 pb-4 flex items-center gap-2 flex-wrap">
-        {order.items?.slice(0, 3).map((item, i) => (
-          <div key={i} className="w-10 h-10 rounded-xl bg-[#fdf6f6] border border-[#f0e0e0] overflow-hidden shrink-0">
-            <Image src={item.img || "/logo.jpg"} alt={item.name} width={40} height={40} className="object-cover w-full h-full" />
-          </div>
-        ))}
-        {(order.items?.length ?? 0) > 3 && (
-          <div className="w-10 h-10 rounded-xl bg-[#fdf6f6] border border-[#f0e0e0] flex items-center justify-center text-xs font-bold text-[#4b2e2e]">
-            +{order.items.length - 3}
+      {/* Delivery + mini timeline row */}
+      <div className="px-5 py-3 flex items-center gap-4 flex-wrap">
+        {(order.delivery_details?.delivery_date || order.delivery_details?.delivery_time) && (
+          <div className="flex items-center gap-3 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-1.5 flex-wrap">
+            {order.delivery_details?.delivery_date && (
+              <span className="flex items-center gap-1">
+                <Calendar size={11} />
+                {new Date(order.delivery_details.delivery_date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" })}
+              </span>
+            )}
+            {order.delivery_details?.delivery_time && (
+              <span className="flex items-center gap-1"><Clock size={11} /> {order.delivery_details.delivery_time}</span>
+            )}
           </div>
         )}
-        <div className="ml-auto text-right">
-          <p className="text-xs text-gray-400">Total</p>
-          <p className="font-bold text-[#4b2e2e] text-sm">₱{Number(total).toLocaleString()}</p>
-        </div>
-      </div>
-
-      {/* Delivery schedule strip */}
-      {(order.delivery_details?.delivery_date || order.delivery_details?.delivery_time) && (
-        <div className="mx-5 mb-4 bg-amber-50 border border-amber-100 rounded-2xl px-3 py-2 flex items-center gap-3 text-xs text-amber-700 flex-wrap">
-          {order.delivery_details?.delivery_date && (
-            <span className="flex items-center gap-1">
-              <Calendar size={11} />
-              {new Date(order.delivery_details.delivery_date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" })}
-            </span>
-          )}
-          {order.delivery_details?.delivery_time && (
-            <span className="flex items-center gap-1"><Clock size={11} /> {order.delivery_details.delivery_time}</span>
-          )}
-          <span className="ml-auto uppercase text-[10px] font-bold text-amber-500">{order.payment}</span>
-        </div>
-      )}
-
-      {/* Mini timeline bar */}
-      {order.status !== "Cancelled" && (
-        <div className="px-5 pb-4">
-          <div className="flex items-center gap-0">
+        {order.status !== "Cancelled" && (
+          <div className="flex items-center gap-0 flex-1 min-w-[160px]">
             {STATUS_STEPS.map((step, i) => {
               const currentIdx = STATUS_STEPS.indexOf(order.status)
               const done = i <= currentIdx
@@ -352,15 +350,11 @@ function OrderCard({ order, onTrack }: { order: Order; onTrack: () => void }) {
               )
             })}
           </div>
-          <div className="flex justify-between mt-1">
-            <span className="text-[9px] text-gray-300">Pending</span>
-            <span className="text-[9px] text-gray-300">Delivered</span>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Footer */}
-      <div className="px-5 pb-5 border-t border-gray-50 pt-3 flex items-center justify-between gap-2">
+      <div className="px-5 py-3 border-t border-gray-50 flex items-center justify-between gap-2">
         <p className="text-xs text-gray-400">
           {order.items?.length ?? 0} item{(order.items?.length ?? 0) !== 1 ? "s" : ""}
         </p>
@@ -422,7 +416,7 @@ export default function OrdersPage() {
       <div className="min-h-screen flex flex-col text-gray-800">
         <Navbar />
 
-        <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 md:px-12 py-10">
+        <main className="flex-1 w-full max-w-[1100px] mx-auto px-4 sm:px-6 py-10">
 
           {/* Page Header */}
           <div className="mb-8 flex items-end justify-between flex-wrap gap-3">
@@ -478,8 +472,8 @@ export default function OrdersPage() {
             </div>
           )}
 
-          {/* Orders Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Orders — single column full-width */}
+          <div className="space-y-4">
             {filtered.map(order => (
               <OrderCard key={order.id} order={order} onTrack={() => setSelected(order)} />
             ))}
