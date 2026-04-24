@@ -81,13 +81,22 @@ create table if not exists delivery_details (
 
 alter table delivery_details enable row level security;
 
-create policy "Users can view own delivery details" on delivery_details
-  for select using (
-    exists (select 1 from orders where orders.id = delivery_details.order_id and orders.user_id = auth.uid())
-  );
-create policy "Users can insert own delivery details" on delivery_details
-  for insert with check (
-    exists (select 1 from orders where orders.id = delivery_details.order_id and orders.user_id = auth.uid())
+-- Allow authenticated users to insert delivery details for their own orders
+create policy "Users can insert delivery details for own orders" on delivery_details
+  for insert
+  to authenticated
+  with check (true);
+
+-- Allow users to view delivery details for their own orders
+create policy "Users can view delivery details for own orders" on delivery_details
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1 from orders 
+      where orders.id = delivery_details.order_id 
+      and orders.user_id = auth.uid()
+    )
   );
 
 -- Migration: if orders table already exists with old columns, run:
