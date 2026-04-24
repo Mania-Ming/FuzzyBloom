@@ -132,7 +132,26 @@ export default function CheckoutPage() {
         delivery_time: deliveryTime,
       })
 
-      // 4. Insert order items
+      // 4. Validate product IDs and insert order items
+      const productIds = cartItems.map(i => i.product_id).filter(Boolean)
+      if (productIds.length !== cartItems.length) {
+        throw new Error("Some items are no longer available. Please refresh your cart.")
+      }
+
+      const { data: validProducts, error: productCheckError } = await supabase
+        .from("products")
+        .select("id")
+        .in("id", productIds)
+
+      if (productCheckError) throw productCheckError
+
+      const validIds = new Set(validProducts?.map(p => p.id) ?? [])
+      const unavailable = cartItems.filter(i => !validIds.has(i.product_id))
+      if (unavailable.length > 0) {
+        const names = unavailable.map(i => i.name).join(", ")
+        throw new Error(`Some items are no longer available: ${names}. Please remove them from your cart.`)
+      }
+
       const orderItems = cartItems.map((item) => ({
         order_id: order.id,
         product_id: item.product_id,
