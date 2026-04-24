@@ -433,7 +433,14 @@ export default function OrdersPage() {
       .select("*, delivery_details(full_name, phone, address, delivery_date, delivery_time)")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-    setOrders(data ?? [])
+    // Normalize: Supabase may return delivery_details as array for 1-to-1 joins
+    const normalized = (data ?? []).map((o: any) => ({
+      ...o,
+      delivery_details: Array.isArray(o.delivery_details)
+        ? (o.delivery_details[0] ?? null)
+        : (o.delivery_details ?? null),
+    }))
+    setOrders(normalized)
     setLoading(false)
   }, [])
 
@@ -474,10 +481,12 @@ export default function OrdersPage() {
                 {loading ? "Loading..." : `${orders.length} order${orders.length !== 1 ? "s" : ""} placed`}
               </p>
             </div>
-            <Link href="/dashboard"
-              className="text-xs font-semibold text-[#4b2e2e] border border-[#4b2e2e]/30 px-4 py-2 rounded-full hover:bg-[#4b2e2e] hover:text-white transition">
-              + Shop More
-            </Link>
+            {!loading && orders.length > 0 && (
+              <Link href="/dashboard"
+                className="text-xs font-semibold text-[#4b2e2e] border border-[#4b2e2e]/30 px-4 py-2 rounded-full hover:bg-[#4b2e2e] hover:text-white transition">
+                + Shop More
+              </Link>
+            )}
           </div>
 
           {/* Status Filter Tabs */}
