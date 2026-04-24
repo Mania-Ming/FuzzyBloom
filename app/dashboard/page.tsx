@@ -1,13 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { supabase } from "@/lib/supabase"
 import { useMe } from "@/lib/hooks/useMe"
-import { ShoppingCart, Heart, ChevronRight } from "lucide-react"
+import { ShoppingCart, Heart } from "lucide-react"
 
 type Product = { id: string; name: string; price: number; img: string; description: string; is_available: boolean }
 
@@ -29,7 +29,6 @@ export default function Dashboard() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState("")
-  const scrollRef = useRef<HTMLDivElement>(null)
 
   const fetchProducts = useCallback(async () => {
     const { data } = await supabase
@@ -85,10 +84,6 @@ export default function Dashboard() {
     }
   }
 
-  function scrollCarousel() {
-    scrollRef.current?.scrollBy({ left: 280, behavior: "smooth" })
-  }
-
   return (
     <ProtectedRoute>
       <div className="min-h-screen flex flex-col text-gray-800">
@@ -118,7 +113,7 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* FEATURED BOUQUETS — CAROUSEL */}
+        {/* FEATURED BOUQUETS — static 4-item grid */}
         <section className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 pb-14">
           <div className="mb-5">
             <h2 className="text-lg font-bold text-gray-800" style={{ fontFamily: "var(--font-pacifico)" }}>
@@ -136,58 +131,39 @@ export default function Dashboard() {
               <p className="text-gray-500 text-sm font-medium">No bouquets available right now.</p>
             </div>
           ) : (
-            <div className="relative">
-              {/* Scroll arrow */}
-              <button
-                onClick={scrollCarousel}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 shadow-md rounded-full w-9 h-9 flex items-center justify-center hover:bg-gray-50 transition"
-                aria-label="Scroll right"
-              >
-                <ChevronRight size={16} className="text-gray-600" />
-              </button>
-
-              {/* Horizontal scroll container */}
-              <div
-                ref={scrollRef}
-                className="flex gap-4 overflow-x-auto scroll-smooth pb-2 pr-10 no-scrollbar"
-              >
-                {products.map((product) => (
-                  <div
-                    key={product.id}
-                    className="bg-white/90 rounded-2xl shadow-sm border border-white/70 p-4 card-hover flex flex-col shrink-0"
-                    style={{ width: "220px" }}
-                  >
-                    <div className="h-[150px] flex items-center justify-center bg-gray-50/60 rounded-xl mb-3 overflow-hidden">
-                      <img
-                        src={resolveImage(product.img)}
-                        alt={product.name}
-                        className="object-contain w-full h-full max-h-[140px]"
-                        onError={(e) => { (e.target as HTMLImageElement).src = "/p2.png" }}
-                      />
-                    </div>
-                    <p className="font-semibold text-sm text-gray-800 leading-snug">{product.name}</p>
-                    {product.description && (
-                      <p className="text-xs text-gray-500 mt-0.5 flex-1 line-clamp-2">{product.description}</p>
-                    )}
-                    <p className="text-[#4b2e2e] font-bold mt-2 text-sm mb-3">₱{product.price.toLocaleString()}</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => addToWishlist(product)}
-                        title="Add to Wishlist"
-                        className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl hover:border-pink-400 hover:text-pink-500 transition shrink-0"
-                      >
-                        <Heart size={14} />
-                      </button>
-                      <button
-                        onClick={() => addToCart(product)}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-[#4b2e2e] text-white rounded-xl py-2 text-xs font-semibold hover:bg-[#3a2323] transition"
-                      >
-                        <ShoppingCart size={13} /> Add to Cart
-                      </button>
-                    </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+              {products.slice(0, 4).map((product) => (
+                <div key={product.id} className="bg-white/90 rounded-2xl shadow-sm border border-white/70 p-4 card-hover flex flex-col">
+                  <div className="h-[160px] flex items-center justify-center bg-gray-50/60 rounded-xl mb-3 overflow-hidden">
+                    <img
+                      src={resolveImage(product.img)}
+                      alt={product.name}
+                      className="object-contain w-full h-full max-h-[140px]"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/p2.png" }}
+                    />
                   </div>
-                ))}
-              </div>
+                  <p className="font-semibold text-sm text-gray-800 leading-snug">{product.name}</p>
+                  {product.description && (
+                    <p className="text-xs text-gray-500 mt-0.5 flex-1 line-clamp-2">{product.description}</p>
+                  )}
+                  <p className="text-[#4b2e2e] font-bold mt-2 text-sm mb-3">₱{product.price.toLocaleString()}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => addToWishlist(product)}
+                      title="Add to Wishlist"
+                      className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl hover:border-pink-400 hover:text-pink-500 transition shrink-0"
+                    >
+                      <Heart size={14} />
+                    </button>
+                    <button
+                      onClick={() => addToCart(product)}
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-[#4b2e2e] text-white rounded-xl py-2 text-xs font-semibold hover:bg-[#3a2323] transition"
+                    >
+                      <ShoppingCart size={13} /> Add to Cart
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </section>
