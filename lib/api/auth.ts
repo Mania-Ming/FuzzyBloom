@@ -75,7 +75,7 @@ export async function getProducts(category?: string) {
   return data
 }
 
-// INSERT ORDER
+// INSERT ORDER — only core fields go into orders table
 export async function insertOrder(order: {
   user_id: string
   items: any[]
@@ -83,12 +83,6 @@ export async function insertOrder(order: {
   shipping: number
   total: number
   total_amount: number
-  full_name: string
-  address: string | null
-  contact_number: string | null
-  delivery_date?: string | null
-  delivery_time?: string | null
-  recipient_message?: string | null
   payment: string
   status: string
   receipt_url?: string | null
@@ -96,6 +90,19 @@ export async function insertOrder(order: {
   const { data, error } = await supabase.from("orders").insert([order]).select().single()
   if (error) throw error
   return data
+}
+
+// INSERT DELIVERY DETAILS — separate table linked by order_id
+export async function insertDeliveryDetails(details: {
+  order_id: string
+  full_name: string
+  phone: string
+  address: string
+  delivery_date: string
+  delivery_time: string
+}) {
+  const { error } = await supabase.from("delivery_details").insert([details])
+  if (error) throw error
 }
 
 // INSERT ORDER ITEMS

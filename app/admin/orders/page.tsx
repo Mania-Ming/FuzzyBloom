@@ -13,12 +13,14 @@ type Order = {
   payment: string
   status: string
   created_at: string
-  address: string
-  contact_number: string
-  delivery_date?: string | null
-  delivery_time?: string | null
-  recipient_message?: string | null
   receipt_url?: string | null
+  delivery_details?: {
+    full_name: string
+    phone: string
+    address: string
+    delivery_date: string
+    delivery_time: string
+  } | null
 }
 
 type ActionConfirm = { orderId: string; action: string } | null
@@ -54,7 +56,10 @@ export default function AdminOrdersPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false })
+    const { data } = await supabase
+      .from("orders")
+      .select("*, delivery_details(full_name, phone, address, delivery_date, delivery_time)")
+      .order("created_at", { ascending: false })
     setOrders(data ?? [])
     setLoading(false)
   }, [])
@@ -98,7 +103,8 @@ export default function AdminOrdersPage() {
     .filter(o => {
       if (!search.trim()) return true
       const q = search.toLowerCase()
-      return o.full_name?.toLowerCase().includes(q) || String(o.id).toLowerCase().includes(q)
+      const name = o.delivery_details?.full_name ?? ""
+      return name.toLowerCase().includes(q) || String(o.id).toLowerCase().includes(q)
     })
 
   return (
@@ -187,18 +193,15 @@ export default function AdminOrdersPage() {
               <div className="px-6 py-4 flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-start gap-4 flex-wrap">
                   <div>
-                    <p className="font-semibold text-gray-800 text-sm">{order.full_name || "Unknown"}</p>
+                    <p className="font-semibold text-gray-800 text-sm">{order.delivery_details?.full_name || "Unknown"}</p>
                     <p className="text-xs text-gray-400 font-mono">#{String(order.id).slice(0, 8)}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{new Date(order.created_at).toLocaleDateString()}</p>
                   </div>
                   <div className="text-xs text-gray-400 space-y-0.5 mt-0.5">
-                    <p className="flex items-center gap-1"><MapPin size={11} /> {order.address || "—"}</p>
-                    <p className="flex items-center gap-1"><Phone size={11} /> {order.contact_number || "—"}</p>
-                    {order.delivery_date && (
-                      <p className="flex items-center gap-1">📅 {new Date(order.delivery_date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" })}{order.delivery_time ? ` · ${order.delivery_time}` : ""}</p>
-                    )}
-                    {order.recipient_message && (
-                      <p className="flex items-center gap-1 italic text-gray-400">💬 "{order.recipient_message}"</p>
+                    <p className="flex items-center gap-1"><MapPin size={11} /> {order.delivery_details?.address || "—"}</p>
+                    <p className="flex items-center gap-1"><Phone size={11} /> {order.delivery_details?.phone || "—"}</p>
+                    {order.delivery_details?.delivery_date && (
+                      <p className="flex items-center gap-1">📅 {new Date(order.delivery_details.delivery_date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" })}{order.delivery_details?.delivery_time ? ` · ${order.delivery_details.delivery_time}` : ""}</p>
                     )}
                   </div>
                 </div>

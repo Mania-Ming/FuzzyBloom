@@ -52,7 +52,7 @@ create table if not exists product_variants (
   created_at timestamptz default now()
 );
 
--- ORDERS
+-- ORDERS (core fields only)
 create table if not exists orders (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users(id) on delete cascade,
@@ -61,27 +61,42 @@ create table if not exists orders (
   shipping numeric default 20,
   total numeric not null,
   total_amount numeric,
-  full_name text,
-  address text,
-  contact_number text,
-  delivery_date date,
-  delivery_time text,
-  recipient_message text,
-  payment text default 'cod', -- 'cod' | 'gcash'
+  payment text default 'cod',       -- 'cod' | 'gcash'
   receipt_url text,
-  status text default 'Pending', -- Pending | Confirmed | Preparing | Out for Delivery | Delivered | Cancelled
+  status text default 'Pending',    -- Pending | Confirmed | Preparing | Out for Delivery | Delivered | Cancelled
   created_at timestamptz default now()
 );
 
--- Run these if orders table already exists:
--- alter table orders add column if not exists total_amount numeric;
--- alter table orders add column if not exists full_name text;
--- alter table orders add column if not exists address text;
--- alter table orders add column if not exists contact_number text;
--- alter table orders add column if not exists delivery_date date;
--- alter table orders add column if not exists delivery_time text;
--- alter table orders add column if not exists recipient_message text;
--- alter table orders add column if not exists receipt_url text;
+-- DELIVERY DETAILS (linked 1-to-1 with orders)
+create table if not exists delivery_details (
+  id uuid default gen_random_uuid() primary key,
+  order_id uuid references orders(id) on delete cascade unique,
+  full_name text not null,
+  phone text not null,
+  address text not null,
+  delivery_date date not null,
+  delivery_time text not null,
+  created_at timestamptz default now()
+);
+
+alter table delivery_details enable row level security;
+
+create policy "Users can view own delivery details" on delivery_details
+  for select using (
+    exists (select 1 from orders where orders.id = delivery_details.order_id and orders.user_id = auth.uid())
+  );
+create policy "Users can insert own delivery details" on delivery_details
+  for insert with check (
+    exists (select 1 from orders where orders.id = delivery_details.order_id and orders.user_id = auth.uid())
+  );
+
+-- Migration: if orders table already exists with old columns, run:
+-- alter table orders drop column if exists full_name;
+-- alter table orders drop column if exists address;
+-- alter table orders drop column if exists contact_number;
+-- alter table orders drop column if exists delivery_date;
+-- alter table orders drop column if exists delivery_time;
+-- alter table orders drop column if exists recipient_message;
 
 -- =============================================
 -- ROW LEVEL SECURITY (RLS)

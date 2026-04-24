@@ -8,7 +8,7 @@ import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { supabase } from "@/lib/supabase"
 import { useMe } from "@/lib/hooks/useMe"
-import { X, MapPin, Phone, Calendar, Clock, MessageSquare, Package } from "lucide-react"
+import { X, MapPin, Phone, Calendar, Clock, Package } from "lucide-react"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,6 +19,14 @@ type OrderItem = {
   img?: string
 }
 
+type DeliveryDetails = {
+  full_name: string
+  phone: string
+  address: string
+  delivery_date: string
+  delivery_time: string
+}
+
 type Order = {
   id: string
   created_at: string
@@ -27,14 +35,9 @@ type Order = {
   payment: string
   status: string
   items: OrderItem[]
-  delivery_date?: string | null
-  delivery_time?: string | null
-  recipient_message?: string | null
-  full_name?: string
-  address?: string
-  contact_number?: string
   subtotal?: number
   shipping?: number
+  delivery_details?: DeliveryDetails | null
 }
 
 type StatusHistory = {
@@ -227,59 +230,43 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
           </div>
 
           {/* DELIVERY DETAILS */}
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Delivery Details</p>
-            <div className="space-y-2.5 text-sm">
-              {order.full_name && (
+          {order.delivery_details && (
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Delivery Details</p>
+              <div className="space-y-2.5 text-sm">
                 <div className="flex items-center gap-2.5 text-gray-600">
                   <div className="w-7 h-7 bg-[#fdf6f6] rounded-lg flex items-center justify-center shrink-0">
                     <Package size={13} className="text-[#4b2e2e]" />
                   </div>
-                  <span>{order.full_name}</span>
+                  <span>{order.delivery_details.full_name}</span>
                 </div>
-              )}
-              {order.address && (
                 <div className="flex items-center gap-2.5 text-gray-600">
                   <div className="w-7 h-7 bg-[#fdf6f6] rounded-lg flex items-center justify-center shrink-0">
                     <MapPin size={13} className="text-[#4b2e2e]" />
                   </div>
-                  <span>{order.address}</span>
+                  <span>{order.delivery_details.address}</span>
                 </div>
-              )}
-              {order.contact_number && (
                 <div className="flex items-center gap-2.5 text-gray-600">
                   <div className="w-7 h-7 bg-[#fdf6f6] rounded-lg flex items-center justify-center shrink-0">
                     <Phone size={13} className="text-[#4b2e2e]" />
                   </div>
-                  <span>{order.contact_number}</span>
+                  <span>{order.delivery_details.phone}</span>
                 </div>
-              )}
-              {order.delivery_date && (
                 <div className="flex items-center gap-2.5 text-gray-600">
                   <div className="w-7 h-7 bg-[#fdf6f6] rounded-lg flex items-center justify-center shrink-0">
                     <Calendar size={13} className="text-[#4b2e2e]" />
                   </div>
-                  <span>{new Date(order.delivery_date + "T00:00:00").toLocaleDateString("en-PH", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
+                  <span>{new Date(order.delivery_details.delivery_date + "T00:00:00").toLocaleDateString("en-PH", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
                 </div>
-              )}
-              {order.delivery_time && (
                 <div className="flex items-center gap-2.5 text-gray-600">
                   <div className="w-7 h-7 bg-[#fdf6f6] rounded-lg flex items-center justify-center shrink-0">
                     <Clock size={13} className="text-[#4b2e2e]" />
                   </div>
-                  <span>{order.delivery_time}</span>
+                  <span>{order.delivery_details.delivery_time}</span>
                 </div>
-              )}
-              {order.recipient_message && (
-                <div className="flex items-start gap-2.5 text-gray-600">
-                  <div className="w-7 h-7 bg-[#fdf6f6] rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <MessageSquare size={13} className="text-[#4b2e2e]" />
-                  </div>
-                  <span className="italic">"{order.recipient_message}"</span>
-                </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
 
@@ -334,16 +321,16 @@ function OrderCard({ order, onTrack }: { order: Order; onTrack: () => void }) {
       </div>
 
       {/* Delivery schedule strip */}
-      {(order.delivery_date || order.delivery_time) && (
+      {(order.delivery_details?.delivery_date || order.delivery_details?.delivery_time) && (
         <div className="mx-5 mb-4 bg-amber-50 border border-amber-100 rounded-2xl px-3 py-2 flex items-center gap-3 text-xs text-amber-700 flex-wrap">
-          {order.delivery_date && (
+          {order.delivery_details?.delivery_date && (
             <span className="flex items-center gap-1">
               <Calendar size={11} />
-              {new Date(order.delivery_date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" })}
+              {new Date(order.delivery_details.delivery_date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" })}
             </span>
           )}
-          {order.delivery_time && (
-            <span className="flex items-center gap-1"><Clock size={11} /> {order.delivery_time}</span>
+          {order.delivery_details?.delivery_time && (
+            <span className="flex items-center gap-1"><Clock size={11} /> {order.delivery_details.delivery_time}</span>
           )}
           <span className="ml-auto uppercase text-[10px] font-bold text-amber-500">{order.payment}</span>
         </div>
@@ -401,7 +388,7 @@ export default function OrdersPage() {
     setLoading(true)
     const { data } = await supabase
       .from("orders")
-      .select("*")
+      .select("*, delivery_details(full_name, phone, address, delivery_date, delivery_time)")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
     setOrders(data ?? [])
