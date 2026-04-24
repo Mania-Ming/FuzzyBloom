@@ -1,16 +1,22 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { supabase } from "@/lib/supabase"
 import { useMe } from "@/lib/hooks/useMe"
-import { ShoppingCart, Heart, ArrowRight } from "lucide-react"
+import { ShoppingCart, Heart, ArrowRight }
+  from "lucide-react"
 
-type Product = { id: string; name: string; price: number; img: string; description: string }
+type Product = { id: string; name: string; price: number; img: string; description: string; is_available: boolean }
+
+function resolveImage(src: string | null | undefined, fallback = "/p2.png"): string {
+  if (!src) return fallback
+  if (src.startsWith("http")) return src
+  return src.startsWith("/") ? src : `/${src}`
+}
 
 const categories = [
   { name: "Bouquets",         link: "/bouquets",         bg: "from-pink-100 to-rose-200",     icon: "/bouquet.png" },
@@ -25,24 +31,33 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState("")
 
-  useEffect(() => {
-    supabase
+  const fetchProducts = useCallback(async () => {
+    const { data } = await supabase
       .from("products")
-      .select("id, name, price, image_url, description")
+      .select("id, name, price, image_url, description, is_available")
       .eq("category", "Bouquets")
       .eq("is_available", true)
       .order("name")
-      .then(({ data }) => {
-        setProducts((data ?? []).map(p => ({
-          id: p.id,
-          name: p.name,
-          price: p.price,
-          img: p.image_url || "/p2.png",
-          description: p.description || "",
-        })))
-        setLoading(false)
-      })
+    setProducts((data ?? []).map(p => ({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      img: p.image_url || "/p2.png",
+      description: p.description || "",
+      is_available: p.is_available,
+    })))
+    setLoading(false)
   }, [])
+
+  useEffect(() => {
+    fetchProducts()
+    // Realtime: re-fetch on any product change so admin updates reflect instantly
+    const channel = supabase
+      .channel("dashboard-products")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, fetchProducts)
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [fetchProducts])
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(""), 2000) }
 
@@ -127,11 +142,11 @@ export default function Dashboard() {
               {products.map((product) => (
                 <div key={product.id} className="bg-white/90 rounded-2xl shadow-sm border border-white/70 p-4 card-hover flex flex-col">
                   <div className="h-[160px] flex items-center justify-center bg-gray-50/60 rounded-xl mb-3 overflow-hidden">
-                    <Image
-                      src={product.img}
+                    <img
+                      src={resolveImage(product.img)}
                       alt={product.name}
-                      width={140} height={140}
-                      className="object-contain w-full h-auto max-h-[140px]"
+                      className="object-contain w-full h-full max-h-[140px]"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/p2.png" }}
                     />
                   </div>
                   <p className="font-semibold text-sm text-gray-800 leading-snug">{product.name}</p>

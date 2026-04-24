@@ -1,14 +1,19 @@
 "use client"
 
-import Image from "next/image"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import SmartNavbar from "@/components/SmartNavbar"
 import Footer from "@/components/Footer"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/hooks/useAuth"
 import { useMe } from "@/lib/hooks/useMe"
-import { MessageCircle, X } from "lucide-react"
+import { MessageCircle, X, Heart } from "lucide-react"
+
+function resolveImage(src: string | null | undefined, fallback = "/p1.png"): string {
+  if (!src) return fallback
+  if (src.startsWith("http")) return src
+  return src.startsWith("/") ? src : `/${src}`
+}
 
 type DBProduct = {
   id: string
@@ -32,28 +37,25 @@ export default function BouquetsPage() {
   const [sending, setSending] = useState(false)
   const [toast, setToast] = useState("")
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from("products")
-        .select("id, name, description, price, image_url, is_available, category")
-        .eq("category", "Bouquets")
-        .order("name")
-      setProducts(data ?? [])
-      setLoading(false)
-    }
-    load()
+  const fetchProducts = useCallback(async () => {
+    const { data } = await supabase
+      .from("products")
+      .select("id, name, description, price, image_url, is_available, category")
+      .eq("category", "Bouquets")
+      .order("name")
+    setProducts(data ?? [])
+    setLoading(false)
+  }, [])
 
-    // Realtime subscription
+  useEffect(() => {
+    fetchProducts()
+    // Realtime: handle INSERT, UPDATE, DELETE so admin changes reflect instantly
     const channel = supabase
       .channel("bouquets-products")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "products" }, (payload) => {
-        setProducts(prev => prev.map(p => p.id === payload.new.id ? { ...p, ...payload.new } : p))
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, fetchProducts)
       .subscribe()
-
     return () => { supabase.removeChannel(channel) }
-  }, [])
+  }, [fetchProducts])
 
   async function addToCart(product: DBProduct) {
     if (!isLoggedIn) { router.push("/login"); return }
@@ -175,8 +177,13 @@ export default function BouquetsPage() {
                 )}
 
                 <div className="h-[160px] flex items-center justify-center bg-gray-50/50 rounded-xl mb-3 cursor-zoom-in"
-                  onClick={() => setZoomedImg({ src: product.image_url || "/p1.png", name: product.name })}>
-                  <Image src={product.image_url || "/p1.png"} alt={product.name} width={140} height={140} className="object-contain w-full h-auto max-h-[140px]" />
+                  onClick={() => setZoomedImg({ src: resolveImage(product.image_url), name: product.name })}>
+                  <img
+                    src={resolveImage(product.image_url)}
+                    alt={product.name}
+                    className="object-contain w-full h-full max-h-[140px]"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "/p1.png" }}
+                  />
                 </div>
 
                 <h3 className="font-semibold text-sm text-gray-800">{product.name}</h3>
@@ -184,7 +191,9 @@ export default function BouquetsPage() {
                 <p className="text-[#4b2e2e] font-bold mt-2 text-sm mb-2">₱{product.price}</p>
 
                 <div className="flex gap-1.5 mb-1.5">
-                  <button onClick={() => addToWishlist(product)} className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-full hover:border-pink-400 hover:text-pink-500 transition text-sm">♡</button>
+                  <button onClick={() => addToWishlist(product)} className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-full hover:border-pink-400 hover:text-pink-500 transition">
+                    <Heart size={13} />
+                  </button>
                   <button onClick={() => addToCart(product)} disabled={!product.is_available}
                     className={`flex-1 rounded-full py-2 text-xs font-semibold transition ${product.is_available ? "bg-[#4b2e2e] text-white hover:bg-[#3a2323]" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
                     {product.is_available ? "+ Cart" : "Not Available"}

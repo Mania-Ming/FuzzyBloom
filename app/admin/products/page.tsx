@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import Toast, { ToastType } from "@/components/admin/Toast"
 import ConfirmModal from "@/components/admin/ConfirmModal"
@@ -29,6 +30,7 @@ const CATEGORIES = ["All", "Bouquets", "Flower Keychains", "Ribbon Keychains", "
 const emptyForm = { name: "", description: "", price: "", category: "Bouquets", image_url: "", color: "", is_available: true }
 
 export default function ProductsPage() {
+  const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [filtered, setFiltered] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -47,7 +49,15 @@ export default function ProductsPage() {
     setLoading(false)
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+    // Realtime: keep admin list in sync with any external changes
+    const channel = supabase
+      .channel("admin-products")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, load)
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [load])
 
   useEffect(() => {
     let list = products
@@ -71,11 +81,11 @@ export default function ProductsPage() {
     if (editing) {
       const { error } = await supabase.from("products").update(payload).eq("id", editing.id)
       if (error) { setToast({ message: "Failed to update product.", type: "error" }) }
-      else { setToast({ message: "Product updated!", type: "success" }); setShowForm(false); load() }
+      else { setToast({ message: "Product updated!", type: "success" }); setShowForm(false); load(); router.refresh() }
     } else {
       const { error } = await supabase.from("products").insert(payload)
       if (error) { setToast({ message: "Failed to add product.", type: "error" }) }
-      else { setToast({ message: "Product added!", type: "success" }); setShowForm(false); load() }
+      else { setToast({ message: "Product added!", type: "success" }); setShowForm(false); load(); router.refresh() }
     }
     setSaving(false)
   }
