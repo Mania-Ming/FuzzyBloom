@@ -11,17 +11,9 @@ import { X, MapPin, Phone, Calendar, Clock, Package, Truck, CheckCircle, Loader,
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type OrderItem = {
-  name: string
-  qty: number
-  price: number
-  img?: string
-}
-
-type LiveItem = {
+type FetchedItem = {
   quantity: number
-  price: number
-  products: { name: string; image_url?: string } | null
+  products: { name: string; image_url?: string; price: number } | null
 }
 
 type DeliveryDetails = {
@@ -35,14 +27,17 @@ type DeliveryDetails = {
 type Order = {
   id: string
   created_at: string
-  total: number
-  total_amount: number
-  payment: string
+  total_price: number
   status: string
-  items: OrderItem[]
+  delivery_details?: DeliveryDetails | null
+  order_items?: FetchedItem[]
+  // legacy fields kept for card display compatibility
+  items?: { name: string; qty: number; price: number; img?: string }[]
+  payment?: string
+  total?: number
+  total_amount?: number
   subtotal?: number
   shipping?: number
-  delivery_details?: DeliveryDetails | null
 }
 
 type StatusHistory = {
@@ -147,8 +142,6 @@ function StatusTimeline({ status, history }: { status: string; history: StatusHi
 
 function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
   const [history, setHistory] = useState<StatusHistory[]>([])
-  const [liveItems, setLiveItems] = useState<LiveItem[]>([])
-  const [itemsLoading, setItemsLoading] = useState(true)
 
   useEffect(() => {
     supabase
@@ -159,32 +152,18 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
       .then(({ data }) => setHistory(data ?? []))
   }, [order.id])
 
-  // Fetch live order items from order_items → products
-  useEffect(() => {
-    supabase
-      .from("order_items")
-      .select("quantity, price, products ( name, image_url )")
-      .eq("order_id", order.id)
-      .then(({ data }) => {
-        const rows = (data ?? []).map((i: any) => ({
-          quantity: i.quantity,
-          price: i.price,
-          products: Array.isArray(i.products) ? (i.products[0] ?? null) : (i.products ?? null),
-        }))
-        setLiveItems(rows)
-        setItemsLoading(false)
-      })
-  }, [order.id])
-
-  // lock body scroll
   useEffect(() => {
     document.body.style.overflow = "hidden"
     return () => { document.body.style.overflow = "" }
   }, [])
 
-  const subtotal = order.subtotal ?? liveItems.reduce((s, i) => s + Number(i.price) * i.quantity, 0)
-  const shipping = order.shipping ?? 20
-  const total = order.total_amount || order.total || subtotal + shipping
+  // Use embedded order_items from the fetch query
+  const fetchedItems: FetchedItem[] = (order.order_items ?? []).map((i: any) => ({
+    quantity: i.quantity,
+    products: Array.isArray(i.products) ? (i.products[0] ?? null) : (i.products ?? null),
+  }))
+
+  const total = order.total_price || order.total_amount || order.total || 0
 
   return (
     <div
@@ -221,18 +200,14 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
             <StatusTimeline status={order.status} history={history} />
           </div>
 
-          {/* ITEMS — from live order_items join */}
+          {/* ITEMS — from embedded order_items */}
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Items Ordered</p>
-            {itemsLoading ? (
-              <div className="flex justify-center py-6">
-                <div className="w-6 h-6 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : liveItems.length === 0 ? (
+            {fetchedItems.length === 0 ? (
               <p className="text-sm text-gray-400 italic">No items found.</p>
             ) : (
               <div className="space-y-3">
-                {liveItems.map((item, i) => (
+                {fetchedItems.map((item, i) => (
                   <div key={i} className="flex items-center gap-3 bg-[#fdf6f6] rounded-2xl p-3">
                     <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
                       {item.products?.image_url ? (
@@ -251,7 +226,7 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
                       <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
                     </div>
                     <p className="font-bold text-[#4b2e2e] text-sm shrink-0">
-                      ₱{(Number(item.price) * item.quantity).toLocaleString()}
+                      ₱{((Number(item.products?.price) || 0) * item.quantity).toLocaleString()}
                     </p>
                   </div>
                 ))}
@@ -261,11 +236,9 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
 
           {/* PRICE BREAKDOWN */}
           <div className="bg-[#fdf6f6] rounded-2xl p-4 space-y-2 text-sm">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Price Breakdown</p>
-            <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>₱{subtotal.toLocaleString()}</span></div>
-            <div className="flex justify-between text-gray-600"><span>Shipping</span><span>₱{shipping}</span></div>
-            <div className="flex justify-between font-bold text-base border-t border-[#f0e0e0] pt-2 mt-1">
-              <span>Total</span><span className="text-[#4b2e2e]">₱{total.toLocaleString()}</span>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Order Total</p>
+            <div className="flex justify-between font-bold text-base">
+              <span>Total</span><span className="text-[#4b2e2e]">₱{Number(total).toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-xs text-gray-400 pt-1">
               <span>Payment</span>
@@ -326,7 +299,8 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
 // ─── Order Card ───────────────────────────────────────────────────────────────
 
 function OrderCard({ order, onTrack }: { order: Order; onTrack: () => void }) {
-  const total = order.total_amount || order.total || 0
+  const total = order.total_price || order.total_amount || order.total || 0
+  const itemCount = order.order_items?.length ?? order.items?.length ?? 0
 
   return (
     <div className="bg-white/90 rounded-2xl border border-white/80 shadow-sm hover:shadow-md transition-shadow overflow-hidden w-full">
@@ -342,18 +316,18 @@ function OrderCard({ order, onTrack }: { order: Order; onTrack: () => void }) {
           </div>
           {/* Items inline preview */}
           <div className="flex items-center gap-1.5">
-            {order.items?.slice(0, 4).map((item, i) => (
+            {(order.order_items ?? []).slice(0, 4).map((item: any, i: number) => (
               <div key={i} className="w-9 h-9 rounded-lg bg-[#fdf6f6] border border-[#f0e0e0] overflow-hidden shrink-0">
                 <img
-                  src={resolveImage(item.img)}
-                  alt={item.name}
+                  src={resolveImage(Array.isArray(item.products) ? item.products[0]?.image_url : item.products?.image_url)}
+                  alt="item"
                   className="object-cover w-full h-full"
                   onError={(e) => { (e.target as HTMLImageElement).src = "/logo.jpg" }}
                 />
               </div>
             ))}
-            {(order.items?.length ?? 0) > 4 && (
-              <span className="text-xs text-gray-400 font-semibold">+{order.items.length - 4}</span>
+            {itemCount > 4 && (
+              <span className="text-xs text-gray-400 font-semibold">+{itemCount - 4}</span>
             )}
           </div>
         </div>
@@ -404,7 +378,7 @@ function OrderCard({ order, onTrack }: { order: Order; onTrack: () => void }) {
       {/* Footer */}
       <div className="px-5 py-3 border-t border-gray-50 flex items-center justify-between gap-2">
         <p className="text-xs text-gray-400">
-          {order.items?.length ?? 0} item{(order.items?.length ?? 0) !== 1 ? "s" : ""}
+          {itemCount} item{itemCount !== 1 ? "s" : ""}
         </p>
         <button
           onClick={onTrack}
@@ -435,12 +409,26 @@ export default function OrdersPage() {
     const { data, error } = await supabase
       .from("orders")
       .select(`
-        *,
-        delivery_details ( * ),
+        id,
+        total_price,
+        status,
+        created_at,
+
+        delivery_details (
+          full_name,
+          phone,
+          address,
+          delivery_date,
+          delivery_time
+        ),
+
         order_items (
           quantity,
-          price,
-          products ( name, image_url )
+          products (
+            name,
+            image_url,
+            price
+          )
         )
       `)
       .eq("user_id", authUser.id)
