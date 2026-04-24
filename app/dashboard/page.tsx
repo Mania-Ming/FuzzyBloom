@@ -83,7 +83,7 @@ export default function Dashboard() {
         )}
 
         {/* CATEGORIES */}
-        <section className="max-w-[1100px] mx-auto w-full px-6 py-10">
+        <section className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 py-10">
           <div className="mb-5">
             <h2 className="text-lg font-bold text-gray-800">Shop by Category</h2>
             <p className="text-gray-500 text-sm mt-0.5">Browse our handcrafted collections</p>
@@ -101,7 +101,7 @@ export default function Dashboard() {
         </section>
 
         {/* FEATURED BOUQUETS */}
-        <section className="max-w-[1100px] mx-auto w-full px-6 pb-14">
+        <section className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 pb-14">
           <div className="flex items-end justify-between mb-5">
             <div>
               <h2 className="text-lg font-bold text-gray-800" style={{ fontFamily: "var(--font-pacifico)" }}>

@@ -331,9 +331,12 @@ export default function AdminOrdersPage() {
     setConfirm(null)
 
     if (action === "Delete") {
+      // Delete in FK-safe order: history → items → delivery_details → order
+      await supabase.from("order_status_history").delete().eq("order_id", orderId)
       await supabase.from("order_items").delete().eq("order_id", orderId)
+      await supabase.from("delivery_details").delete().eq("order_id", orderId)
       const { error } = await supabase.from("orders").delete().eq("id", orderId)
-      if (error) { setToast({ message: "Failed to delete order.", type: "error" }); return }
+      if (error) { setToast({ message: "Failed to delete order: " + error.message, type: "error" }); return }
       setToast({ message: "Order deleted.", type: "success" })
       load(); return
     }
@@ -499,11 +502,13 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
 
-              {/* GCash receipt badge */}
+              {/* GCash receipt badge — inside the card, below the row */}
               {isGcash && (
-                <span className={`text-[10px] font-semibold px-2 py-1 rounded-lg border ${hasReceipt ? "bg-blue-50 text-blue-500 border-blue-100" : "bg-red-50 text-red-400 border-red-100"}`}>
-                  {hasReceipt ? "Receipt Uploaded" : "No Receipt"}
-                </span>
+                <div className="px-5 pb-3">
+                  <span className={`text-[10px] font-semibold px-2 py-1 rounded-lg border ${hasReceipt ? "bg-blue-50 text-blue-500 border-blue-100" : "bg-red-50 text-red-400 border-red-100"}`}>
+                    {hasReceipt ? "Receipt Uploaded" : "No Receipt — verify before confirming"}
+                  </span>
+                </div>
               )}
             </div>
           )

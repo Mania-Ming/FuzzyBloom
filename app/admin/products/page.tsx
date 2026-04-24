@@ -133,7 +133,12 @@ export default function ProductsPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       {p.image_url
-                        ? <img src={p.image_url} alt={p.name} className="w-10 h-10 rounded-xl object-cover bg-gray-100" />
+                        ? <img
+                            src={p.image_url}
+                            alt={p.name}
+                            className="w-10 h-10 rounded-xl object-cover bg-gray-100"
+                            onError={(e) => { (e.target as HTMLImageElement).src = "/logo.jpg" }}
+                          />
                         : <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center"><Package size={16} className="text-pink-300" /></div>
                       }
                       <div>
@@ -179,14 +184,28 @@ export default function ProductsPage() {
             <form onSubmit={handleSave} className="px-8 py-6 space-y-4">
               {[
                 { label: "Product Name", key: "name", type: "text", required: true },
-                { label: "Image URL", key: "image_url", type: "text" },
+                { label: "Image URL (https://...)", key: "image_url", type: "url", placeholder: "https://example.com/image.jpg" },
                 { label: "Price (₱)", key: "price", type: "number", required: true },
-                { label: "Color", key: "color", type: "text" },
+                { label: "Color", key: "color", type: "text", placeholder: "e.g. Pink, Red" },
               ].map(f => (
                 <div key={f.key}>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{f.label}</label>
-                  <input type={f.type} required={f.required} value={(form as any)[f.key]} onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 focus:outline-none focus:ring-2 focus:ring-[#4b2e2e]/20 transition" />
+                  <input
+                    type={f.type}
+                    required={f.required}
+                    placeholder={(f as any).placeholder || ""}
+                    value={(form as any)[f.key]}
+                    onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50/80 focus:outline-none focus:ring-2 focus:ring-[#4b2e2e]/20 transition"
+                  />
+                  {f.key === "image_url" && (form as any)[f.key] && (
+                    <img
+                      src={(form as any)[f.key]}
+                      alt="preview"
+                      className="mt-2 w-16 h-16 rounded-xl object-cover border border-gray-100"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                    />
+                  )}
                 </div>
               ))}
               <div>
