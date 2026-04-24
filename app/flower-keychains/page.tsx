@@ -8,7 +8,7 @@ import Footer from "@/components/Footer"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/hooks/useAuth"
 import { useMe } from "@/lib/hooks/useMe"
-import { MessageCircle, X } from "lucide-react"
+import { MessageCircle, X, Heart } from "lucide-react"
 
 type Product = { id: string; name: string; img: string }
 
@@ -150,16 +150,18 @@ export default function FlowerKeychainsPage() {
               <div className="flex gap-2.5 flex-wrap">
                 {colors.map((c) => (
                   <button key={c.id} onClick={() => setSelected(c)}
-                    className={`border-2 rounded-xl p-1.5 transition relative ${selected.name === c.name ? "border-[#4b2e2e] shadow-md" : "border-gray-200 hover:border-gray-300"}`}>
+                    className={`border-2 rounded-xl p-1.5 transition relative ${selected.id === c.id ? "border-[#4b2e2e] shadow-md" : "border-gray-200 hover:border-gray-300"}`}>
                     {availability[c.id] === false && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white" />}
                     <Image src={c.img} alt={c.name} width={56} height={56} className="object-contain rounded-lg" />
                   </button>
                 ))}
               </div>
             </div>
-            {!isLoggedIn && <p className="text-xs text-gray-400 bg-gray-50 rounded-xl px-3 py-2 mb-4 flex items-center gap-2"><span>🔒</span> Login to add to cart or wishlist</p>}
+            {!isLoggedIn && <p className="text-xs text-gray-400 bg-gray-50 rounded-xl px-3 py-2 mb-4">Login to add to cart or wishlist</p>}
             <div className="flex gap-3 mb-3">
-              <button onClick={addToWishlist} className="w-12 h-12 flex items-center justify-center border-2 border-gray-200 rounded-full hover:border-pink-400 hover:text-pink-500 transition text-lg">♡</button>
+              <button onClick={addToWishlist} className="w-12 h-12 flex items-center justify-center border-2 border-gray-200 rounded-full hover:border-pink-400 hover:text-pink-500 transition">
+                <Heart size={16} />
+              </button>
               <button onClick={addToCart} disabled={!isAvailable}
                 className={`flex-1 py-3 rounded-full font-semibold text-sm transition ${isAvailable ? "bg-[#4b2e2e] text-white hover:bg-[#3a2323] shadow-md shadow-[#4b2e2e]/20" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
                 {!isLoggedIn ? "Login to Purchase" : isAvailable ? "Add to Cart" : "Not Available"}

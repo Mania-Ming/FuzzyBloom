@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import {
   ShoppingBag, MapPin, Phone, Calendar, Clock,
-  Check, X, Package, Search, ChevronRight, User
+  Check, X, Package, Search, ChevronRight, User, Trash2
 } from "lucide-react"
 import Toast, { ToastType } from "@/components/admin/Toast"
 import ConfirmModal from "@/components/admin/ConfirmModal"
@@ -51,8 +51,8 @@ const STATUS_COLOR: Record<string, string> = {
 }
 
 const STATUS_ICON: Record<string, string> = {
-  Pending: "🕐", Confirmed: "✅", Preparing: "🌸",
-  "Out for Delivery": "🚚", Delivered: "🎉", Cancelled: "❌",
+  Pending: "Pending", Confirmed: "Confirmed", Preparing: "Preparing",
+  "Out for Delivery": "Out for Delivery", Delivered: "Delivered", Cancelled: "Cancelled",
 }
 
 function nextStatus(current: string): string | null {
@@ -123,7 +123,7 @@ function OrderDrawer({
 
           {/* CUSTOMER INFO */}
           <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Customer & Delivery</p>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Customer &amp; Delivery</p>
             {dd ? (
               <div className="bg-[#fdf6f6] rounded-2xl p-4 space-y-2.5 text-sm">
                 <div className="flex items-center gap-2.5 text-gray-700">
@@ -148,7 +148,10 @@ function OrderDrawer({
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-gray-400 italic">No delivery details found.</p>
+              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-sm text-amber-700">
+                <p className="font-semibold">No delivery details found</p>
+                <p className="text-xs mt-0.5 text-amber-600">The customer may not have completed checkout properly.</p>
+              </div>
             )}
           </div>
 
@@ -188,7 +191,7 @@ function OrderDrawer({
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Payment Summary</p>
             <div className="flex justify-between text-gray-600">
               <span>Payment Method</span>
-              <span className="font-semibold uppercase">{isGcash ? "📱 GCash" : "💵 COD"}</span>
+              <span className="font-semibold">{isGcash ? "GCash" : "Cash on Delivery"}</span>
             </div>
             <div className="flex justify-between font-bold text-base border-t border-[#f0e0e0] pt-2 mt-1">
               <span>Total</span>
@@ -212,7 +215,6 @@ function OrderDrawer({
                 </>
               ) : (
                 <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-center">
-                  <p className="text-2xl mb-1">📎</p>
                   <p className="text-sm font-semibold text-red-500">No receipt uploaded</p>
                   <p className="text-xs text-red-400 mt-0.5">Verify with customer before confirming</p>
                 </div>
@@ -237,7 +239,7 @@ function OrderDrawer({
                       {done ? "✓" : i + 1}
                     </div>
                     <span className={`text-sm ${isCurrent ? "font-bold text-[#4b2e2e]" : done ? "text-gray-600" : "text-gray-300"}`}>
-                      {STATUS_ICON[step]} {step}
+                      {step}
                     </span>
                     {isCurrent && <span className="text-[10px] bg-[#4b2e2e] text-white px-2 py-0.5 rounded-full font-bold">Current</span>}
                   </div>
@@ -246,19 +248,19 @@ function OrderDrawer({
               {order.status === "Cancelled" && (
                 <div className="flex items-center gap-3">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 bg-red-50 border-red-300 text-red-500 shrink-0">✕</div>
-                  <span className="text-sm font-bold text-red-500">❌ Cancelled</span>
+                  <span className="text-sm font-bold text-red-500">Cancelled</span>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Action Footer */}
+        {/* Action Footer — ordered: Confirm → Cancel → Delete */}
         <div className="px-6 py-4 border-t border-gray-100 space-y-2 shrink-0">
           {next && order.status !== "Cancelled" && (
             <button
               onClick={() => { onAction(order.id, next); onClose() }}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-[#4b2e2e] text-white rounded-full font-bold text-sm hover:bg-[#3a2323] transition"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-[#4b2e2e] text-white rounded-xl font-bold text-sm hover:bg-[#3a2323] transition"
             >
               <Check size={14} /> Mark as {next}
             </button>
@@ -266,7 +268,7 @@ function OrderDrawer({
           {order.status !== "Cancelled" && order.status !== "Delivered" && (
             <button
               onClick={() => { onAction(order.id, "Cancelled"); onClose() }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-red-200 text-red-500 rounded-full font-semibold text-sm hover:bg-red-50 transition"
+              className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-red-200 text-red-500 rounded-xl font-semibold text-sm hover:bg-red-50 transition"
             >
               <X size={14} /> Cancel Order
             </button>
@@ -274,9 +276,9 @@ function OrderDrawer({
           {order.status === "Cancelled" && (
             <button
               onClick={() => { onAction(order.id, "Delete"); onClose() }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-500 text-white rounded-full font-semibold text-sm hover:bg-red-600 transition"
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-500 text-white rounded-xl font-semibold text-sm hover:bg-red-600 transition"
             >
-              <X size={14} /> Delete Order
+              <Trash2 size={14} /> Delete Order
             </button>
           )}
         </div>
@@ -454,44 +456,54 @@ export default function AdminOrdersPage() {
                 <div className="flex items-center gap-3 flex-wrap shrink-0">
                   <div className="text-right">
                     <p className="font-bold text-[#4b2e2e] text-sm">₱{Number(order.total_amount).toLocaleString()}</p>
-                    <p className="text-[10px] text-gray-400 uppercase">{isGcash ? "📱 GCash" : "💵 COD"}</p>
+                    <p className="text-[10px] text-gray-400 uppercase">{isGcash ? "GCash" : "COD"}</p>
                   </div>
 
                   <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${STATUS_COLOR[order.status] ?? STATUS_COLOR.Pending}`}>
                     {STATUS_ICON[order.status]} {order.status}
                   </span>
 
-                  {/* Quick action buttons */}
-                  {next && order.status !== "Cancelled" && (
+                  {/* Quick action buttons — View Details | Confirm | Cancel | Delete */}
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleAction(order.id, next)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#4b2e2e] text-white text-xs font-semibold hover:bg-[#3a2323] transition"
+                      onClick={() => setSelected(order)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition"
                     >
-                      <Check size={11} /> {next}
+                      View Details <ChevronRight size={11} />
                     </button>
-                  )}
-
-                  {isGcash && (
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border ${hasReceipt ? "bg-blue-50 text-blue-500 border-blue-100" : "bg-red-50 text-red-400 border-red-100"}`}>
-                      {hasReceipt ? "📎 Receipt" : "⚠️ No Receipt"}
-                    </span>
-                  )}
-
-                  {/* View Details button */}
-                  <button
-                    onClick={() => setSelected(order)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition"
-                  >
-                    View Details <ChevronRight size={11} />
-                  </button>
+                    {next && order.status !== "Cancelled" && (
+                      <button
+                        onClick={() => handleAction(order.id, next)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#4b2e2e] text-white text-xs font-semibold hover:bg-[#3a2323] transition"
+                      >
+                        <Check size={11} /> {next}
+                      </button>
+                    )}
+                    {order.status !== "Cancelled" && order.status !== "Delivered" && (
+                      <button
+                        onClick={() => handleAction(order.id, "Cancelled")}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-100 text-xs font-semibold text-red-500 hover:bg-red-50 transition"
+                      >
+                        <X size={11} /> Cancel
+                      </button>
+                    )}
+                    {order.status === "Cancelled" && (
+                      <button
+                        onClick={() => handleAction(order.id, "Delete")}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition"
+                      >
+                        <Trash2 size={11} /> Delete
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* GCash warning strip */}
-              {isGcash && !hasReceipt && order.status === "Pending" && (
-                <div className="mx-5 mb-3 bg-red-50 border border-red-100 rounded-xl px-3 py-2 text-xs text-red-500 font-medium">
-                  ⚠️ No receipt uploaded — open details to verify before confirming
-                </div>
+              {/* GCash receipt badge */}
+              {isGcash && (
+                <span className={`text-[10px] font-semibold px-2 py-1 rounded-lg border ${hasReceipt ? "bg-blue-50 text-blue-500 border-blue-100" : "bg-red-50 text-red-400 border-red-100"}`}>
+                  {hasReceipt ? "Receipt Uploaded" : "No Receipt"}
+                </span>
               )}
             </div>
           )

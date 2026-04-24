@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import Toast, { ToastType } from "@/components/admin/Toast"
 import ConfirmModal from "@/components/admin/ConfirmModal"
+import { Edit2, Trash2, CheckCircle, XCircle, Package } from "lucide-react"
 
 type Product = {
   id: string
@@ -133,7 +134,7 @@ export default function ProductsPage() {
                     <div className="flex items-center gap-3">
                       {p.image_url
                         ? <img src={p.image_url} alt={p.name} className="w-10 h-10 rounded-xl object-cover bg-gray-100" />
-                        : <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-lg">🌸</div>
+                        : <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center"><Package size={16} className="text-pink-300" /></div>
                       }
                       <div>
                         <p className="font-semibold text-gray-800">{p.name}</p>
@@ -146,14 +147,18 @@ export default function ProductsPage() {
                   <td className="px-6 py-4 font-bold text-[#4b2e2e]">₱{Number(p.price).toLocaleString()}</td>
                   <td className="px-6 py-4">
                     {p.is_available
-                      ? <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-50 text-green-600 border border-green-100">✅ Available</span>
-                      : <span className="text-xs font-semibold px-3 py-1 rounded-full bg-red-50 text-red-500 border border-red-100">❌ Sold Out</span>
+                      ? <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-green-50 text-green-600 border border-green-100"><CheckCircle size={11} /> Available</span>
+                      : <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full bg-red-50 text-red-500 border border-red-100"><XCircle size={11} /> Sold Out</span>
                     }
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <button onClick={() => openEdit(p)} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">Edit</button>
-                      <button onClick={() => setDeleteTarget(p.id)} className="px-3 py-1.5 rounded-lg border border-red-100 text-xs font-semibold text-red-500 hover:bg-red-50 transition">Delete</button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => openEdit(p)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">
+                        <Edit2 size={11} /> Edit
+                      </button>
+                      <button onClick={() => setDeleteTarget(p.id)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-100 text-xs font-semibold text-red-500 hover:bg-red-50 transition">
+                        <Trash2 size={11} /> Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
