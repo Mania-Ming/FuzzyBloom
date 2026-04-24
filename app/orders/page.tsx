@@ -420,20 +420,35 @@ function OrderCard({ order, onTrack }: { order: Order; onTrack: () => void }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function OrdersPage() {
-  const { data: user } = useMe()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Order | null>(null)
   const [filterStatus, setFilterStatus] = useState("All")
+  const { data: user } = useMe() // used only for realtime filter
 
-  const load = useCallback(async (userId: string) => {
+  const load = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase
+    // Always resolve user from Supabase auth directly — never rely on cached hook
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) { setLoading(false); return }
+
+    const { data, error } = await supabase
       .from("orders")
-      .select("*, delivery_details(full_name, phone, address, delivery_date, delivery_time)")
-      .eq("user_id", userId)
+      .select(`
+        *,
+        delivery_details ( * ),
+        order_items (
+          quantity,
+          price,
+          products ( name, image_url )
+        )
+      `)
+      .eq("user_id", authUser.id)
       .order("created_at", { ascending: false })
-    // Normalize: Supabase may return delivery_details as array for 1-to-1 joins
+
+    if (error) console.error("Orders fetch error:", error.message)
+
+    // Normalize delivery_details: Supabase may return it as array for 1-to-1 joins
     const normalized = (data ?? []).map((o: any) => ({
       ...o,
       delivery_details: Array.isArray(o.delivery_details)
@@ -444,25 +459,19 @@ export default function OrdersPage() {
     setLoading(false)
   }, [])
 
-  useEffect(() => {
-    if (!user?.id) return
-    load(user.id)
-  }, [user?.id, load])
+  useEffect(() => { load() }, [load])
 
-  // realtime status updates
+  // Realtime: re-fetch on status update for this user's orders
   useEffect(() => {
     if (!user?.id) return
     const channel = supabase
       .channel("orders-user")
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` },
-        (payload) => {
-          setOrders(prev => prev.map(o => o.id === payload.new.id ? { ...o, ...(payload.new as Partial<Order>) } : o))
-          setSelected(prev => prev?.id === payload.new.id ? { ...prev, ...(payload.new as Partial<Order>) } as Order : prev)
-        }
+        () => load() // full re-fetch so delivery_details stays in sync
       )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [user?.id])
+  }, [user?.id, load])
 
   const filtered = filterStatus === "All" ? orders : orders.filter(o => o.status === filterStatus)
 

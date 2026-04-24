@@ -95,8 +95,8 @@ function OrderDrawer({
       const { data: orderData, error: orderErr } = await supabase
         .from("orders")
         .select(`
-          id, total_amount, payment, status, created_at, receipt_url,
-          delivery_details ( full_name, phone, address, delivery_date, delivery_time )
+          *,
+          delivery_details ( * )
         `)
         .eq("id", orderId)
         .single()
@@ -104,10 +104,12 @@ function OrderDrawer({
       if (orderErr) console.error("Order fetch error:", orderErr.message)
 
       // Fetch order items with product info
-      const { data: itemsData } = await supabase
+      const { data: itemsData, error: itemsErr } = await supabase
         .from("order_items")
-        .select("quantity, price, products ( name, image_url )")
+        .select("quantity, price, products ( * )")
         .eq("order_id", orderId)
+
+      if (itemsErr) console.error("Order items fetch error:", itemsErr.message)
 
       if (orderData) {
         const dd = Array.isArray(orderData.delivery_details)
@@ -361,14 +363,20 @@ export default function AdminOrdersPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    // Fetch orders with delivery_details only
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("orders")
       .select(`
-        id, total_amount, payment, status, created_at, receipt_url,
-        delivery_details ( full_name, phone, address, delivery_date, delivery_time )
+        *,
+        delivery_details ( * ),
+        order_items (
+          quantity,
+          price,
+          products ( name, image_url )
+        )
       `)
       .order("created_at", { ascending: false })
+
+    if (error) console.error("Admin orders fetch error:", error.message)
 
     const normalized = (data ?? []).map((o: any) => ({
       ...o,
