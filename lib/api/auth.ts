@@ -86,6 +86,9 @@ export async function insertOrder(order: {
   full_name: string
   address: string | null
   contact_number: string | null
+  delivery_date?: string | null
+  delivery_time?: string | null
+  recipient_message?: string | null
   payment: string
   status: string
   receipt_url?: string | null

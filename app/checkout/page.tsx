@@ -13,6 +13,8 @@ import { supabase } from "@/lib/supabase"
 
 type CartItem = { product_id: string; name: string; price: number; img?: string; qty: number }
 
+const TIME_SLOTS = ["Morning (8AM–12PM)", "Afternoon (12PM–5PM)", "Evening (5PM–9PM)"]
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { data: user } = useMe()
@@ -20,9 +22,18 @@ export default function CheckoutPage() {
   const [payment, setPayment] = useState("cod")
   const [gcashProof, setGcashProof] = useState<File | null>(null)
   const [gcashPreview, setGcashPreview] = useState<string | null>(null)
+  const [receiptError, setReceiptError] = useState("")
   const { mutateAsync: saveOrder } = useInsertOrder()
   const shipping = 20
-  const [profile, setProfile] = useState<{ address: string; contact_number: string } | null>(null)
+
+  // Form fields
+  const [fullName, setFullName] = useState("")
+  const [phone, setPhone] = useState("")
+  const [address, setAddress] = useState("")
+  const [deliveryDate, setDeliveryDate] = useState("")
+  const [deliveryTime, setDeliveryTime] = useState("")
+  const [message, setMessage] = useState("")
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     setCartItems(JSON.parse(localStorage.getItem("cart") || "[]"))
@@ -32,60 +43,69 @@ export default function CheckoutPage() {
     if (!user?.id) return
     supabase
       .from("profiles")
-      .select("address, contact_number")
+      .select("address, contact_number, full_name")
       .eq("id", user.id)
       .single()
-      .then(({ data, error }) => {
-        if (error) console.error("Profile fetch error:", error.message)
-        if (data) setProfile(data)
+      .then(({ data }) => {
+        if (data) {
+          setAddress(data.address || "")
+          setPhone(data.contact_number || "")
+          setFullName(data.full_name || user.full_name || "")
+        }
       })
   }, [user?.id])
 
   const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.qty) || 1), 0)
   const total = subtotal + (cartItems.length > 0 ? shipping : 0)
 
+  const today = new Date().toISOString().split("T")[0]
+
   function handleGcashUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (file) { setGcashProof(file); setGcashPreview(URL.createObjectURL(file)) }
+    if (!file) return
+    const allowed = ["image/jpeg", "image/jpg", "image/png"]
+    if (!allowed.includes(file.type)) {
+      setReceiptError("Only JPG and PNG files are accepted.")
+      return
+    }
+    setReceiptError("")
+    setGcashProof(file)
+    setGcashPreview(URL.createObjectURL(file))
+  }
+
+  function validate() {
+    const e: Record<string, string> = {}
+    if (!fullName.trim()) e.fullName = "Full name is required."
+    if (!phone.trim()) e.phone = "Phone number is required."
+    if (!address.trim()) e.address = "Delivery address is required."
+    if (!deliveryDate) e.deliveryDate = "Delivery date is required."
+    else if (deliveryDate < today) e.deliveryDate = "Delivery date cannot be in the past."
+    if (!deliveryTime) e.deliveryTime = "Please select a delivery time slot."
+    if (payment === "gcash" && !gcashProof) e.receipt = "Please upload your GCash payment receipt."
+    setErrors(e)
+    return Object.keys(e).length === 0
   }
 
   async function placeOrder() {
     if (cartItems.length === 0) { alert("Cart is empty!"); return }
-    if (payment === "gcash" && !gcashProof) { alert("Please upload GCash proof of payment."); return }
     if (!user?.id) { alert("You must be logged in to place an order."); return }
+    if (!validate()) return
 
-    // check session
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      alert("Your session has expired. Please log in again.")
-      router.push("/login")
-      return
-    }
+    if (!session) { alert("Session expired. Please log in again."); router.push("/login"); return }
 
     try {
       let receiptUrl: string | null = null
 
-      // Upload GCash receipt and get public URL
       if (payment === "gcash" && gcashProof) {
         const ext = gcashProof.name.split(".").pop() ?? "jpg"
         const filePath = `public/${user.id}_${Date.now()}.${ext}`
-
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("receipts")
           .upload(filePath, gcashProof, { cacheControl: "3600", upsert: true })
-
-        if (uploadError) {
-          console.error("Receipt upload error:", uploadError)
-          alert("Failed to upload receipt: " + uploadError.message)
-          return
-        }
-
-        const { data: urlData } = supabase.storage
-          .from("receipts")
-          .getPublicUrl(uploadData.path)
-
+        if (uploadError) { alert("Failed to upload receipt: " + uploadError.message); return }
+        const { data: urlData } = supabase.storage.from("receipts").getPublicUrl(uploadData.path)
         receiptUrl = urlData.publicUrl
-        console.log("Receipt URL saved:", receiptUrl)
       }
 
       const order = await saveOrder({
@@ -95,38 +115,32 @@ export default function CheckoutPage() {
         shipping,
         total,
         total_amount: total,
-        full_name: user.full_name,
-        address: profile?.address ?? null,
-        contact_number: profile?.contact_number ?? null,
+        full_name: fullName,
+        address,
+        contact_number: phone,
+        delivery_date: deliveryDate,
+        delivery_time: deliveryTime,
+        recipient_message: message || null,
         payment,
         status: "Pending",
         receipt_url: receiptUrl,
       })
 
-      const orderItems = cartItems.map((item) => {
-        if (!item.product_id) {
-          console.error("Missing product_id for item:", item)
-          throw new Error(`Product ID missing for "${item.name}". Cannot place order.`)
-        }
-        return {
-          order_id: order.id,
-          product_id: item.product_id,
-          quantity: item.qty,
-          price: item.price,
-        }
-      })
-      console.log("Inserting order items:", orderItems)
+      const orderItems = cartItems.map((item) => ({
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.qty,
+        price: item.price,
+      }))
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
       if (itemsError) throw itemsError
 
       localStorage.removeItem("cart")
-      if (user?.id) {
-        await supabase.from("cart_items").delete().eq("user_id", user.id)
-      }
+      await supabase.from("cart_items").delete().eq("user_id", user.id)
       alert("Order placed successfully! 🎉")
       router.push("/orders")
     } catch (err: any) {
-      alert("Failed to place order: " + (err?.message ?? "Unknown error. Please try again."))
+      alert("Failed to place order: " + (err?.message ?? "Unknown error."))
     }
   }
 
@@ -135,7 +149,6 @@ export default function CheckoutPage() {
       <div className="min-h-screen flex flex-col text-gray-800">
         <Navbar />
         <main className="flex-1 max-w-5xl mx-auto w-full px-6 md:px-12 py-8">
-
           <h1 className="text-2xl text-[#2a1515] mb-6" style={{ fontFamily: "var(--font-pacifico)" }}>Checkout</h1>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -143,11 +156,9 @@ export default function CheckoutPage() {
             {/* LEFT — ORDER ITEMS */}
             <div className="space-y-4">
               <h2 className="font-semibold text-gray-700">Order Items</h2>
-
               {cartItems.length === 0 && (
                 <p className="text-gray-400 text-sm">No items in cart. <Link href="/dashboard" className="underline text-[#4b2e2e]">Shop now</Link></p>
               )}
-
               <div className="space-y-3">
                 {cartItems.map((item, i) => (
                   <div key={i} className="bg-white/80 border border-white/60 p-4 rounded-2xl flex justify-between items-center shadow-sm">
@@ -174,64 +185,71 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* GCASH QR CODE */}
+              {/* GCASH QR */}
               {payment === "gcash" && (
-                <div className="bg-white border border-[#e8d5d5] rounded-2xl shadow-sm p-6 flex flex-col items-center text-center animate-fadeIn">
+                <div className="bg-white border border-[#e8d5d5] rounded-2xl shadow-sm p-6 flex flex-col items-center text-center">
                   <p className="text-sm font-bold text-[#2a1515] mb-1">Scan to Pay via GCash</p>
                   <p className="text-xs text-gray-400 mb-4">Send payment then upload screenshot below</p>
-                  <Image
-                    src="/gcashqrcode.jpg"
-                    alt="GCash QR Code"
-                    width={250}
-                    height={250}
-                    className="rounded-xl object-contain shadow-sm"
-                  />
+                  <Image src="/gcashqrcode.jpg" alt="GCash QR Code" width={250} height={250} className="rounded-xl object-contain shadow-sm" />
                 </div>
               )}
             </div>
 
-            {/* RIGHT — PAYMENT */}
+            {/* RIGHT — FORM */}
             <div className="space-y-4">
 
-              {/* DELIVERY INFO */}
-              <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm">
-                <h2 className="font-semibold text-gray-700 mb-3">Delivery Information</h2>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    <span>{user?.full_name ?? "—"}</span>
+              {/* DELIVERY DETAILS */}
+              <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm space-y-3">
+                <h2 className="font-semibold text-gray-700">Delivery Details</h2>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Full Name *</label>
+                  <input value={fullName} onChange={e => setFullName(e.target.value)}
+                    className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] ${errors.fullName ? "border-red-300" : "border-gray-200"}`}
+                    placeholder="Enter full name" />
+                  {errors.fullName && <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>}
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Phone Number *</label>
+                  <input value={phone} onChange={e => setPhone(e.target.value)}
+                    className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] ${errors.phone ? "border-red-300" : "border-gray-200"}`}
+                    placeholder="e.g. 09XXXXXXXXX" />
+                  {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Delivery Address *</label>
+                  <input value={address} onChange={e => setAddress(e.target.value)}
+                    className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] ${errors.address ? "border-red-300" : "border-gray-200"}`}
+                    placeholder="Street, Barangay, City" />
+                  {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1 block">Delivery Date *</label>
+                    <input type="date" value={deliveryDate} min={today} onChange={e => setDeliveryDate(e.target.value)}
+                      className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] ${errors.deliveryDate ? "border-red-300" : "border-gray-200"}`} />
+                    {errors.deliveryDate && <p className="text-xs text-red-500 mt-1">{errors.deliveryDate}</p>}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <span>{user?.email ?? "—"}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>{profile?.address || "—"}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    <span>{profile?.contact_number || "—"}</span>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1 block">Time Slot *</label>
+                    <select value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)}
+                      className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] bg-white ${errors.deliveryTime ? "border-red-300" : "border-gray-200"}`}>
+                      <option value="">Select time</option>
+                      {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    {errors.deliveryTime && <p className="text-xs text-red-500 mt-1">{errors.deliveryTime}</p>}
                   </div>
                 </div>
-                {(!profile?.address || !profile?.contact_number) && (
-                  <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 text-xs text-amber-700">
-                    ⚠️ Please update your profile to add delivery information.{" "}
-                    <Link href="/profile" className="font-semibold underline">Go to Profile →</Link>
-                  </div>
-                )}
-                {(profile?.address && profile?.contact_number) && (
-                  <Link href="/profile" className="text-xs text-[#4b2e2e] font-medium hover:underline mt-3 inline-block">Edit in Profile →</Link>
-                )}
+
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Message for Recipient <span className="text-gray-400">(optional)</span></label>
+                  <textarea value={message} onChange={e => setMessage(e.target.value)} rows={2}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] resize-none"
+                    placeholder="e.g. Happy Birthday! 🎉" />
+                </div>
               </div>
 
               {/* PAYMENT METHOD */}
@@ -242,40 +260,43 @@ export default function CheckoutPage() {
                     { value: "cod", label: "Cash on Delivery", icon: "💵" },
                     { value: "gcash", label: "GCash", icon: "📱" },
                   ].map((opt) => (
-                    <label
-                      key={opt.value}
-                      className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition ${payment === opt.value ? "border-[#4b2e2e] bg-[#4b2e2e]/5" : "border-gray-100 hover:border-gray-200"}`}
-                    >
+                    <label key={opt.value}
+                      className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition ${payment === opt.value ? "border-[#4b2e2e] bg-[#4b2e2e]/5" : "border-gray-100 hover:border-gray-200"}`}>
                       <div className="flex items-center gap-3">
                         <span className="text-xl">{opt.icon}</span>
                         <span className="font-medium text-sm text-gray-700">{opt.label}</span>
                       </div>
-                      <input type="radio" checked={payment === opt.value} onChange={() => setPayment(opt.value)} className="accent-[#4b2e2e]" />
+                      <input type="radio" checked={payment === opt.value} onChange={() => { setPayment(opt.value); setReceiptError(""); setErrors(p => ({ ...p, receipt: "" })) }} className="accent-[#4b2e2e]" />
                     </label>
                   ))}
                 </div>
+
                 {payment === "gcash" && (
                   <div className="mt-4">
-                    <p className="text-sm font-semibold text-gray-700 mb-2">Upload Proof of Payment</p>
-                    <label className="block border-2 border-dashed border-gray-200 rounded-2xl p-5 text-center cursor-pointer hover:border-[#4b2e2e] transition">
+                    <p className="text-sm font-semibold text-gray-700 mb-1">
+                      Upload GCash Receipt <span className="text-red-500">*</span>
+                    </p>
+                    <p className="text-xs text-gray-400 mb-2">Accepted: JPG, PNG only</p>
+                    <label className={`block border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition ${errors.receipt ? "border-red-300 bg-red-50/30" : "border-gray-200 hover:border-[#4b2e2e]"}`}>
                       {gcashPreview ? (
-                        <img src={gcashPreview} alt="proof" className="max-h-40 mx-auto rounded-xl object-contain" />
+                        <img src={gcashPreview} alt="receipt" className="max-h-40 mx-auto rounded-xl object-contain" />
                       ) : (
                         <div className="text-gray-400 text-sm">
                           <p className="text-3xl mb-2">📎</p>
-                          <p>Click to upload screenshot</p>
+                          <p>Click to upload receipt</p>
                         </div>
                       )}
-                      <input type="file" accept="image/*" onChange={handleGcashUpload} className="hidden" />
+                      <input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onChange={handleGcashUpload} className="hidden" />
                     </label>
+                    {receiptError && <p className="text-xs text-red-500 mt-1">{receiptError}</p>}
+                    {errors.receipt && !receiptError && <p className="text-xs text-red-500 mt-1">{errors.receipt}</p>}
+                    {gcashProof && <p className="text-xs text-green-600 mt-1">✓ Receipt uploaded: {gcashProof.name}</p>}
                   </div>
                 )}
               </div>
 
-              <button
-                onClick={placeOrder}
-                className="w-full bg-[#4b2e2e] text-white py-4 rounded-full hover:bg-[#3a2323] transition font-bold text-sm shadow-md shadow-[#4b2e2e]/20"
-              >
+              <button onClick={placeOrder}
+                className="w-full bg-[#4b2e2e] text-white py-4 rounded-full hover:bg-[#3a2323] transition font-bold text-sm shadow-md shadow-[#4b2e2e]/20">
                 Place Order — ₱{total}
               </button>
             </div>
