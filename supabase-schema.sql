@@ -125,6 +125,9 @@ create policy "Anyone can view products" on products for select using (true);
 -- Orders: users can only see their own
 create policy "Users can view own orders" on orders for select using (auth.uid() = user_id);
 create policy "Users can insert own orders" on orders for insert with check (auth.uid() = user_id);
+create policy "Users can update own orders" on orders for update using (auth.uid() = user_id);
+-- Admin: service_role bypasses RLS automatically. For anon-key admin panel, add:
+-- create policy "Admin full access orders" on orders for all to authenticated using (true) with check (true);
 
 -- ORDER STATUS HISTORY
 create table if not exists order_status_history (

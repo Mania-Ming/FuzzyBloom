@@ -93,11 +93,15 @@ export default function CheckoutPage() {
 
   async function placeOrder() {
     if (cartItems.length === 0) { alert("Cart is empty!"); return }
-    if (!user?.id) { alert("You must be logged in to place an order."); return }
     if (!validate()) return
 
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { alert("Session expired. Please log in again."); router.push("/login"); return }
+    // Always get the freshest user from Supabase auth — never rely on cached hook data
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+    if (authError || !authUser) {
+      alert("You must be logged in to place an order.")
+      router.push("/login")
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -105,7 +109,7 @@ export default function CheckoutPage() {
       let receiptUrl: string | null = null
       if (payment === "gcash" && gcashProof) {
         const ext = gcashProof.name.split(".").pop() ?? "jpg"
-        const filePath = `public/${user.id}_${Date.now()}.${ext}`
+        const filePath = `public/${authUser.id}_${Date.now()}.${ext}`
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("receipts")
           .upload(filePath, gcashProof, { cacheControl: "3600", upsert: true })
@@ -114,9 +118,9 @@ export default function CheckoutPage() {
         receiptUrl = urlData.publicUrl
       }
 
-      // 2. Insert into orders table (core fields only)
+      // 2. Insert into orders table — use authUser.id (verified from Supabase, not cached hook)
       const order = await saveOrder({
-        user_id: user.id,
+        user_id: authUser.id,
         items: cartItems,
         subtotal,
         shipping,
@@ -168,7 +172,7 @@ export default function CheckoutPage() {
 
       // 5. Clear cart
       localStorage.removeItem("cart")
-      await supabase.from("cart_items").delete().eq("user_id", user.id)
+      await supabase.from("cart_items").delete().eq("user_id", authUser.id)
 
       alert("Order placed successfully! 🎉")
       router.push("/orders")
