@@ -87,6 +87,8 @@ export default function AdminOrdersPage() {
 
     const { error } = await supabase.from("orders").update({ status: action }).eq("id", orderId)
     if (error) { setToast({ message: "Failed to update order.", type: "error" }); return }
+    // log to history (trigger handles it, but insert as fallback if trigger not set up)
+    await supabase.from("order_status_history").insert({ order_id: orderId, status: action })
     setToast({ message: `Order marked as "${action}".`, type: "success" })
     load()
   }

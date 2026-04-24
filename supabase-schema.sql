@@ -102,6 +102,42 @@ create policy "Anyone can view products" on products for select using (true);
 create policy "Users can view own orders" on orders for select using (auth.uid() = user_id);
 create policy "Users can insert own orders" on orders for insert with check (auth.uid() = user_id);
 
+-- ORDER STATUS HISTORY
+create table if not exists order_status_history (
+  id uuid default gen_random_uuid() primary key,
+  order_id uuid references orders(id) on delete cascade,
+  status text not null,
+  note text,
+  changed_at timestamptz default now()
+);
+
+alter table order_status_history enable row level security;
+
+-- Users can read history for their own orders
+create policy "Users can view own order history" on order_status_history
+  for select using (
+    exists (
+      select 1 from orders where orders.id = order_status_history.order_id and orders.user_id = auth.uid()
+    )
+  );
+
+-- Trigger: auto-insert into order_status_history when order status changes
+create or replace function log_order_status_change()
+returns trigger as $$
+begin
+  if (TG_OP = 'INSERT') or (OLD.status is distinct from NEW.status) then
+    insert into order_status_history (order_id, status)
+    values (NEW.id, NEW.status);
+  end if;
+  return NEW;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_order_status_change on orders;
+create trigger on_order_status_change
+  after insert or update of status on orders
+  for each row execute procedure log_order_status_change();
+
 -- =============================================
 -- STORAGE BUCKET FOR GCASH PROOFS
 -- =============================================
