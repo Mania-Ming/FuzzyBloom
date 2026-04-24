@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState, useCallback } from "react"
 import Navbar from "@/components/Navbar"
@@ -345,7 +344,12 @@ function OrderCard({ order, onTrack }: { order: Order; onTrack: () => void }) {
           <div className="flex items-center gap-1.5">
             {order.items?.slice(0, 4).map((item, i) => (
               <div key={i} className="w-9 h-9 rounded-lg bg-[#fdf6f6] border border-[#f0e0e0] overflow-hidden shrink-0">
-                <Image src={item.img || "/logo.jpg"} alt={item.name} width={36} height={36} className="object-cover w-full h-full" />
+                <img
+                  src={resolveImage(item.img)}
+                  alt={item.name}
+                  className="object-cover w-full h-full"
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/logo.jpg" }}
+                />
               </div>
             ))}
             {(order.items?.length ?? 0) > 4 && (

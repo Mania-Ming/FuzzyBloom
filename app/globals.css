@@ -50,6 +50,10 @@ button {
   cursor: pointer;
 }
 
+/* Hide scrollbar for carousel */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* Reusable card hover lift */
 .card-hover {
   transition: transform 0.2s ease, box-shadow 0.2s ease;

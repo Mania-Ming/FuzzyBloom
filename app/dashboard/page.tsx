@@ -1,14 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { supabase } from "@/lib/supabase"
 import { useMe } from "@/lib/hooks/useMe"
-import { ShoppingCart, Heart, ArrowRight }
-  from "lucide-react"
+import { ShoppingCart, Heart, ChevronRight } from "lucide-react"
 
 type Product = { id: string; name: string; price: number; img: string; description: string; is_available: boolean }
 
@@ -30,6 +29,7 @@ export default function Dashboard() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState("")
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const fetchProducts = useCallback(async () => {
     const { data } = await supabase
@@ -51,7 +51,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchProducts()
-    // Realtime: re-fetch on any product change so admin updates reflect instantly
     const channel = supabase
       .channel("dashboard-products")
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, fetchProducts)
@@ -86,6 +85,10 @@ export default function Dashboard() {
     }
   }
 
+  function scrollCarousel() {
+    scrollRef.current?.scrollBy({ left: 280, behavior: "smooth" })
+  }
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen flex flex-col text-gray-800">
@@ -101,7 +104,7 @@ export default function Dashboard() {
         <section className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 py-10">
           <div className="mb-5">
             <h2 className="text-lg font-bold text-gray-800">Shop by Category</h2>
-            <p className="text-gray-500 text-sm mt-0.5">Browse our handcrafted collections</p>
+            <p className="text-gray-600 text-sm mt-0.5 font-medium">Browse our handcrafted collections</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {categories.map((cat) => (
@@ -115,18 +118,13 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* FEATURED BOUQUETS */}
+        {/* FEATURED BOUQUETS — CAROUSEL */}
         <section className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 pb-14">
-          <div className="flex items-end justify-between mb-5">
-            <div>
-              <h2 className="text-lg font-bold text-gray-800" style={{ fontFamily: "var(--font-pacifico)" }}>
-                Featured Bouquets
-              </h2>
-              <p className="text-sm text-gray-500 mt-0.5">Handcrafted with love, just for you</p>
-            </div>
-            <Link href="/bouquets" className="flex items-center gap-1 text-xs font-semibold text-[#4b2e2e] hover:underline">
-              View All <ArrowRight size={13} />
-            </Link>
+          <div className="mb-5">
+            <h2 className="text-lg font-bold text-gray-800" style={{ fontFamily: "var(--font-pacifico)" }}>
+              Featured Bouquets
+            </h2>
+            <p className="text-sm text-gray-600 font-medium mt-0.5">Handcrafted with love, just for you</p>
           </div>
 
           {loading ? (
@@ -135,42 +133,61 @@ export default function Dashboard() {
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-16 bg-white/60 rounded-2xl border border-white/60">
-              <p className="text-gray-400 text-sm">No bouquets available right now.</p>
+              <p className="text-gray-500 text-sm font-medium">No bouquets available right now.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-              {products.map((product) => (
-                <div key={product.id} className="bg-white/90 rounded-2xl shadow-sm border border-white/70 p-4 card-hover flex flex-col">
-                  <div className="h-[160px] flex items-center justify-center bg-gray-50/60 rounded-xl mb-3 overflow-hidden">
-                    <img
-                      src={resolveImage(product.img)}
-                      alt={product.name}
-                      className="object-contain w-full h-full max-h-[140px]"
-                      onError={(e) => { (e.target as HTMLImageElement).src = "/p2.png" }}
-                    />
+            <div className="relative">
+              {/* Scroll arrow */}
+              <button
+                onClick={scrollCarousel}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 shadow-md rounded-full w-9 h-9 flex items-center justify-center hover:bg-gray-50 transition"
+                aria-label="Scroll right"
+              >
+                <ChevronRight size={16} className="text-gray-600" />
+              </button>
+
+              {/* Horizontal scroll container */}
+              <div
+                ref={scrollRef}
+                className="flex gap-4 overflow-x-auto scroll-smooth pb-2 pr-10 no-scrollbar"
+              >
+                {products.map((product) => (
+                  <div
+                    key={product.id}
+                    className="bg-white/90 rounded-2xl shadow-sm border border-white/70 p-4 card-hover flex flex-col shrink-0"
+                    style={{ width: "220px" }}
+                  >
+                    <div className="h-[150px] flex items-center justify-center bg-gray-50/60 rounded-xl mb-3 overflow-hidden">
+                      <img
+                        src={resolveImage(product.img)}
+                        alt={product.name}
+                        className="object-contain w-full h-full max-h-[140px]"
+                        onError={(e) => { (e.target as HTMLImageElement).src = "/p2.png" }}
+                      />
+                    </div>
+                    <p className="font-semibold text-sm text-gray-800 leading-snug">{product.name}</p>
+                    {product.description && (
+                      <p className="text-xs text-gray-500 mt-0.5 flex-1 line-clamp-2">{product.description}</p>
+                    )}
+                    <p className="text-[#4b2e2e] font-bold mt-2 text-sm mb-3">₱{product.price.toLocaleString()}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => addToWishlist(product)}
+                        title="Add to Wishlist"
+                        className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl hover:border-pink-400 hover:text-pink-500 transition shrink-0"
+                      >
+                        <Heart size={14} />
+                      </button>
+                      <button
+                        onClick={() => addToCart(product)}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-[#4b2e2e] text-white rounded-xl py-2 text-xs font-semibold hover:bg-[#3a2323] transition"
+                      >
+                        <ShoppingCart size={13} /> Add to Cart
+                      </button>
+                    </div>
                   </div>
-                  <p className="font-semibold text-sm text-gray-800 leading-snug">{product.name}</p>
-                  {product.description && (
-                    <p className="text-xs text-gray-400 mt-0.5 flex-1 line-clamp-2">{product.description}</p>
-                  )}
-                  <p className="text-[#4b2e2e] font-bold mt-2 text-sm mb-3">₱{product.price.toLocaleString()}</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => addToWishlist(product)}
-                      title="Add to Wishlist"
-                      className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl hover:border-pink-400 hover:text-pink-500 transition shrink-0"
-                    >
-                      <Heart size={14} />
-                    </button>
-                    <button
-                      onClick={() => addToCart(product)}
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-[#4b2e2e] text-white rounded-xl py-2 text-xs font-semibold hover:bg-[#3a2323] transition"
-                    >
-                      <ShoppingCart size={13} /> Add to Cart
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </section>

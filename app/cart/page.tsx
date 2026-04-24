@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -11,6 +10,12 @@ import { supabase } from "@/lib/supabase"
 import { useMe } from "@/lib/hooks/useMe"
 
 type CartItem = { product_id: string; name: string; price: number; img?: string; qty: number }
+
+function resolveImage(src: string | null | undefined, fallback = "/p2.png"): string {
+  if (!src) return fallback
+  if (src.startsWith("http")) return src
+  return src.startsWith("/") ? src : `/${src}`
+}
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
@@ -125,13 +130,18 @@ export default function CartPage() {
                 )}
                 {cartItems.map((item, i) => (
                   <div key={item.product_id} className="bg-white/80 rounded-2xl border border-white/60 shadow-sm p-4 flex items-center gap-4">
-                    <div className="w-20 h-20 bg-gray-50 rounded-xl flex items-center justify-center shrink-0">
-                      <Image src={item.img || "/p2.png"} alt={item.name} width={72} height={72} className="rounded-lg object-cover" />
+                    <div className="w-20 h-20 bg-gray-50 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+                      <img
+                        src={resolveImage(item.img)}
+                        alt={item.name}
+                        className="w-full h-full object-cover rounded-xl"
+                        onError={(e) => { (e.target as HTMLImageElement).src = "/p2.png" }}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm text-gray-800 truncate">{item.name}</p>
                       <p className="text-[#4b2e2e] font-bold text-sm mt-0.5">₱{Number(item.price) || 0}</p>
-                      <p className="text-xs text-gray-300 font-mono mt-0.5 truncate">ID: {item.product_id}</p>
+                      <p className="text-xs font-mono text-gray-500 mt-0.5 truncate">#{item.product_id.slice(0, 12)}...</p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="flex items-center border border-gray-200 rounded-full overflow-hidden bg-white">

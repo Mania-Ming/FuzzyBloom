@@ -13,11 +13,11 @@ import { MessageCircle, X, Heart } from "lucide-react"
 type Product = { id: string; name: string; img: string }
 
 const colors: Product[] = [
-  { id: "750356a4-5397-4225-ba9c-cfb6de48cce4", name: "Pink", img: "/r1.png" },
-  { id: "51a7f03d-8747-4a62-93c0-6f45d687e321", name: "Purple", img: "/r2.png" },
-  { id: "0b229c48-2cda-4e27-b0b2-e2aadbd06d6d", name: "White", img: "/r3.png" },
-  { id: "81eac360-8c62-44ec-a335-5d2e7995a73e", name: "Yellow", img: "/r4.png" },
-  { id: "1815aee6-c967-43a4-a243-197936547929", name: "Red", img: "/r5.png" },
+  { id: "750356a4-5397-4225-ba9c-cfb6de48cce4", name: "Black", img: "/r1.png" },
+  { id: "51a7f03d-8747-4a62-93c0-6f45d687e321", name: "Blue", img: "/r2.png" },
+  { id: "0b229c48-2cda-4e27-b0b2-e2aadbd06d6d", name: "Purple", img: "/r3.png" },
+  { id: "81eac360-8c62-44ec-a335-5d2e7995a73e", name: "Green", img: "/r4.png" },
+  { id: "1815aee6-c967-43a4-a243-197936547929", name: "Pink", img: "/r5.png" },
 ]
 
 export default function RibbonKeychainsPage() {

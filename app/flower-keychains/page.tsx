@@ -13,12 +13,12 @@ import { MessageCircle, X, Heart } from "lucide-react"
 type Product = { id: string; name: string; img: string }
 
 const colors: Product[] = [
-  { id: "b7ed3194-9a79-448a-aaba-c0c0af2a7ca9", name: "Pink", img: "/k1.png" },
-  { id: "25252edd-2276-4d09-bff8-ddbe83bdd078", name: "Purple", img: "/k2.png" },
-  { id: "3252c399-c743-4a2f-8b1f-e163c797fcfd", name: "White", img: "/k3.png" },
-  { id: "af739689-0076-4dae-b5db-9d576e7ac181", name: "Yellow", img: "/k4.png" },
-  { id: "f4adda5d-0b8a-49e4-91da-d81c887cb6d1", name: "Red", img: "/k5.png" },
-  { id: "271971f8-2f13-43f3-a98b-1589a1d9b771", name: "Blue", img: "/k6.png" },
+  { id: "b7ed3194-9a79-448a-aaba-c0c0af2a7ca9", name: "White", img: "/k1.png" },
+  { id: "25252edd-2276-4d09-bff8-ddbe83bdd078", name: "Yellow", img: "/k2.png" },
+  { id: "3252c399-c743-4a2f-8b1f-e163c797fcfd", name: "Blue", img: "/k3.png" },
+  { id: "af739689-0076-4dae-b5db-9d576e7ac181", name: "Red", img: "/k4.png" },
+  { id: "f4adda5d-0b8a-49e4-91da-d81c887cb6d1", name: "Purple", img: "/k5.png" },
+  { id: "271971f8-2f13-43f3-a98b-1589a1d9b771", name: "Pink", img: "/k6.png" },
 ]
 
 export default function FlowerKeychainsPage() {
