@@ -19,6 +19,18 @@ type DeliveryDetails = {
   delivery_time: string
 }
 
+type Profile = {
+  full_name: string
+  contact_number?: string
+  address?: string
+}
+
+type OrderItemRow = {
+  quantity: number
+  price: number
+  products: { name: string; image_url?: string } | null
+}
+
 type Order = {
   id: string
   total_amount: number
@@ -27,12 +39,11 @@ type Order = {
   created_at: string
   receipt_url?: string | null
   delivery_details?: DeliveryDetails | null
+  profiles?: Profile | null
 }
 
-type OrderItem = {
-  quantity: number
-  price: number
-  products?: { name: string; image_url?: string } | { name: string; image_url?: string }[] | null
+type FullOrder = Order & {
+  order_items: OrderItemRow[]
 }
 
 type ActionConfirm = { orderId: string; action: string } | null
@@ -50,54 +61,107 @@ const STATUS_COLOR: Record<string, string> = {
   Cancelled:          "bg-red-50 text-red-500 border-red-100",
 }
 
-const STATUS_ICON: Record<string, string> = {
-  Pending: "Pending", Confirmed: "Confirmed", Preparing: "Preparing",
-  "Out for Delivery": "Out for Delivery", Delivered: "Delivered", Cancelled: "Cancelled",
-}
-
 function nextStatus(current: string): string | null {
   const idx = STATUS_FLOW.indexOf(current)
   return idx === -1 || idx === STATUS_FLOW.length - 1 ? null : STATUS_FLOW[idx + 1]
 }
 
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "N/A"
+  const d = new Date(dateStr + "T00:00:00")
+  if (isNaN(d.getTime())) return "N/A"
+  return d.toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" })
+}
+
 // ─── Order Detail Drawer ──────────────────────────────────────────────────────
 
 function OrderDrawer({
-  order,
+  orderId,
   onClose,
   onAction,
 }: {
-  order: Order
+  orderId: string
   onClose: () => void
   onAction: (orderId: string, action: string) => void
 }) {
-  const [items, setItems] = useState<OrderItem[]>([])
-  const [loadingItems, setLoadingItems] = useState(true)
+  const [order, setOrder] = useState<FullOrder | null>(null)
+  const [loading, setLoading] = useState(true)
   const [receiptOpen, setReceiptOpen] = useState(false)
 
   useEffect(() => {
-    supabase
-      .from("order_items")
-      .select("quantity, price, products!order_items_product_id_fkey(name, image_url)")
-      .eq("order_id", order.id)
-      .then(({ data }) => { setItems(data ?? []); setLoadingItems(false) })
-  }, [order.id])
+    async function fetchFull() {
+      setLoading(true)
+
+      // Fetch order with delivery_details and profiles (user fallback)
+      const { data: orderData } = await supabase
+        .from("orders")
+        .select(`
+          id, total_amount, payment, status, created_at, receipt_url,
+          delivery_details ( full_name, phone, address, delivery_date, delivery_time ),
+          profiles ( full_name, contact_number, address )
+        `)
+        .eq("id", orderId)
+        .single()
+
+      // Fetch order items with product info
+      const { data: itemsData } = await supabase
+        .from("order_items")
+        .select("quantity, price, products ( name, image_url )")
+        .eq("order_id", orderId)
+
+      if (orderData) {
+        const dd = Array.isArray(orderData.delivery_details)
+          ? orderData.delivery_details[0] ?? null
+          : orderData.delivery_details ?? null
+        const prof = Array.isArray(orderData.profiles)
+          ? orderData.profiles[0] ?? null
+          : orderData.profiles ?? null
+
+        const items: OrderItemRow[] = (itemsData ?? []).map((i: any) => ({
+          quantity: i.quantity,
+          price: i.price,
+          products: Array.isArray(i.products) ? (i.products[0] ?? null) : (i.products ?? null),
+        }))
+
+        setOrder({ ...orderData, delivery_details: dd, profiles: prof, order_items: items })
+      }
+      setLoading(false)
+    }
+    fetchFull()
+  }, [orderId])
 
   useEffect(() => {
     document.body.style.overflow = "hidden"
     return () => { document.body.style.overflow = "" }
   }, [])
 
+  if (loading || !order) {
+    return (
+      <>
+        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
+        </div>
+      </>
+    )
+  }
+
   const next = nextStatus(order.status)
   const isGcash = order.payment?.toLowerCase() === "gcash"
   const dd = order.delivery_details
+  const prof = order.profiles
+
+  // Resolve display values: delivery_details first, then profiles fallback, then N/A
+  const displayName    = dd?.full_name    || prof?.full_name    || "N/A"
+  const displayPhone   = dd?.phone        || prof?.contact_number || "N/A"
+  const displayAddress = dd?.address      || prof?.address      || "N/A"
+  const displayDate    = formatDate(dd?.delivery_date)
+  const displayTime    = dd?.delivery_time || "N/A"
 
   return (
     <>
-      {/* Backdrop */}
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Drawer */}
       <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col">
 
         {/* Header */}
@@ -110,7 +174,7 @@ function OrderDrawer({
           </div>
           <div className="flex items-center gap-3">
             <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${STATUS_COLOR[order.status] ?? STATUS_COLOR.Pending}`}>
-              {STATUS_ICON[order.status]} {order.status}
+              {order.status}
             </span>
             <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition">
               <X size={14} className="text-gray-500" />
@@ -121,67 +185,63 @@ function OrderDrawer({
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
 
-          {/* CUSTOMER INFO */}
+          {/* CUSTOMER & DELIVERY */}
           <div>
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Customer &amp; Delivery</p>
-            {dd ? (
-              <div className="bg-[#fdf6f6] rounded-2xl p-4 space-y-2.5 text-sm">
-                <div className="flex items-center gap-2.5 text-gray-700">
-                  <User size={14} className="text-[#4b2e2e] shrink-0" />
-                  <span className="font-semibold">{dd.full_name}</span>
-                </div>
-                <div className="flex items-center gap-2.5 text-gray-600">
-                  <Phone size={14} className="text-[#4b2e2e] shrink-0" />
-                  <span>{dd.phone}</span>
-                </div>
-                <div className="flex items-start gap-2.5 text-gray-600">
-                  <MapPin size={14} className="text-[#4b2e2e] shrink-0 mt-0.5" />
-                  <span>{dd.address}</span>
-                </div>
-                <div className="flex items-center gap-2.5 text-gray-600">
-                  <Calendar size={14} className="text-[#4b2e2e] shrink-0" />
-                  <span>{new Date(dd.delivery_date + "T00:00:00").toLocaleDateString("en-PH", { weekday: "short", month: "long", day: "numeric", year: "numeric" })}</span>
-                </div>
-                <div className="flex items-center gap-2.5 text-gray-600">
-                  <Clock size={14} className="text-[#4b2e2e] shrink-0" />
-                  <span>{dd.delivery_time}</span>
-                </div>
+            <div className="bg-[#fdf6f6] rounded-2xl p-4 space-y-2.5 text-sm">
+              <div className="flex items-center gap-2.5 text-gray-700">
+                <User size={14} className="text-[#4b2e2e] shrink-0" />
+                <span className="font-semibold">{displayName}</span>
               </div>
-            ) : (
-              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-sm text-amber-700">
-                <p className="font-semibold">No delivery details found</p>
-                <p className="text-xs mt-0.5 text-amber-600">The customer may not have completed checkout properly.</p>
+              <div className="flex items-center gap-2.5 text-gray-600">
+                <Phone size={14} className="text-[#4b2e2e] shrink-0" />
+                <span>{displayPhone}</span>
               </div>
-            )}
+              <div className="flex items-start gap-2.5 text-gray-600">
+                <MapPin size={14} className="text-[#4b2e2e] shrink-0 mt-0.5" />
+                <span>{displayAddress}</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-gray-600">
+                <Calendar size={14} className="text-[#4b2e2e] shrink-0" />
+                <span>{displayDate}</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-gray-600">
+                <Clock size={14} className="text-[#4b2e2e] shrink-0" />
+                <span>{displayTime}</span>
+              </div>
+            </div>
           </div>
 
           {/* ORDER ITEMS */}
           <div>
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Items Ordered</p>
-            {loadingItems ? (
-              <div className="flex justify-center py-6">
-                <div className="w-6 h-6 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : items.length === 0 ? (
+            {order.order_items.length === 0 ? (
               <p className="text-sm text-gray-400 italic">No items found.</p>
             ) : (
               <div className="space-y-2">
-                {items.map((item, i) => {
-                  const prod = Array.isArray(item.products) ? item.products[0] : item.products
-                  return (
-                    <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
-                      {prod?.image_url
-                        ? <img src={prod.image_url} alt={prod.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
-                        : <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center shrink-0"><Package size={16} className="text-pink-300" /></div>
-                      }
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-800 truncate">{prod?.name ?? "Unknown"}</p>
-                        <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
+                {order.order_items.map((item, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                    {item.products?.image_url ? (
+                      <img
+                        src={item.products.image_url}
+                        alt={item.products.name}
+                        className="w-10 h-10 rounded-lg object-cover shrink-0"
+                        onError={(e) => { (e.target as HTMLImageElement).src = "/logo.jpg" }}
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center shrink-0">
+                        <Package size={16} className="text-pink-300" />
                       </div>
-                      <p className="font-bold text-[#4b2e2e] text-sm shrink-0">₱{(Number(item.price) * item.quantity).toLocaleString()}</p>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{item.products?.name ?? "N/A"}</p>
+                      <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
                     </div>
-                  )
-                })}
+                    <p className="font-bold text-[#4b2e2e] text-sm shrink-0">
+                      ₱{(Number(item.price) * item.quantity).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -222,7 +282,7 @@ function OrderDrawer({
             </div>
           )}
 
-          {/* STATUS FLOW */}
+          {/* STATUS TIMELINE */}
           <div>
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Order Status</p>
             <div className="space-y-1.5">
@@ -255,7 +315,7 @@ function OrderDrawer({
           </div>
         </div>
 
-        {/* Action Footer — ordered: Confirm → Cancel → Delete */}
+        {/* Action Footer */}
         <div className="px-6 py-4 border-t border-gray-100 space-y-2 shrink-0">
           {next && order.status !== "Cancelled" && (
             <button
@@ -284,7 +344,6 @@ function OrderDrawer({
         </div>
       </div>
 
-      {/* Receipt fullscreen */}
       {receiptOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" onClick={() => setReceiptOpen(false)}>
           <img src={order.receipt_url!} alt="Receipt" className="max-w-full max-h-full rounded-2xl object-contain" />
@@ -303,25 +362,33 @@ export default function AdminOrdersPage() {
   const [confirm, setConfirm] = useState<ActionConfirm>(null)
   const [filterStatus, setFilterStatus] = useState("All")
   const [search, setSearch] = useState("")
-  const [selected, setSelected] = useState<Order | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     const { data } = await supabase
       .from("orders")
-      .select("*, delivery_details(full_name, phone, address, delivery_date, delivery_time)")
+      .select(`
+        id, total_amount, payment, status, created_at, receipt_url,
+        delivery_details ( full_name, phone, address, delivery_date, delivery_time ),
+        profiles ( full_name, contact_number, address )
+      `)
       .order("created_at", { ascending: false })
-    setOrders(data ?? [])
+
+    // Normalize nested objects (Supabase may return arrays for 1-to-1 joins)
+    const normalized = (data ?? []).map((o: any) => ({
+      ...o,
+      delivery_details: Array.isArray(o.delivery_details) ? (o.delivery_details[0] ?? null) : (o.delivery_details ?? null),
+      profiles: Array.isArray(o.profiles) ? (o.profiles[0] ?? null) : (o.profiles ?? null),
+    }))
+
+    setOrders(normalized)
     setLoading(false)
   }, [])
 
   useEffect(() => { load() }, [load])
 
   async function handleAction(orderId: string, action: string) {
-    if (action === "Delete") {
-      setConfirm({ orderId, action })
-      return
-    }
     setConfirm({ orderId, action })
   }
 
@@ -331,7 +398,6 @@ export default function AdminOrdersPage() {
     setConfirm(null)
 
     if (action === "Delete") {
-      // Delete in FK-safe order: history → items → delivery_details → order
       await supabase.from("order_status_history").delete().eq("order_id", orderId)
       await supabase.from("order_items").delete().eq("order_id", orderId)
       await supabase.from("delivery_details").delete().eq("order_id", orderId)
@@ -353,8 +419,8 @@ export default function AdminOrdersPage() {
     .filter(o => {
       if (!search.trim()) return true
       const q = search.toLowerCase()
-      return (o.delivery_details?.full_name ?? "").toLowerCase().includes(q)
-        || String(o.id).toLowerCase().includes(q)
+      const name = o.delivery_details?.full_name || o.profiles?.full_name || ""
+      return name.toLowerCase().includes(q) || String(o.id).toLowerCase().includes(q)
     })
 
   return (
@@ -370,11 +436,10 @@ export default function AdminOrdersPage() {
         />
       )}
 
-      {/* Detail Drawer */}
-      {selected && (
+      {selectedId && (
         <OrderDrawer
-          order={selected}
-          onClose={() => setSelected(null)}
+          orderId={selectedId}
+          onClose={() => setSelectedId(null)}
           onAction={handleAction}
         />
       )}
@@ -408,7 +473,7 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
-      {/* Orders Table */}
+      {/* Orders List */}
       <div className="space-y-3">
         {loading && (
           <div className="flex justify-center py-16">
@@ -428,26 +493,30 @@ export default function AdminOrdersPage() {
           const isGcash = order.payment?.toLowerCase() === "gcash"
           const hasReceipt = !!order.receipt_url
           const dd = order.delivery_details
+          const prof = order.profiles
+          const displayName = dd?.full_name || prof?.full_name || "No Name"
+          const displayPhone = dd?.phone || prof?.contact_number || "N/A"
+          const displayAddress = dd?.address || prof?.address || "N/A"
 
           return (
             <div key={order.id} className="bg-white rounded-2xl border border-[#e8d5d5] shadow-sm overflow-hidden">
               <div className="px-5 py-4 flex flex-wrap items-center justify-between gap-3">
 
                 {/* Left: customer info */}
-                <div className="flex items-start gap-3 flex-wrap min-w-0">
+                <div className="flex items-start gap-3 min-w-0">
                   <div className="w-9 h-9 rounded-full bg-[#fdf6f6] border border-[#f0e0e0] flex items-center justify-center shrink-0">
                     <User size={16} className="text-[#4b2e2e]" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-800 text-sm">{dd?.full_name || "Unknown"}</p>
+                    <p className="font-semibold text-gray-800 text-sm">{displayName}</p>
                     <p className="text-xs text-gray-400 font-mono">#{String(order.id).slice(0, 8)}</p>
                     <div className="flex items-center gap-3 mt-1 flex-wrap text-xs text-gray-400">
-                      {dd?.phone && <span className="flex items-center gap-1"><Phone size={10} />{dd.phone}</span>}
-                      {dd?.address && <span className="flex items-center gap-1 truncate max-w-[200px]"><MapPin size={10} />{dd.address}</span>}
+                      <span className="flex items-center gap-1"><Phone size={10} />{displayPhone}</span>
+                      <span className="flex items-center gap-1 truncate max-w-[200px]"><MapPin size={10} />{displayAddress}</span>
                       {dd?.delivery_date && (
                         <span className="flex items-center gap-1">
                           <Calendar size={10} />
-                          {new Date(dd.delivery_date + "T00:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" })}
+                          {formatDate(dd.delivery_date)}
                           {dd.delivery_time && ` · ${dd.delivery_time}`}
                         </span>
                       )}
@@ -456,53 +525,52 @@ export default function AdminOrdersPage() {
                 </div>
 
                 {/* Right: amount + status + actions */}
-                <div className="flex items-center gap-3 flex-wrap shrink-0">
-                  <div className="text-right">
+                <div className="flex items-center gap-2 flex-wrap shrink-0">
+                  <div className="text-right mr-1">
                     <p className="font-bold text-[#4b2e2e] text-sm">₱{Number(order.total_amount).toLocaleString()}</p>
                     <p className="text-[10px] text-gray-400 uppercase">{isGcash ? "GCash" : "COD"}</p>
                   </div>
 
                   <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${STATUS_COLOR[order.status] ?? STATUS_COLOR.Pending}`}>
-                    {STATUS_ICON[order.status]} {order.status}
+                    {order.status}
                   </span>
 
-                  {/* Quick action buttons — View Details | Confirm | Cancel | Delete */}
-                  <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedId(order.id)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition"
+                  >
+                    View Details <ChevronRight size={11} />
+                  </button>
+
+                  {next && order.status !== "Cancelled" && (
                     <button
-                      onClick={() => setSelected(order)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition"
+                      onClick={() => handleAction(order.id, next)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#4b2e2e] text-white text-xs font-semibold hover:bg-[#3a2323] transition"
                     >
-                      View Details <ChevronRight size={11} />
+                      <Check size={11} /> {next}
                     </button>
-                    {next && order.status !== "Cancelled" && (
-                      <button
-                        onClick={() => handleAction(order.id, next)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#4b2e2e] text-white text-xs font-semibold hover:bg-[#3a2323] transition"
-                      >
-                        <Check size={11} /> {next}
-                      </button>
-                    )}
-                    {order.status !== "Cancelled" && order.status !== "Delivered" && (
-                      <button
-                        onClick={() => handleAction(order.id, "Cancelled")}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-100 text-xs font-semibold text-red-500 hover:bg-red-50 transition"
-                      >
-                        <X size={11} /> Cancel
-                      </button>
-                    )}
-                    {order.status === "Cancelled" && (
-                      <button
-                        onClick={() => handleAction(order.id, "Delete")}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition"
-                      >
-                        <Trash2 size={11} /> Delete
-                      </button>
-                    )}
-                  </div>
+                  )}
+
+                  {order.status !== "Cancelled" && order.status !== "Delivered" && (
+                    <button
+                      onClick={() => handleAction(order.id, "Cancelled")}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-100 text-xs font-semibold text-red-500 hover:bg-red-50 transition"
+                    >
+                      <X size={11} /> Cancel
+                    </button>
+                  )}
+
+                  {order.status === "Cancelled" && (
+                    <button
+                      onClick={() => handleAction(order.id, "Delete")}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition"
+                    >
+                      <Trash2 size={11} /> Delete
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* GCash receipt badge — inside the card, below the row */}
               {isGcash && (
                 <div className="px-5 pb-3">
                   <span className={`text-[10px] font-semibold px-2 py-1 rounded-lg border ${hasReceipt ? "bg-blue-50 text-blue-500 border-blue-100" : "bg-red-50 text-red-400 border-red-100"}`}>

@@ -19,6 +19,12 @@ type OrderItem = {
   img?: string
 }
 
+type LiveItem = {
+  quantity: number
+  price: number
+  products: { name: string; image_url?: string } | null
+}
+
 type DeliveryDetails = {
   full_name: string
   phone: string
@@ -135,6 +141,8 @@ function StatusTimeline({ status, history }: { status: string; history: StatusHi
 
 function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
   const [history, setHistory] = useState<StatusHistory[]>([])
+  const [liveItems, setLiveItems] = useState<LiveItem[]>([])
+  const [itemsLoading, setItemsLoading] = useState(true)
 
   useEffect(() => {
     supabase
@@ -145,13 +153,30 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
       .then(({ data }) => setHistory(data ?? []))
   }, [order.id])
 
+  // Fetch live order items from order_items → products
+  useEffect(() => {
+    supabase
+      .from("order_items")
+      .select("quantity, price, products ( name, image_url )")
+      .eq("order_id", order.id)
+      .then(({ data }) => {
+        const rows = (data ?? []).map((i: any) => ({
+          quantity: i.quantity,
+          price: i.price,
+          products: Array.isArray(i.products) ? (i.products[0] ?? null) : (i.products ?? null),
+        }))
+        setLiveItems(rows)
+        setItemsLoading(false)
+      })
+  }, [order.id])
+
   // lock body scroll
   useEffect(() => {
     document.body.style.overflow = "hidden"
     return () => { document.body.style.overflow = "" }
   }, [])
 
-  const subtotal = order.subtotal ?? order.items?.reduce((s, i) => s + Number(i.price) * Number(i.qty), 0) ?? 0
+  const subtotal = order.subtotal ?? liveItems.reduce((s, i) => s + Number(i.price) * i.quantity, 0)
   const shipping = order.shipping ?? 20
   const total = order.total_amount || order.total || subtotal + shipping
 
@@ -190,23 +215,42 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
             <StatusTimeline status={order.status} history={history} />
           </div>
 
-          {/* ITEMS */}
+          {/* ITEMS — from live order_items join */}
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Items Ordered</p>
-            <div className="space-y-3">
-              {order.items?.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 bg-[#fdf6f6] rounded-2xl p-3">
-                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-sm">
-                    <Image src={item.img || "/logo.jpg"} alt={item.name} width={44} height={44} className="rounded-lg object-cover" />
+            {itemsLoading ? (
+              <div className="flex justify-center py-6">
+                <div className="w-6 h-6 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : liveItems.length === 0 ? (
+              <p className="text-sm text-gray-400 italic">No items found.</p>
+            ) : (
+              <div className="space-y-3">
+                {liveItems.map((item, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-[#fdf6f6] rounded-2xl p-3">
+                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                      {item.products?.image_url ? (
+                        <img
+                          src={item.products.image_url}
+                          alt={item.products.name}
+                          className="w-full h-full object-cover rounded-xl"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "/logo.jpg" }}
+                        />
+                      ) : (
+                        <Package size={20} className="text-gray-300" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-gray-800 truncate">{item.products?.name ?? "N/A"}</p>
+                      <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
+                    </div>
+                    <p className="font-bold text-[#4b2e2e] text-sm shrink-0">
+                      ₱{(Number(item.price) * item.quantity).toLocaleString()}
+                    </p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-gray-800 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-400">Qty: {item.qty}</p>
-                  </div>
-                  <p className="font-bold text-[#4b2e2e] text-sm shrink-0">₱{(Number(item.price) * Number(item.qty)).toLocaleString()}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* PRICE BREAKDOWN */}
@@ -223,35 +267,40 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
             </div>
           </div>
 
-          {order.delivery_details && (
+          {/* DELIVERY DETAILS */}
+          {order.delivery_details ? (
             <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Delivery Details</p>
               <div className="bg-[#fdf6f6] rounded-2xl p-4 space-y-2.5 text-sm">
                 <div className="flex items-center gap-2.5 text-gray-700">
                   <Package size={13} className="text-[#4b2e2e] shrink-0" />
-                  <span className="font-semibold">{order.delivery_details.full_name}</span>
+                  <span className="font-semibold">{order.delivery_details.full_name || "N/A"}</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-gray-600">
                   <Phone size={13} className="text-[#4b2e2e] shrink-0" />
-                  <span>{order.delivery_details.phone}</span>
+                  <span>{order.delivery_details.phone || "N/A"}</span>
                 </div>
                 <div className="flex items-start gap-2.5 text-gray-600">
                   <MapPin size={13} className="text-[#4b2e2e] shrink-0 mt-0.5" />
-                  <span>{order.delivery_details.address}</span>
+                  <span>{order.delivery_details.address || "N/A"}</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-gray-600">
                   <Calendar size={13} className="text-[#4b2e2e] shrink-0" />
                   <span>
                     {order.delivery_details.delivery_date
                       ? new Date(order.delivery_details.delivery_date + "T00:00:00").toLocaleDateString("en-PH", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
-                      : "—"}
+                      : "N/A"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5 text-gray-600">
                   <Clock size={13} className="text-[#4b2e2e] shrink-0" />
-                  <span>{order.delivery_details.delivery_time}</span>
+                  <span>{order.delivery_details.delivery_time || "N/A"}</span>
                 </div>
               </div>
+            </div>
+          ) : (
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-sm text-amber-700">
+              <p className="font-semibold">Delivery details not available</p>
             </div>
           )}
 
