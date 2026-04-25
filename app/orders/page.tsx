@@ -454,31 +454,44 @@ export default function OrdersPage() {
     const { data: { user: authUser } } = await supabase.auth.getUser()
     if (!authUser) { setLoading(false); return }
 
-    const { data, error } = await supabase
+    // Step 1: fetch orders only — no join to avoid 406 ambiguous relationship error
+    const { data: ordersData, error: ordersError } = await supabase
       .from("orders")
-      .select(`
-        *,
-        delivery_details!inner (
-          full_name,
-          phone,
-          address,
-          delivery_date,
-          delivery_time
-        )
-      `)
+      .select("*")
       .eq("user_id", authUser.id)
       .order("created_at", { ascending: false })
 
-    console.log(data)
-    console.log(error)
+    console.log("orders:", ordersData)
+    console.log("orders error:", ordersError)
 
-    const normalized = (data ?? []).map((o: any) => ({
+    if (ordersError || !ordersData || ordersData.length === 0) {
+      setOrders([])
+      setLoading(false)
+      return
+    }
+
+    // Step 2: fetch delivery_details separately by order IDs
+    const orderIds = ordersData.map((o: any) => o.id)
+    const { data: ddData, error: ddError } = await supabase
+      .from("delivery_details")
+      .select("order_id, full_name, phone, address, delivery_type, delivery_date, delivery_time, rider_name, rider_contact")
+      .in("order_id", orderIds)
+
+    console.log("delivery_details:", ddData)
+    console.log("delivery_details error:", ddError)
+
+    // Step 3: merge delivery_details into each order client-side
+    const ddMap: Record<string, any> = {}
+    for (const dd of ddData ?? []) {
+      ddMap[dd.order_id] = dd
+    }
+
+    const merged = ordersData.map((o: any) => ({
       ...o,
-      delivery_details: Array.isArray(o.delivery_details)
-        ? (o.delivery_details[0] ?? null)
-        : (o.delivery_details ?? null),
+      delivery_details: ddMap[o.id] ?? null,
     }))
-    setOrders(normalized)
+
+    setOrders(merged)
     setLoading(false)
   }, [])
 
