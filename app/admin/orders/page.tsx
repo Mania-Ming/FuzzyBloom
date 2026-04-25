@@ -89,8 +89,8 @@ function OrderDrawer({
   const [order, setOrder] = useState<FullOrder | null>(null)
   const [loading, setLoading] = useState(true)
   const [receiptOpen, setReceiptOpen] = useState(false)
-  const [riderName, setRiderName] = useState("")
-  const [riderContact, setRiderContact] = useState("")
+  const [riders, setRiders] = useState<{ id: string; name: string; phone: string }[]>([])
+  const [selectedRiderId, setSelectedRiderId] = useState("")
   const [assigningRider, setAssigningRider] = useState(false)
 
   useEffect(() => {
@@ -113,9 +113,10 @@ function OrderDrawer({
           ? orderData.delivery_details[0] ?? null
           : orderData.delivery_details ?? null
         setOrder({ ...orderData, delivery_details: dd, order_items: [] })
-        if (dd?.rider_name) setRiderName(dd.rider_name)
-        if (dd?.rider_contact) setRiderContact(dd.rider_contact)
       }
+
+      const { data: riderData } = await supabase.from("riders").select("id, name, phone").order("name")
+      setRiders(riderData ?? [])
       setLoading(false)
     }
     fetchFull()
@@ -143,13 +144,15 @@ function OrderDrawer({
   const isDelivery = dd?.delivery_type === "delivery"
 
   async function assignRider() {
-    if (!order) return
-    if (!riderName.trim() || !riderContact.trim()) return
+    if (!order || !selectedRiderId) return
     setAssigningRider(true)
+
+    const rider = riders.find(r => r.id === selectedRiderId)
+    if (!rider) { setAssigningRider(false); return }
 
     const { error: ddErr } = await supabase
       .from("delivery_details")
-      .update({ rider_name: riderName.trim(), rider_contact: riderContact.trim() })
+      .update({ rider_id: rider.id, rider_name: rider.name, rider_contact: rider.phone })
       .eq("order_id", order.id)
 
     if (ddErr) {
@@ -169,7 +172,7 @@ function OrderDrawer({
         ...prev,
         status: "Out for Delivery",
         delivery_details: prev.delivery_details
-          ? { ...prev.delivery_details, rider_name: riderName.trim(), rider_contact: riderContact.trim() }
+          ? { ...prev.delivery_details, rider_name: rider.name, rider_contact: rider.phone }
           : prev.delivery_details
       } : prev)
       onAction(order.id, "__reload__")
@@ -354,23 +357,21 @@ function OrderDrawer({
                 </div>
               )}
 
-              {/* Input fields */}
+              {/* Rider dropdown */}
               <div className="space-y-2">
-                <input
-                  value={riderName}
-                  onChange={e => setRiderName(e.target.value)}
-                  placeholder="Rider Name"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition"
-                />
-                <input
-                  value={riderContact}
-                  onChange={e => setRiderContact(e.target.value)}
-                  placeholder="Rider Contact (09XXXXXXXXX)"
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition"
-                />
+                <select
+                  value={selectedRiderId}
+                  onChange={e => setSelectedRiderId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition bg-white"
+                >
+                  <option value="">Select a rider...</option>
+                  {riders.map(r => (
+                    <option key={r.id} value={r.id}>{r.name} — {r.phone}</option>
+                  ))}
+                </select>
                 <button
                   onClick={assignRider}
-                  disabled={!riderName.trim() || !riderContact.trim() || assigningRider}
+                  disabled={!selectedRiderId || assigningRider}
                   className="w-full flex items-center justify-center gap-2 py-2.5 bg-purple-600 text-white rounded-xl font-semibold text-sm hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Bike size={14} />

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { User, Mail, Lock, Save } from "lucide-react"
+import { User, Mail, Lock, Save, MapPin } from "lucide-react"
 import Toast, { ToastType } from "@/components/admin/Toast"
 
 const inputCls = "w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50/80 focus:outline-none focus:ring-2 focus:ring-[#4b2e2e]/20 focus:border-[#4b2e2e] transition"
@@ -10,8 +10,12 @@ const inputCls = "w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-
 export default function SettingsPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [pickupLocation, setPickupLocation] = useState("")
   const [saving, setSaving] = useState(false)
+  const [savingLocation, setSavingLocation] = useState(false)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<ToastType>(null)
 
@@ -19,15 +23,18 @@ export default function SettingsPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data } = await supabase.from("profiles").select("full_name").eq("id", user.id).single()
-      setName(data?.full_name ?? "")
+      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single()
+      setName(profile?.full_name ?? "")
       setEmail(user.email ?? "")
+
+      const { data: settings } = await supabase.from("settings").select("value").eq("key", "pickup_location").single()
+      setPickupLocation(settings?.value ?? "")
       setLoading(false)
     }
     load()
   }, [])
 
-  async function handleSave(e: React.FormEvent) {
+  async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
 
@@ -45,18 +52,54 @@ export default function SettingsPage() {
       return
     }
 
-    if (password.trim()) {
-      const { error: pwErr } = await supabase.auth.updateUser({ password: password.trim() })
+    if (newPassword.trim()) {
+      if (newPassword !== confirmPassword) {
+        setToast({ message: "New passwords do not match.", type: "error" })
+        setSaving(false)
+        return
+      }
+      if (newPassword.length < 6) {
+        setToast({ message: "Password must be at least 6 characters.", type: "error" })
+        setSaving(false)
+        return
+      }
+      // Re-authenticate with current password first
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password: currentPassword,
+      })
+      if (signInErr) {
+        setToast({ message: "Current password is incorrect.", type: "error" })
+        setSaving(false)
+        return
+      }
+      const { error: pwErr } = await supabase.auth.updateUser({ password: newPassword })
       if (pwErr) {
-        setToast({ message: "Profile saved but password update failed: " + pwErr.message, type: "error" })
+        setToast({ message: "Password update failed: " + pwErr.message, type: "error" })
         setSaving(false)
         return
       }
     }
 
-    setPassword("")
+    setCurrentPassword("")
+    setNewPassword("")
+    setConfirmPassword("")
     setToast({ message: "Profile updated successfully!", type: "success" })
     setSaving(false)
+  }
+
+  async function handleSaveLocation(e: React.FormEvent) {
+    e.preventDefault()
+    setSavingLocation(true)
+    const { error } = await supabase
+      .from("settings")
+      .upsert({ key: "pickup_location", value: pickupLocation.trim() }, { onConflict: "key" })
+    if (error) {
+      setToast({ message: "Failed to save location: " + error.message, type: "error" })
+    } else {
+      setToast({ message: "Pickup location saved!", type: "success" })
+    }
+    setSavingLocation(false)
   }
 
   if (loading) return (
@@ -72,51 +115,65 @@ export default function SettingsPage() {
       <div className="flex items-center gap-2">
         <User size={22} className="text-[#4b2e2e]" />
         <div>
-          <h1 className="text-2xl font-bold text-[#2a1515]">Admin Profile</h1>
-          <p className="text-gray-400 text-sm mt-0.5">Update your name and password</p>
+          <h1 className="text-2xl font-bold text-[#2a1515]">Settings</h1>
+          <p className="text-gray-400 text-sm mt-0.5">Manage your profile and store settings</p>
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="bg-white rounded-2xl border border-[#e8d5d5] shadow-sm p-6 space-y-5">
+      {/* PROFILE FORM */}
+      <form onSubmit={handleSaveProfile} className="bg-white rounded-2xl border border-[#e8d5d5] shadow-sm p-6 space-y-5">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Admin Profile</p>
 
-        {/* Full Name */}
         <div>
           <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
             <User size={12} /> Full Name
           </label>
-          <input
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Your name"
-            className={inputCls}
-          />
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className={inputCls} />
         </div>
 
-        {/* Email — readonly */}
         <div>
           <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
             <Mail size={12} /> Email
           </label>
-          <input
-            value={email}
-            disabled
-            className={inputCls + " opacity-60 cursor-not-allowed"}
-          />
+          <input value={email} disabled className={inputCls + " opacity-60 cursor-not-allowed"} />
           <p className="text-xs text-gray-400 mt-1">Email cannot be changed here.</p>
         </div>
 
-        {/* New Password */}
-        <div>
-          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-            <Lock size={12} /> New Password
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="Leave blank to keep current password"
-            className={inputCls}
-          />
+        <div className="border-t border-gray-100 pt-4 space-y-3">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <Lock size={11} /> Change Password
+          </p>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Current Password</label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={e => setCurrentPassword(e.target.value)}
+              placeholder="Enter current password"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">New Password</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              placeholder="Enter new password"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Confirm New Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+              className={inputCls}
+            />
+          </div>
+          <p className="text-xs text-gray-400">Leave password fields blank to keep current password.</p>
         </div>
 
         <button
@@ -126,6 +183,31 @@ export default function SettingsPage() {
         >
           <Save size={15} />
           {saving ? "Saving..." : "Save Profile"}
+        </button>
+      </form>
+
+      {/* PICKUP LOCATION FORM */}
+      <form onSubmit={handleSaveLocation} className="bg-white rounded-2xl border border-[#e8d5d5] shadow-sm p-6 space-y-4">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Store Settings</p>
+        <div>
+          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            <MapPin size={12} /> Pickup Location
+          </label>
+          <input
+            value={pickupLocation}
+            onChange={e => setPickupLocation(e.target.value)}
+            placeholder="e.g. 123 Rizal St, Brgy. San Jose, Manila"
+            className={inputCls}
+          />
+          <p className="text-xs text-gray-400 mt-1">Shown to customers who choose Pick-up at checkout.</p>
+        </div>
+        <button
+          type="submit"
+          disabled={savingLocation}
+          className="w-full flex items-center justify-center gap-2 bg-[#4b2e2e] text-white py-3.5 rounded-full text-sm font-semibold hover:bg-[#3a2323] transition shadow-md shadow-[#4b2e2e]/20 disabled:opacity-60"
+        >
+          <Save size={15} />
+          {savingLocation ? "Saving..." : "Save Location"}
         </button>
       </form>
     </div>

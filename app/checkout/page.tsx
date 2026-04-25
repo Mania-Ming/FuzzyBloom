@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Truck, Store, MapPin, CreditCard, Wallet, Upload, Calendar, Clock } from "lucide-react"
+import { Truck, Store, CreditCard, Wallet, Upload, Calendar, Clock } from "lucide-react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
@@ -17,15 +17,13 @@ type CartItem = { product_id: string; name: string; price: number; img?: string;
 const TIME_SLOTS = ["9:00 AM", "1:00 PM", "6:00 PM"]
 
 const DELIVERY_OPTIONS = [
-  { value: "delivery", label: "Delivery",  desc: "Delivered by rider",       icon: Truck,  fee: 35 },
-  { value: "pickup",   label: "Pick-up",   desc: "Pick up at store",         icon: Store,  fee: 0  },
-  { value: "meetup",   label: "Meet-up",   desc: "Meet-up with seller",      icon: MapPin, fee: 0  },
+  { value: "delivery", label: "Delivery", desc: "Delivered by rider",   icon: Truck, fee: 35 },
+  { value: "pickup",   label: "Pick-up",  desc: "Pick up at store",     icon: Store, fee: 0  },
 ] as const
 
 const DELIVERY_INFO: Record<string, { desc: string; defaultPayment: string }> = {
-  delivery: { desc: "Your order will be delivered by a rider.",   defaultPayment: "Cash on Delivery" },
-  pickup:   { desc: "You will pick up your order at the shop.",   defaultPayment: "Cash on Arrival"  },
-  meetup:   { desc: "Meet-up will be arranged with the seller.",  defaultPayment: "Cash on Arrival"  },
+  delivery: { desc: "Your order will be delivered by a rider.", defaultPayment: "Cash on Delivery" },
+  pickup:   { desc: "You will pick up your order at the shop.", defaultPayment: "Cash on Arrival"  },
 }
 
 function resolveImage(src: string | null | undefined, fallback = "/p2.png"): string {
@@ -42,7 +40,8 @@ export default function CheckoutPage() {
   const { mutateAsync: saveOrder } = useInsertOrder()
 
   // Delivery + payment
-  const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup" | "meetup">("delivery")
+  const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery")
+  const [pickupLocation, setPickupLocation] = useState("")
   const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery")
   const [showPopup, setShowPopup] = useState(false)
 
@@ -61,6 +60,8 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setCartItems(JSON.parse(localStorage.getItem("cart") || "[]"))
+    supabase.from("settings").select("value").eq("key", "pickup_location").single()
+      .then(({ data }) => { if (data) setPickupLocation(data.value ?? "") })
   }, [])
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function CheckoutPage() {
   const today = new Date().toISOString().split("T")[0]
   const isGcash = paymentMethod === "GCash"
 
-  function handleDeliveryTypeChange(type: "delivery" | "pickup" | "meetup") {
+  function handleDeliveryTypeChange(type: "delivery" | "pickup") {
     setDeliveryType(type)
     setPaymentMethod(DELIVERY_INFO[type].defaultPayment)
     setGcashFile(null); setGcashPreview(null); setReceiptError("")
@@ -108,11 +109,11 @@ export default function CheckoutPage() {
 
   function validate() {
     const e: Record<string, string> = {}
-    if (deliveryType === "delivery" || deliveryType === "meetup") {
+    if (deliveryType === "delivery") {
       if (!fullName.trim()) e.fullName = "Full name is required."
       if (!phone.trim()) e.phone = "Phone number is required."
       else if (!/^09\d{9}$/.test(phone.trim())) e.phone = "Enter a valid 11-digit PH number (09XXXXXXXXX)."
-      if (!address.trim()) e.address = deliveryType === "delivery" ? "Delivery address is required." : "Meet-up location is required."
+      if (!address.trim()) e.address = "Delivery address is required."
     }
     if (!deliveryDate) e.deliveryDate = "Date is required."
     else if (deliveryDate < today) e.deliveryDate = "Date cannot be in the past."
@@ -335,7 +336,7 @@ export default function CheckoutPage() {
               {/* DELIVERY DETAILS */}
               <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm space-y-3">
                 <h2 className="font-semibold text-gray-700">
-                  {deliveryType === "delivery" ? "Delivery Details" : deliveryType === "pickup" ? "Pick-up Info" : "Meet-up Details"}
+                  {deliveryType === "delivery" ? "Delivery Details" : "Pick-up Info"}
                 </h2>
 
                 {deliveryType === "delivery" && (
@@ -356,35 +357,22 @@ export default function CheckoutPage() {
                 )}
 
                 {deliveryType === "pickup" && (
-                  <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-xl p-4">
-                    <Store size={18} className="text-amber-600 shrink-0" />
+                  <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-xl p-4">
+                    <Store size={18} className="text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-semibold text-amber-700">Pick up at store location</p>
-                      <p className="text-xs text-amber-600 mt-0.5">No address needed. Pay upon arrival.</p>
+                      <p className="text-sm font-semibold text-amber-700">Pick up at store</p>
+                      {pickupLocation ? (
+                        <p className="text-xs text-amber-600 mt-0.5">{pickupLocation}</p>
+                      ) : (
+                        <p className="text-xs text-amber-500 mt-0.5">No address needed. Pay upon arrival.</p>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {deliveryType === "meetup" && (
-                  <>
-                    <Field label="Full Name" error={errors.fullName}>
-                      <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Enter full name"
-                        className={input(errors.fullName)} />
-                    </Field>
-                    <Field label="Meet-up Location" error={errors.address}>
-                      <input value={address} onChange={e => setAddress(e.target.value)} placeholder="e.g. SM City, Jollibee Rizal Ave"
-                        className={input(errors.address)} />
-                    </Field>
-                    <Field label="Phone Number" error={errors.phone}>
-                      <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="09XXXXXXXXX" maxLength={11}
-                        className={input(errors.phone)} />
-                    </Field>
-                  </>
-                )}
-
                 {/* Date + Time */}
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label={deliveryType === "delivery" ? "Delivery Date" : "Date"} error={errors.deliveryDate}>
+                  <Field label={deliveryType === "delivery" ? "Delivery Date" : "Pick-up Date"} error={errors.deliveryDate}>
                     <div className="relative">
                       <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                       <input type="date" value={deliveryDate} min={today} onChange={e => setDeliveryDate(e.target.value)}
