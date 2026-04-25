@@ -457,18 +457,12 @@ export default function OrdersPage() {
     const { data, error } = await supabase
       .from("orders")
       .select(`
-        id,
-        total_amount,
-        status,
-        created_at,
-        items,
-        payment,
-        receipt_url,
-        delivery_details!delivery_details_order_id_fkey (
-          delivery_type,
+        *,
+        delivery_details (
           full_name,
           phone,
           address,
+          delivery_type,
           delivery_date,
           delivery_time,
           rider_name,
