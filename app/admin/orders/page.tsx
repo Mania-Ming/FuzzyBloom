@@ -190,7 +190,8 @@ function OrderDrawer({
     <>
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col max-h-[92vh]" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
@@ -440,13 +441,6 @@ function OrderDrawer({
           )}
         </div>
       </div>
-
-      {receiptOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" onClick={() => setReceiptOpen(false)}>
-          <img src={order.receipt_url!} alt="Receipt" className="max-w-full max-h-full rounded-2xl object-contain" />
-        </div>
-      )}
-    </>
   )
 }
 

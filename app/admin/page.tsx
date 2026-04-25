@@ -4,18 +4,15 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { LayoutDashboard, Package, ShoppingBag, Users, DollarSign } from "lucide-react"
 
-type Stats = {
-  totalProducts: number
-  totalOrders: number
-  totalUsers: number
-  totalSales: number
-}
+type Stats = { totalProducts: number; totalOrders: number; totalUsers: number; totalSales: number }
 
 const statusColor: Record<string, string> = {
-  Pending: "bg-amber-50 text-amber-600 border-amber-100",
-  Approved: "bg-blue-50 text-blue-600 border-blue-100",
-  Completed: "bg-green-50 text-green-600 border-green-100",
-  Cancelled: "bg-red-50 text-red-500 border-red-100",
+  Pending:            "bg-amber-50 text-amber-600 border-amber-100",
+  Confirmed:          "bg-blue-50 text-blue-600 border-blue-100",
+  Preparing:          "bg-orange-50 text-orange-500 border-orange-100",
+  "Out for Delivery": "bg-purple-50 text-purple-600 border-purple-100",
+  Delivered:          "bg-green-50 text-green-600 border-green-100",
+  Cancelled:          "bg-red-50 text-red-500 border-red-100",
 }
 
 export default function AdminDashboard() {
@@ -25,46 +22,27 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function load() {
-      // Fetch counts
       const [
-        { count: products, error: e1 },
-        { count: orders, error: e2 },
-        { count: users, error: e3 },
+        { count: products },
+        { count: orders },
+        { count: users },
       ] = await Promise.all([
         supabase.from("products").select("*", { count: "exact", head: true }),
         supabase.from("orders").select("*", { count: "exact", head: true }),
         supabase.from("profiles").select("*", { count: "exact", head: true }),
       ])
 
-      if (e1) console.error("Products count error:", e1.message)
-      if (e2) console.error("Orders count error:", e2.message)
-      if (e3) console.error("Users count error:", e3.message)
+      const { data: salesData } = await supabase.from("orders").select("total_amount")
+      const totalSales = salesData?.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0) ?? 0
 
-      // Fetch orders for sales total + recent list separately to isolate errors
-      const { data: salesData, error: salesErr } = await supabase
+      // Join orders with profiles to get customer name
+      const { data: recent } = await supabase
         .from("orders")
-        .select("*")
-
-      if (salesErr) console.error("Sales fetch error:", salesErr.message)
-      console.log("Sales data:", salesData)
-
-      const { data: recent, error: recentErr } = await supabase
-        .from("orders")
-        .select("*")
+        .select(`id, total_amount, status, created_at, payment, profiles ( full_name )`)
         .order("created_at", { ascending: false })
         .limit(5)
 
-      if (recentErr) console.error("Recent orders error:", recentErr.message)
-      console.log("Recent orders fetched:", recent)
-
-      const totalSales = salesData?.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0) ?? 0
-
-      setStats({
-        totalProducts: products ?? 0,
-        totalOrders: orders ?? 0,
-        totalUsers: users ?? 0,
-        totalSales,
-      })
+      setStats({ totalProducts: products ?? 0, totalOrders: orders ?? 0, totalUsers: users ?? 0, totalSales })
       setRecentOrders(recent ?? [])
       setLoading(false)
     }
@@ -72,10 +50,10 @@ export default function AdminDashboard() {
   }, [])
 
   const statCards = [
-    { label: "Total Products", value: stats.totalProducts, Icon: Package, color: "bg-pink-50 border-pink-100", text: "text-pink-600", iconColor: "text-pink-400" },
-    { label: "Total Orders", value: stats.totalOrders, Icon: ShoppingBag, color: "bg-amber-50 border-amber-100", text: "text-amber-600", iconColor: "text-amber-400" },
-    { label: "Total Users", value: stats.totalUsers, Icon: Users, color: "bg-purple-50 border-purple-100", text: "text-purple-600", iconColor: "text-purple-400" },
-    { label: "Total Sales", value: `₱${stats.totalSales.toLocaleString()}`, Icon: DollarSign, color: "bg-green-50 border-green-100", text: "text-green-600", iconColor: "text-green-400" },
+    { label: "Total Products", value: stats.totalProducts,                    Icon: Package,      color: "bg-pink-50 border-pink-100",     text: "text-pink-600",   iconColor: "text-pink-400"   },
+    { label: "Total Orders",   value: stats.totalOrders,                      Icon: ShoppingBag,  color: "bg-amber-50 border-amber-100",   text: "text-amber-600",  iconColor: "text-amber-400"  },
+    { label: "Total Users",    value: stats.totalUsers,                       Icon: Users,        color: "bg-purple-50 border-purple-100", text: "text-purple-600", iconColor: "text-purple-400" },
+    { label: "Total Sales",    value: `₱${stats.totalSales.toLocaleString()}`, Icon: DollarSign,   color: "bg-green-50 border-green-100",   text: "text-green-600",  iconColor: "text-green-400"  },
   ]
 
   if (loading) return (
@@ -90,7 +68,7 @@ export default function AdminDashboard() {
         <h1 className="text-2xl font-bold text-[#2a1515] flex items-center gap-2">
           <LayoutDashboard size={22} className="text-[#4b2e2e]" /> Dashboard
         </h1>
-        <p className="text-gray-400 text-sm mt-0.5">Welcome back, Admin</p>
+        <p className="text-gray-400 text-sm mt-0.5">Overview of your store</p>
       </div>
 
       {/* STAT CARDS */}
@@ -131,7 +109,7 @@ export default function AdminDashboard() {
               {recentOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50/50 transition">
                   <td className="px-6 py-4 font-mono text-xs text-gray-500">#{String(order.id).slice(0, 8)}</td>
-                  <td className="px-6 py-4 font-medium text-gray-800">{order.full_name ?? "—"}</td>
+                  <td className="px-6 py-4 font-medium text-gray-800">{(order.profiles as any)?.full_name ?? "—"}</td>
                   <td className="px-6 py-4 font-bold text-[#4b2e2e]">₱{Number(order.total_amount).toLocaleString()}</td>
                   <td className="px-6 py-4 text-gray-500 uppercase text-xs">{order.payment}</td>
                   <td className="px-6 py-4">
