@@ -27,8 +27,8 @@ type DeliveryDetails = {
   address: string
   delivery_date: string
   delivery_time: string
-  rider_name?: string | null
-  rider_contact?: string | null
+  rider_id?: string | null
+  riders?: { name: string; phone: string } | null
 }
 
 type Order = {
@@ -282,20 +282,24 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
             </div>
           )}
 
-          {/* RIDER DETAILS — delivery only, shown when assigned */}
-          {dd?.delivery_type === "delivery" && dd?.rider_name && (
+          {/* RIDER — shown when assigned */}
+          {dd?.delivery_type === "delivery" && (
             <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Your Rider</p>
-              <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 space-y-2.5 text-sm">
-                <div className="flex items-center gap-2.5 text-purple-700">
-                  <Truck size={13} className="text-purple-500 shrink-0" />
-                  <span className="font-semibold">{dd.rider_name}</span>
+              {dd.riders ? (
+                <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 space-y-2.5 text-sm">
+                  <div className="flex items-center gap-2.5 text-purple-700">
+                    <Truck size={13} className="text-purple-500 shrink-0" />
+                    <span className="font-semibold">{dd.riders.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-purple-600">
+                    <Phone size={13} className="text-purple-500 shrink-0" />
+                    <span>{dd.riders.phone}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2.5 text-purple-600">
-                  <Phone size={13} className="text-purple-500 shrink-0" />
-                  <span>{dd.rider_contact || "N/A"}</span>
-                </div>
-              </div>
+              ) : (
+                <p className="text-sm text-gray-400">No rider assigned yet</p>
+              )}
             </div>
           )}
 
@@ -470,11 +474,11 @@ export default function OrdersPage() {
       return
     }
 
-    // Step 2: fetch delivery_details separately by order IDs
+    // Step 2: fetch delivery_details + nested rider separately by order IDs
     const orderIds = ordersData.map((o: any) => o.id)
     const { data: ddData, error: ddError } = await supabase
       .from("delivery_details")
-      .select("order_id, full_name, phone, address, delivery_type, delivery_date, delivery_time, rider_name, rider_contact")
+      .select("order_id, full_name, phone, address, delivery_type, delivery_date, delivery_time, rider_id, riders ( name, phone )")
       .in("order_id", orderIds)
 
     console.log("delivery_details:", ddData)
