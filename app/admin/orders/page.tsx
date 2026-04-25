@@ -143,34 +143,41 @@ function OrderDrawer({
   const isDelivery = dd?.delivery_type === "delivery"
 
   async function assignRider() {
+    if (!order) return
     if (!riderName.trim() || !riderContact.trim()) return
     setAssigningRider(true)
-    try {
-      const { error: ddErr } = await supabase
-        .from("delivery_details")
-        .update({ rider_name: riderName.trim(), rider_contact: riderContact.trim() })
-        .eq("order_id", order.id)
-      if (ddErr) throw ddErr
 
-      const { error: orderErr } = await supabase
-        .from("orders")
-        .update({ status: "Out for Delivery" })
-        .eq("id", order.id)
-      if (orderErr) throw orderErr
+    const { error: ddErr } = await supabase
+      .from("delivery_details")
+      .update({ rider_name: riderName.trim(), rider_contact: riderContact.trim() })
+      .eq("order_id", order.id)
 
+    if (ddErr) {
+      alert("Failed to assign rider: " + ddErr.message)
+      setAssigningRider(false)
+      return
+    }
+
+    const { error: orderErr } = await supabase
+      .from("orders")
+      .update({ status: "Out for Delivery" })
+      .eq("id", order.id)
+
+    if (!orderErr) {
       await supabase.from("order_status_history").insert({ order_id: order.id, status: "Out for Delivery" })
-
       setOrder(prev => prev ? {
         ...prev,
         status: "Out for Delivery",
-        delivery_details: prev.delivery_details ? { ...prev.delivery_details, rider_name: riderName.trim(), rider_contact: riderContact.trim() } : prev.delivery_details
+        delivery_details: prev.delivery_details
+          ? { ...prev.delivery_details, rider_name: riderName.trim(), rider_contact: riderContact.trim() }
+          : prev.delivery_details
       } : prev)
       onAction(order.id, "__reload__")
-    } catch (err: any) {
-      alert("Failed to assign rider: " + err.message)
-    } finally {
-      setAssigningRider(false)
+    } else {
+      alert("Rider saved but failed to update status: " + orderErr.message)
     }
+
+    setAssigningRider(false)
   }
 
   const displayName    = dd?.full_name    || "N/A"
