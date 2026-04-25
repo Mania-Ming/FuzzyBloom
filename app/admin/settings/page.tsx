@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savingLocation, setSavingLocation] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<ToastType>(null)
 
   useEffect(() => {
