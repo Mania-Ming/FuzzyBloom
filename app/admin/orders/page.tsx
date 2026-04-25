@@ -96,25 +96,27 @@ function OrderDrawer({
     async function fetchFull() {
       setLoading(true)
 
+      // Fetch order without FK hint to avoid 406 ambiguous relationship error
       const { data: orderData, error: orderErr } = await supabase
         .from("orders")
-        .select(`
-          id, total_amount, payment, status, created_at, receipt_url, items,
-          delivery_details!delivery_details_order_id_fkey ( delivery_type, full_name, phone, address, delivery_date, delivery_time, rider_name, rider_contact )
-        `)
+        .select("id, total_amount, payment, status, created_at, receipt_url, items")
         .eq("id", orderId)
         .single()
 
-      if (orderErr) console.error("Order fetch error:", orderErr.message)
+      if (orderErr) { console.error("Order fetch error:", orderErr.message); setLoading(false); return }
 
-      if (orderData) {
-        const dd = Array.isArray(orderData.delivery_details)
-          ? orderData.delivery_details[0] ?? null
-          : orderData.delivery_details ?? null
-        setOrder({ ...orderData, delivery_details: dd, order_items: [] })
-      }
+      // Fetch delivery_details + assigned rider separately
+      const { data: ddData } = await supabase
+        .from("delivery_details")
+        .select("delivery_type, full_name, phone, address, delivery_date, delivery_time, rider_id, riders ( id, name, phone )")
+        .eq("order_id", orderId)
+        .maybeSingle()
 
       const { data: riderData } = await supabase.from("riders").select("id, name, phone").order("name")
+
+      setOrder({ ...orderData, delivery_details: ddData ?? null, order_items: [] })
+      // Pre-select current rider if assigned
+      if (ddData?.rider_id) setSelectedRiderId(ddData.rider_id)
       setRiders(riderData ?? [])
       setLoading(false)
     }
@@ -150,9 +152,15 @@ function OrderDrawer({
 
     if (error) {
       console.error(error)
-      alert("Failed to assign rider")
+      alert("Failed to assign rider: " + error.message)
     } else {
-      alert("Rider assigned successfully")
+      // Re-fetch delivery details to reflect persisted rider
+      const { data: ddData } = await supabase
+        .from("delivery_details")
+        .select("delivery_type, full_name, phone, address, delivery_date, delivery_time, rider_id, riders ( id, name, phone )")
+        .eq("order_id", orderId)
+        .maybeSingle()
+      setOrder(prev => prev ? { ...prev, delivery_details: ddData ?? prev.delivery_details } : prev)
       onAction(orderId, "__reload__")
     }
   }
@@ -313,15 +321,15 @@ function OrderDrawer({
               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Rider Assignment</p>
 
               {/* Show assigned rider if exists */}
-              {dd?.rider_name ? (
+              {(dd as any)?.riders ? (
                 <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 space-y-2 text-sm mb-3">
                   <div className="flex items-center gap-2 text-purple-700">
                     <Bike size={14} className="shrink-0" />
-                    <span className="font-semibold">{dd.rider_name}</span>
+                    <span className="font-semibold">{(dd as any).riders.name}</span>
                   </div>
                   <div className="flex items-center gap-2 text-purple-600">
                     <Phone size={13} className="shrink-0" />
-                    <span>{dd.rider_contact || "N/A"}</span>
+                    <span>{(dd as any).riders.phone}</span>
                   </div>
                   <p className="text-[10px] text-purple-400 font-semibold uppercase tracking-wide">Rider Assigned</p>
                 </div>
@@ -450,7 +458,8 @@ export default function AdminOrdersPage() {
           phone,
           address,
           delivery_date,
-          delivery_time
+          delivery_time,
+          rider_id
         )
       `)
       .order("created_at", { ascending: false })

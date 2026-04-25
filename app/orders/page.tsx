@@ -458,44 +458,38 @@ export default function OrdersPage() {
     const { data: { user: authUser } } = await supabase.auth.getUser()
     if (!authUser) { setLoading(false); return }
 
-    // Step 1: fetch orders only — no join to avoid 406 ambiguous relationship error
+    // Step 1: fetch orders only — avoids 406 ambiguous relationship error
     const { data: ordersData, error: ordersError } = await supabase
       .from("orders")
       .select("*")
       .eq("user_id", authUser.id)
       .order("created_at", { ascending: false })
 
-    console.log("orders:", ordersData)
-    console.log("orders error:", ordersError)
-
-    if (ordersError || !ordersData || ordersData.length === 0) {
+    if (ordersError) {
+      console.error("Orders fetch error:", ordersError.message)
       setOrders([])
       setLoading(false)
       return
     }
 
-    // Step 2: fetch delivery_details + nested rider separately by order IDs
-    const orderIds = ordersData.map((o: any) => o.id)
-    const { data: ddData, error: ddError } = await supabase
-      .from("delivery_details")
-      .select("order_id, full_name, phone, address, delivery_type, delivery_date, delivery_time, rider_id, riders ( name, phone )")
-      .in("order_id", orderIds)
-
-    console.log("delivery_details:", ddData)
-    console.log("delivery_details error:", ddError)
-
-    // Step 3: merge delivery_details into each order client-side
-    const ddMap: Record<string, any> = {}
-    for (const dd of ddData ?? []) {
-      ddMap[dd.order_id] = dd
+    if (!ordersData || ordersData.length === 0) {
+      setOrders([])
+      setLoading(false)
+      return
     }
 
-    const merged = ordersData.map((o: any) => ({
-      ...o,
-      delivery_details: ddMap[o.id] ?? null,
-    }))
+    // Step 2: fetch delivery_details + nested rider by order IDs
+    const orderIds = ordersData.map((o: any) => o.id)
+    const { data: ddData } = await supabase
+      .from("delivery_details")
+      .select("order_id, full_name, phone, address, delivery_type, delivery_date, delivery_time, rider_id, riders ( id, name, phone )")
+      .in("order_id", orderIds)
 
-    setOrders(merged)
+    // Step 3: merge client-side
+    const ddMap: Record<string, any> = {}
+    for (const dd of ddData ?? []) ddMap[dd.order_id] = dd
+
+    setOrders(ordersData.map((o: any) => ({ ...o, delivery_details: ddMap[o.id] ?? null })))
     setLoading(false)
   }, [])
 
