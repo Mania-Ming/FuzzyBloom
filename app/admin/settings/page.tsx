@@ -91,13 +91,18 @@ export default function SettingsPage() {
   async function handleSaveLocation(e: React.FormEvent) {
     e.preventDefault()
     setSavingLocation(true)
-    const { error } = await supabase
-      .from("settings")
-      .upsert({ key: "pickup_location", value: pickupLocation })
-    if (error) {
-      setToast({ message: error.message, type: "error" })
-    } else {
-      setToast({ message: "Saved successfully", type: "success" })
+    try {
+      const { error } = await supabase
+        .from("settings")
+        .upsert(
+          { key: "pickup_location", value: pickupLocation },
+          { onConflict: "key" }
+        )
+      if (error) throw error
+      setToast({ message: "Settings saved!", type: "success" })
+    } catch (err: any) {
+      console.error(err.message)
+      setToast({ message: err.message, type: "error" })
     }
     setSavingLocation(false)
   }
