@@ -458,21 +458,19 @@ export default function OrdersPage() {
       .from("orders")
       .select(`
         *,
-        delivery_details (
+        delivery_details!inner (
           full_name,
           phone,
           address,
-          delivery_type,
           delivery_date,
-          delivery_time,
-          rider_name,
-          rider_contact
+          delivery_time
         )
       `)
       .eq("user_id", authUser.id)
       .order("created_at", { ascending: false })
 
-    if (error) console.error("Orders fetch error:", error.message)
+    console.log(data)
+    console.log(error)
 
     const normalized = (data ?? []).map((o: any) => ({
       ...o,
