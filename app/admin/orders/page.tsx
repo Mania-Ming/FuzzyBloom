@@ -130,12 +130,9 @@ function OrderDrawer({
 
   if (loading || !order) {
     return (
-      <>
-        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </>
+      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
+      </div>
     )
   }
 
@@ -172,11 +169,8 @@ function OrderDrawer({
   const displayTime    = dd?.delivery_time || "N/A"
 
   return (
-    <>
-      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-        <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col max-h-[92vh]" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
@@ -423,9 +417,8 @@ function OrderDrawer({
             </button>
           )}
         </div>
-        </div>
       </div>
-    </>
+    </div>
   )
 }
 
