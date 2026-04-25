@@ -27,6 +27,8 @@ type DeliveryDetails = {
   address: string
   delivery_date: string
   delivery_time: string
+  rider_name?: string | null
+  rider_contact?: string | null
 }
 
 type Order = {
@@ -280,6 +282,23 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
             </div>
           )}
 
+          {/* RIDER DETAILS — delivery only, shown when assigned */}
+          {dd?.delivery_type === "delivery" && dd?.rider_name && (
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Your Rider</p>
+              <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 space-y-2.5 text-sm">
+                <div className="flex items-center gap-2.5 text-purple-700">
+                  <Truck size={13} className="text-purple-500 shrink-0" />
+                  <span className="font-semibold">{dd.rider_name}</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-purple-600">
+                  <Phone size={13} className="text-purple-500 shrink-0" />
+                  <span>{dd.rider_contact || "N/A"}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* DELIVERY DETAILS */}
           {dd ? (
             <div>
@@ -451,7 +470,9 @@ export default function OrdersPage() {
           phone,
           address,
           delivery_date,
-          delivery_time
+          delivery_time,
+          rider_name,
+          rider_contact
         )
       `)
       .eq("user_id", authUser.id)

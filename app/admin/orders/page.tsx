@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import {
   ShoppingBag, MapPin, Phone, Calendar, Clock,
-  Check, X, Package, Search, ChevronRight, User, Trash2
+  Check, X, Package, Search, ChevronRight, User, Trash2, Bike
 } from "lucide-react"
 import Toast, { ToastType } from "@/components/admin/Toast"
 import ConfirmModal from "@/components/admin/ConfirmModal"
@@ -31,6 +31,8 @@ type DeliveryDetails = {
   address: string
   delivery_date: string
   delivery_time: string
+  rider_name?: string | null
+  rider_contact?: string | null
 }
 
 type OrderItemRow = {
@@ -87,6 +89,9 @@ function OrderDrawer({
   const [order, setOrder] = useState<FullOrder | null>(null)
   const [loading, setLoading] = useState(true)
   const [receiptOpen, setReceiptOpen] = useState(false)
+  const [riderName, setRiderName] = useState("")
+  const [riderContact, setRiderContact] = useState("")
+  const [assigningRider, setAssigningRider] = useState(false)
 
   useEffect(() => {
     async function fetchFull() {
@@ -96,7 +101,7 @@ function OrderDrawer({
         .from("orders")
         .select(`
           id, total_amount, payment, status, created_at, receipt_url, items,
-          delivery_details!delivery_details_order_id_fkey ( delivery_type, full_name, phone, address, delivery_date, delivery_time )
+          delivery_details!delivery_details_order_id_fkey ( delivery_type, full_name, phone, address, delivery_date, delivery_time, rider_name, rider_contact )
         `)
         .eq("id", orderId)
         .single()
@@ -108,6 +113,8 @@ function OrderDrawer({
           ? orderData.delivery_details[0] ?? null
           : orderData.delivery_details ?? null
         setOrder({ ...orderData, delivery_details: dd, order_items: [] })
+        if (dd?.rider_name) setRiderName(dd.rider_name)
+        if (dd?.rider_contact) setRiderContact(dd.rider_contact)
       }
       setLoading(false)
     }
@@ -133,6 +140,38 @@ function OrderDrawer({
   const next = nextStatus(order.status)
   const isGcash = order.payment?.toLowerCase() === "gcash"
   const dd = order.delivery_details
+  const isDelivery = dd?.delivery_type === "delivery"
+
+  async function assignRider() {
+    if (!riderName.trim() || !riderContact.trim()) return
+    setAssigningRider(true)
+    try {
+      const { error: ddErr } = await supabase
+        .from("delivery_details")
+        .update({ rider_name: riderName.trim(), rider_contact: riderContact.trim() })
+        .eq("order_id", order.id)
+      if (ddErr) throw ddErr
+
+      const { error: orderErr } = await supabase
+        .from("orders")
+        .update({ status: "Out for Delivery" })
+        .eq("id", order.id)
+      if (orderErr) throw orderErr
+
+      await supabase.from("order_status_history").insert({ order_id: order.id, status: "Out for Delivery" })
+
+      setOrder(prev => prev ? {
+        ...prev,
+        status: "Out for Delivery",
+        delivery_details: prev.delivery_details ? { ...prev.delivery_details, rider_name: riderName.trim(), rider_contact: riderContact.trim() } : prev.delivery_details
+      } : prev)
+      onAction(order.id, "__reload__")
+    } catch (err: any) {
+      alert("Failed to assign rider: " + err.message)
+    } finally {
+      setAssigningRider(false)
+    }
+  }
 
   const displayName    = dd?.full_name    || "N/A"
   const displayPhone   = dd?.phone        || "N/A"
@@ -283,6 +322,56 @@ function OrderDrawer({
             </div>
           )}
 
+          {/* RIDER ASSIGNMENT — delivery only */}
+          {isDelivery && (
+            <div>
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Rider Assignment</p>
+
+              {/* Show assigned rider if exists */}
+              {dd?.rider_name ? (
+                <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 space-y-2 text-sm mb-3">
+                  <div className="flex items-center gap-2 text-purple-700">
+                    <Bike size={14} className="shrink-0" />
+                    <span className="font-semibold">{dd.rider_name}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-purple-600">
+                    <Phone size={13} className="shrink-0" />
+                    <span>{dd.rider_contact || "N/A"}</span>
+                  </div>
+                  <p className="text-[10px] text-purple-400 font-semibold uppercase tracking-wide">Rider Assigned</p>
+                </div>
+              ) : (
+                <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-3 text-xs text-gray-400 mb-3 text-center">
+                  No rider assigned yet
+                </div>
+              )}
+
+              {/* Input fields */}
+              <div className="space-y-2">
+                <input
+                  value={riderName}
+                  onChange={e => setRiderName(e.target.value)}
+                  placeholder="Rider Name"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition"
+                />
+                <input
+                  value={riderContact}
+                  onChange={e => setRiderContact(e.target.value)}
+                  placeholder="Rider Contact (09XXXXXXXXX)"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition"
+                />
+                <button
+                  onClick={assignRider}
+                  disabled={!riderName.trim() || !riderContact.trim() || assigningRider}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-purple-600 text-white rounded-xl font-semibold text-sm hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Bike size={14} />
+                  {assigningRider ? "Assigning..." : dd?.rider_name ? "Update Rider" : "Assign Rider"}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* STATUS TIMELINE */}
           <div>
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Order Status</p>
@@ -402,6 +491,7 @@ export default function AdminOrdersPage() {
   useEffect(() => { load() }, [load])
 
   async function handleAction(orderId: string, action: string) {
+    if (action === "__reload__") { load(); return }
     setConfirm({ orderId, action })
   }
 
