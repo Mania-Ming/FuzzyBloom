@@ -27,7 +27,7 @@ export default function SettingsPage() {
       setName(profile?.full_name ?? "")
       setEmail(user.email ?? "")
 
-      const { data: settings } = await supabase.from("settings").select("value").eq("key", "pickup_location").single()
+      const { data: settings } = await supabase.from("settings").select("*").eq("key", "pickup_location").single()
       setPickupLocation(settings?.value ?? "")
       setLoading(false)
     }
@@ -93,11 +93,11 @@ export default function SettingsPage() {
     setSavingLocation(true)
     const { error } = await supabase
       .from("settings")
-      .upsert({ key: "pickup_location", value: pickupLocation.trim() }, { onConflict: "key" })
+      .upsert({ key: "pickup_location", value: pickupLocation })
     if (error) {
-      setToast({ message: "Failed to save location: " + error.message, type: "error" })
+      setToast({ message: error.message, type: "error" })
     } else {
-      setToast({ message: "Pickup location saved!", type: "success" })
+      setToast({ message: "Saved successfully", type: "success" })
     }
     setSavingLocation(false)
   }

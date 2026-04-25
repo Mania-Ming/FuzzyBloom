@@ -38,7 +38,7 @@ export default function RidersPage() {
       return
     }
     setAdding(true)
-    const { error } = await supabase.from("riders").insert({ name: name.trim(), phone: phone.trim() })
+    const { error } = await supabase.from("riders").insert({ name: name, phone: phone })
     if (error) {
       setToast({ message: "Failed to add rider: " + error.message, type: "error" })
     } else {
