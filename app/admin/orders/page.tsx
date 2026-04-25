@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { createPortal } from "react-dom"
 import { supabase } from "@/lib/supabase"
 import {
   ShoppingBag, MapPin, Phone, Calendar, Clock,
@@ -129,10 +130,11 @@ function OrderDrawer({
   }, [])
 
   if (loading || !order) {
-    return (
-      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+    return createPortal(
+      <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
-      </div>
+      </div>,
+      document.body
     )
   }
 
@@ -168,8 +170,8 @@ function OrderDrawer({
   const displayDate    = formatDate(dd?.delivery_date)
   const displayTime    = dd?.delivery_time || "N/A"
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center" onClick={onClose}>
       <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
@@ -418,7 +420,8 @@ function OrderDrawer({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
