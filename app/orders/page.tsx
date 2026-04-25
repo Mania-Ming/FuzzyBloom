@@ -35,6 +35,7 @@ type Order = {
   total_amount: number
   status: string
   payment?: string
+  receipt_url?: string | null
   items: JsonItem[]
   delivery_details?: DeliveryDetails | null
 }
@@ -239,7 +240,7 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
             )}
           </div>
 
-          {/* TOTAL */}
+          {/* PAYMENT */}
           <div className="bg-[#fdf6f6] rounded-2xl p-4 text-sm space-y-2">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Payment</p>
             {dd?.delivery_type && (
@@ -257,6 +258,21 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
               <span className="text-[#4b2e2e]">₱{Number(order.total_amount).toLocaleString()}</span>
             </div>
           </div>
+
+          {/* GCASH RECEIPT */}
+          {order.payment === "GCash" && (
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">GCash Receipt</p>
+              {order.receipt_url ? (
+                <img src={order.receipt_url} alt="GCash Receipt"
+                  className="w-full rounded-2xl object-contain max-h-64 border border-gray-100" />
+              ) : (
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-sm text-amber-700">
+                  <p className="font-semibold">Receipt pending upload</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* DELIVERY DETAILS */}
           {dd ? (
@@ -422,6 +438,7 @@ export default function OrdersPage() {
         created_at,
         items,
         payment,
+        receipt_url,
         delivery_details!delivery_details_order_id_fkey (
           delivery_type,
           full_name,

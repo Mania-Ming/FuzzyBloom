@@ -15,22 +15,10 @@ type CartItem = { product_id: string; name: string; price: number; img?: string;
 
 const TIME_SLOTS = ["9:00 AM", "1:00 PM", "6:00 PM"]
 
-const DELIVERY_INFO: Record<string, { label: string; desc: string; payment: string }> = {
-  delivery: {
-    label: "Delivery",
-    desc: "Your order will be delivered by a rider.",
-    payment: "Cash on Delivery",
-  },
-  pickup: {
-    label: "Pick-up",
-    desc: "You will pick up your order at the shop.",
-    payment: "Cash on Arrival",
-  },
-  meetup: {
-    label: "Meet-up",
-    desc: "Meet-up will be arranged with the seller.",
-    payment: "Cash on Arrival",
-  },
+const DELIVERY_INFO: Record<string, { label: string; emoji: string; desc: string; defaultPayment: string }> = {
+  delivery: { label: "Delivery",  emoji: "🚴", desc: "Your order will be delivered by a rider.",      defaultPayment: "Cash on Delivery" },
+  pickup:   { label: "Pick-up",   emoji: "🏪", desc: "You will pick up your order at the shop.",      defaultPayment: "Cash on Arrival"  },
+  meetup:   { label: "Meet-up",   emoji: "🤝", desc: "Meet-up will be arranged with the seller.",     defaultPayment: "Cash on Arrival"  },
 }
 
 function resolveImage(src: string | null | undefined, fallback = "/p2.png"): string {
@@ -43,17 +31,19 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { data: user } = useMe()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [gcashProof, setGcashProof] = useState<File | null>(null)
-  const [gcashPreview, setGcashPreview] = useState<string | null>(null)
-  const [receiptError, setReceiptError] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const { mutateAsync: saveOrder } = useInsertOrder()
   const shipping = 20
 
-  // Delivery method + auto payment
+  // Delivery + payment state
   const [deliveryType, setDeliveryType] = useState("delivery")
   const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery")
   const [showPopup, setShowPopup] = useState(false)
+
+  // GCash receipt
+  const [gcashFile, setGcashFile] = useState<File | null>(null)
+  const [gcashPreview, setGcashPreview] = useState<string | null>(null)
+  const [receiptError, setReceiptError] = useState("")
 
   // Delivery form fields
   const [fullName, setFullName] = useState("")
@@ -83,15 +73,25 @@ export default function CheckoutPage() {
       })
   }, [user?.id])
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.qty) || 1), 0)
+  const subtotal = cartItems.reduce((sum, i) => sum + (Number(i.price) || 0) * (Number(i.qty) || 1), 0)
   const total = subtotal + (cartItems.length > 0 ? shipping : 0)
   const today = new Date().toISOString().split("T")[0]
 
   function handleDeliveryTypeChange(type: string) {
     setDeliveryType(type)
-    setPaymentMethod(type === "delivery" ? "Cash on Delivery" : "Cash on Arrival")
-    setShowPopup(true)
+    setPaymentMethod(DELIVERY_INFO[type].defaultPayment)
+    setGcashFile(null)
+    setGcashPreview(null)
+    setReceiptError("")
     setErrors({})
+    setShowPopup(true)
+  }
+
+  function handlePaymentChange(method: string) {
+    setPaymentMethod(method)
+    setGcashFile(null)
+    setGcashPreview(null)
+    setReceiptError("")
   }
 
   function handleGcashUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -102,7 +102,7 @@ export default function CheckoutPage() {
       return
     }
     setReceiptError("")
-    setGcashProof(file)
+    setGcashFile(file)
     setGcashPreview(URL.createObjectURL(file))
   }
 
@@ -112,16 +112,12 @@ export default function CheckoutPage() {
       if (!fullName.trim()) e.fullName = "Full name is required."
       if (!phone.trim()) e.phone = "Phone number is required."
       else if (!/^09\d{9}$/.test(phone.trim())) e.phone = "Enter a valid 11-digit PH number (09XXXXXXXXX)."
-    }
-    if (deliveryType === "delivery") {
-      if (!address.trim()) e.address = "Delivery address is required."
-    }
-    if (deliveryType === "meetup") {
-      if (!address.trim()) e.address = "Meet-up location is required."
+      if (!address.trim()) e.address = deliveryType === "delivery" ? "Delivery address is required." : "Meet-up location is required."
     }
     if (!deliveryDate) e.deliveryDate = "Date is required."
     else if (deliveryDate < today) e.deliveryDate = "Date cannot be in the past."
     if (!deliveryTime) e.deliveryTime = "Please select a time slot."
+    if (paymentMethod === "GCash" && !gcashFile) e.receipt = "Please upload your GCash receipt."
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -131,14 +127,24 @@ export default function CheckoutPage() {
     if (!validate()) return
 
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-    if (authError || !authUser) {
-      alert("You must be logged in to place an order.")
-      router.push("/login")
-      return
-    }
+    if (authError || !authUser) { alert("You must be logged in."); router.push("/login"); return }
 
     setSubmitting(true)
     try {
+      // 1. Upload GCash receipt if needed
+      let receiptUrl: string | null = null
+      if (paymentMethod === "GCash" && gcashFile) {
+        const ext = gcashFile.name.split(".").pop() ?? "jpg"
+        const filePath = `public/${authUser.id}_${Date.now()}.${ext}`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("receipts")
+          .upload(filePath, gcashFile, { cacheControl: "3600", upsert: true })
+        if (uploadError) throw new Error("Failed to upload receipt: " + uploadError.message)
+        const { data: urlData } = supabase.storage.from("receipts").getPublicUrl(uploadData.path)
+        receiptUrl = urlData.publicUrl
+      }
+
+      // 2. Insert order
       const order = await saveOrder({
         user_id: authUser.id,
         items: cartItems,
@@ -148,9 +154,10 @@ export default function CheckoutPage() {
         total_amount: total,
         payment: paymentMethod,
         status: "Pending",
-        receipt_url: null,
+        receipt_url: receiptUrl,
       })
 
+      // 3. Insert delivery details
       await insertDeliveryDetails({
         order_id: order.id,
         delivery_type: deliveryType,
@@ -161,34 +168,22 @@ export default function CheckoutPage() {
         delivery_time: deliveryTime,
       })
 
+      // 4. Validate + insert order items
       const productIds = cartItems.map(i => i.product_id).filter(Boolean)
-      if (productIds.length !== cartItems.length) {
-        throw new Error("Some items are no longer available. Please refresh your cart.")
-      }
-
       const { data: validProducts, error: productCheckError } = await supabase
-        .from("products")
-        .select("id")
-        .in("id", productIds)
-
+        .from("products").select("id").in("id", productIds)
       if (productCheckError) throw productCheckError
 
       const validIds = new Set(validProducts?.map(p => p.id) ?? [])
       const unavailable = cartItems.filter(i => !validIds.has(i.product_id))
-      if (unavailable.length > 0) {
-        throw new Error(`Some items are no longer available: ${unavailable.map(i => i.name).join(", ")}.`)
-      }
+      if (unavailable.length > 0) throw new Error(`Items no longer available: ${unavailable.map(i => i.name).join(", ")}`)
 
       const { error: itemsError } = await supabase.from("order_items").insert(
-        cartItems.map((item) => ({
-          order_id: order.id,
-          product_id: item.product_id,
-          quantity: item.qty,
-          price: item.price,
-        }))
+        cartItems.map(item => ({ order_id: order.id, product_id: item.product_id, quantity: item.qty, price: item.price }))
       )
       if (itemsError) throw itemsError
 
+      // 5. Clear cart
       localStorage.removeItem("cart")
       await supabase.from("cart_items").delete().eq("user_id", authUser.id)
 
@@ -202,6 +197,7 @@ export default function CheckoutPage() {
   }
 
   const info = DELIVERY_INFO[deliveryType]
+  const isGcash = paymentMethod === "GCash"
 
   return (
     <ProtectedRoute>
@@ -225,12 +221,8 @@ export default function CheckoutPage() {
                   <div key={i} className="bg-white/80 border border-white/60 p-4 rounded-2xl flex justify-between items-center shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
-                        <img
-                          src={resolveImage(item.img)}
-                          alt={item.name}
-                          className="w-full h-full object-cover rounded-lg"
-                          onError={(e) => { (e.target as HTMLImageElement).src = "/p2.png" }}
-                        />
+                        <img src={resolveImage(item.img)} alt={item.name} className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "/p2.png" }} />
                       </div>
                       <div>
                         <p className="font-semibold text-sm text-gray-800">{item.name}</p>
@@ -251,18 +243,22 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* PAYMENT METHOD DISPLAY */}
-              <div className="bg-[#fdf6f6] border border-[#f0e0e0] rounded-2xl p-4 text-sm">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Payment Method</p>
-                <p className="font-semibold text-[#4b2e2e]">{paymentMethod}</p>
-                <p className="text-xs text-gray-400 mt-0.5">Auto-set based on delivery method</p>
-              </div>
+              {/* GCASH QR CODE */}
+              {isGcash && (
+                <div className="bg-white border border-[#e8d5d5] rounded-2xl shadow-sm p-6 flex flex-col items-center text-center">
+                  <p className="text-sm font-bold text-[#2a1515] mb-1">Scan to Pay via GCash</p>
+                  <p className="text-xs text-gray-400 mb-4">Send payment then upload screenshot below</p>
+                  <img src="/gcashqrcode.jpg" alt="GCash QR Code"
+                    className="w-[220px] h-[220px] rounded-xl object-contain shadow-sm"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
+                </div>
+              )}
             </div>
 
-            {/* RIGHT — DELIVERY + DETAILS */}
+            {/* RIGHT — DELIVERY + PAYMENT */}
             <div className="space-y-4">
 
-              {/* DELIVERY METHOD SELECT */}
+              {/* DELIVERY METHOD */}
               <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm space-y-3">
                 <h2 className="font-semibold text-gray-700">Delivery Method</h2>
                 <select
@@ -270,13 +266,57 @@ export default function CheckoutPage() {
                   onChange={(e) => handleDeliveryTypeChange(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] bg-white transition"
                 >
-                  <option value="delivery">🚴 Delivery (Cash on Delivery)</option>
-                  <option value="pickup">🏪 Pick-up (Cash on Arrival)</option>
-                  <option value="meetup">🤝 Meet-up (Cash on Arrival)</option>
+                  <option value="delivery">🚴 Delivery</option>
+                  <option value="pickup">🏪 Pick-up</option>
+                  <option value="meetup">🤝 Meet-up</option>
                 </select>
               </div>
 
-              {/* CONDITIONAL FIELDS */}
+              {/* PAYMENT METHOD */}
+              <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm space-y-3">
+                <h2 className="font-semibold text-gray-700">Payment Method</h2>
+                <div className="space-y-2">
+                  {(deliveryType === "delivery"
+                    ? ["Cash on Delivery", "GCash"]
+                    : ["Cash on Arrival", "GCash"]
+                  ).map((opt) => (
+                    <label key={opt}
+                      className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition ${paymentMethod === opt ? "border-[#4b2e2e] bg-[#4b2e2e]/5" : "border-gray-100 hover:border-gray-200"}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{opt === "GCash" ? "📱" : "💵"}</span>
+                        <span className="font-medium text-sm text-gray-700">{opt}</span>
+                      </div>
+                      <input type="radio" checked={paymentMethod === opt}
+                        onChange={() => handlePaymentChange(opt)} className="accent-[#4b2e2e]" />
+                    </label>
+                  ))}
+                </div>
+
+                {/* GCASH RECEIPT UPLOAD */}
+                {isGcash && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-gray-500 mb-1">Upload GCash Receipt <span className="text-red-400">*</span></p>
+                    <p className="text-xs text-gray-400 mb-2">Accepted: JPG, PNG only</p>
+                    <label className={`block border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition ${errors.receipt ? "border-red-300 bg-red-50/30" : "border-gray-200 hover:border-[#4b2e2e]"}`}>
+                      {gcashPreview ? (
+                        <img src={gcashPreview} alt="receipt preview" className="max-h-40 mx-auto rounded-xl object-contain" />
+                      ) : (
+                        <div className="text-gray-400 text-sm">
+                          <p className="text-3xl mb-2">📎</p>
+                          <p>Click to upload receipt</p>
+                        </div>
+                      )}
+                      <input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onChange={handleGcashUpload} className="hidden" />
+                    </label>
+                    {receiptError && <p className="text-xs text-red-500 mt-1">{receiptError}</p>}
+                    {errors.receipt && !receiptError && <p className="text-xs text-red-500 mt-1">{errors.receipt}</p>}
+                    {gcashFile && !errors.receipt && <p className="text-xs text-green-600 mt-1">✓ Receipt uploaded: {gcashFile.name}</p>}
+                  </div>
+                )}
+              </div>
+
+              {/* CONDITIONAL DELIVERY FIELDS */}
               <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm space-y-3">
                 <h2 className="font-semibold text-gray-700">
                   {deliveryType === "delivery" ? "Delivery Details" : deliveryType === "pickup" ? "Pick-up Info" : "Meet-up Details"}
@@ -286,33 +326,20 @@ export default function CheckoutPage() {
                   <>
                     <div>
                       <label className="text-xs font-medium text-gray-500 mb-1 block">Full Name <span className="text-red-400">*</span></label>
-                      <input
-                        value={fullName}
-                        onChange={e => setFullName(e.target.value)}
-                        placeholder="Enter full name"
-                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.fullName ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
-                      />
+                      <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Enter full name"
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.fullName ? "border-red-300 bg-red-50/30" : "border-gray-200"}`} />
                       {errors.fullName && <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>}
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 mb-1 block">Phone Number <span className="text-red-400">*</span></label>
-                      <input
-                        value={phone}
-                        onChange={e => setPhone(e.target.value)}
-                        placeholder="09XXXXXXXXX"
-                        maxLength={11}
-                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.phone ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
-                      />
+                      <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="09XXXXXXXXX" maxLength={11}
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.phone ? "border-red-300 bg-red-50/30" : "border-gray-200"}`} />
                       {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 mb-1 block">Delivery Address <span className="text-red-400">*</span></label>
-                      <input
-                        value={address}
-                        onChange={e => setAddress(e.target.value)}
-                        placeholder="Street, Barangay, City"
-                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.address ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
-                      />
+                      <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, Barangay, City"
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.address ? "border-red-300 bg-red-50/30" : "border-gray-200"}`} />
                       {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
                     </div>
                   </>
@@ -329,33 +356,20 @@ export default function CheckoutPage() {
                   <>
                     <div>
                       <label className="text-xs font-medium text-gray-500 mb-1 block">Full Name <span className="text-red-400">*</span></label>
-                      <input
-                        value={fullName}
-                        onChange={e => setFullName(e.target.value)}
-                        placeholder="Enter full name"
-                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.fullName ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
-                      />
+                      <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Enter full name"
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.fullName ? "border-red-300 bg-red-50/30" : "border-gray-200"}`} />
                       {errors.fullName && <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>}
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 mb-1 block">Meet-up Location <span className="text-red-400">*</span></label>
-                      <input
-                        value={address}
-                        onChange={e => setAddress(e.target.value)}
-                        placeholder="e.g. SM City, Jollibee Rizal Ave"
-                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.address ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
-                      />
+                      <input value={address} onChange={e => setAddress(e.target.value)} placeholder="e.g. SM City, Jollibee Rizal Ave"
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.address ? "border-red-300 bg-red-50/30" : "border-gray-200"}`} />
                       {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 mb-1 block">Phone Number <span className="text-red-400">*</span></label>
-                      <input
-                        value={phone}
-                        onChange={e => setPhone(e.target.value)}
-                        placeholder="09XXXXXXXXX"
-                        maxLength={11}
-                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.phone ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
-                      />
+                      <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="09XXXXXXXXX" maxLength={11}
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.phone ? "border-red-300 bg-red-50/30" : "border-gray-200"}`} />
                       {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
                     </div>
                   </>
@@ -367,22 +381,14 @@ export default function CheckoutPage() {
                     <label className="text-xs font-medium text-gray-500 mb-1 block">
                       {deliveryType === "delivery" ? "Delivery Date" : "Date"} <span className="text-red-400">*</span>
                     </label>
-                    <input
-                      type="date"
-                      value={deliveryDate}
-                      min={today}
-                      onChange={e => setDeliveryDate(e.target.value)}
-                      className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.deliveryDate ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
-                    />
+                    <input type="date" value={deliveryDate} min={today} onChange={e => setDeliveryDate(e.target.value)}
+                      className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.deliveryDate ? "border-red-300 bg-red-50/30" : "border-gray-200"}`} />
                     {errors.deliveryDate && <p className="text-xs text-red-500 mt-1">{errors.deliveryDate}</p>}
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-500 mb-1 block">Time Slot <span className="text-red-400">*</span></label>
-                    <select
-                      value={deliveryTime}
-                      onChange={e => setDeliveryTime(e.target.value)}
-                      className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] bg-white transition ${errors.deliveryTime ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
-                    >
+                    <select value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)}
+                      className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] bg-white transition ${errors.deliveryTime ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}>
                       <option value="">Select time</option>
                       {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
@@ -391,11 +397,8 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <button
-                onClick={placeOrder}
-                disabled={submitting}
-                className="w-full bg-[#4b2e2e] text-white py-4 rounded-full hover:bg-[#3a2323] transition font-bold text-sm shadow-md shadow-[#4b2e2e]/20 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
+              <button onClick={placeOrder} disabled={submitting}
+                className="w-full bg-[#4b2e2e] text-white py-4 rounded-full hover:bg-[#3a2323] transition font-bold text-sm shadow-md shadow-[#4b2e2e]/20 disabled:opacity-60 disabled:cursor-not-allowed">
                 {submitting ? "Placing Order..." : `Place Order — ₱${total}`}
               </button>
             </div>
@@ -409,18 +412,13 @@ export default function CheckoutPage() {
       {showPopup && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-6 rounded-2xl w-full max-w-[360px] text-center shadow-xl">
-            <div className="text-3xl mb-3">
-              {deliveryType === "delivery" ? "🚴" : deliveryType === "pickup" ? "🏪" : "🤝"}
-            </div>
-            <h2 className="text-lg font-bold text-[#2a1515] mb-2">
-              {info.label} Selected
-            </h2>
+            <div className="text-3xl mb-3">{info.emoji}</div>
+            <h2 className="text-lg font-bold text-[#2a1515] mb-2">{info.label} Selected</h2>
             <p className="text-sm text-gray-600 mb-1">{info.desc}</p>
-            <p className="text-sm font-semibold text-[#4b2e2e]">Payment: {info.payment}</p>
-            <button
-              onClick={() => setShowPopup(false)}
-              className="mt-5 bg-[#4b2e2e] text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-[#3a2323] transition w-full"
-            >
+            <p className="text-sm font-semibold text-[#4b2e2e]">Default Payment: {info.defaultPayment}</p>
+            <p className="text-xs text-gray-400 mt-1">You can also choose GCash below.</p>
+            <button onClick={() => setShowPopup(false)}
+              className="mt-5 bg-[#4b2e2e] text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-[#3a2323] transition w-full">
               Got it!
             </button>
           </div>
