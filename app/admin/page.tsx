@@ -35,25 +35,38 @@ export default function AdminDashboard() {
       const { data: salesData } = await supabase.from("orders").select("total_amount")
       const totalSales = salesData?.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0) ?? 0
 
-      // Join orders with profiles to get customer name
-      const { data: recent } = await supabase
+      const { data: recentRaw } = await supabase
         .from("orders")
-        .select(`id, total_amount, status, created_at, payment, profiles ( full_name )`)
+        .select("id, total_amount, status, created_at, payment")
         .order("created_at", { ascending: false })
         .limit(5)
 
+      const orderIds = (recentRaw ?? []).map((o: any) => o.id)
+      const { data: ddData } = await supabase
+        .from("delivery_details")
+        .select("order_id, full_name, phone, address")
+        .in("order_id", orderIds)
+
+      const ddMap: Record<string, any> = {}
+      for (const dd of ddData ?? []) ddMap[dd.order_id] = dd
+
+      const recent = (recentRaw ?? []).map((o: any) => ({
+        ...o,
+        delivery_details: ddMap[o.id] ?? null,
+      }))
+
       setStats({ totalProducts: products ?? 0, totalOrders: orders ?? 0, totalUsers: users ?? 0, totalSales })
-      setRecentOrders(recent ?? [])
+      setRecentOrders(recent)
       setLoading(false)
     }
     load()
   }, [])
 
   const statCards = [
-    { label: "Total Products", value: stats.totalProducts,                    Icon: Package,      color: "bg-pink-50 border-pink-100",     text: "text-pink-600",   iconColor: "text-pink-400"   },
-    { label: "Total Orders",   value: stats.totalOrders,                      Icon: ShoppingBag,  color: "bg-amber-50 border-amber-100",   text: "text-amber-600",  iconColor: "text-amber-400"  },
-    { label: "Total Users",    value: stats.totalUsers,                       Icon: Users,        color: "bg-purple-50 border-purple-100", text: "text-purple-600", iconColor: "text-purple-400" },
-    { label: "Total Sales",    value: `₱${stats.totalSales.toLocaleString()}`, Icon: DollarSign,   color: "bg-green-50 border-green-100",   text: "text-green-600",  iconColor: "text-green-400"  },
+    { label: "Total Products", value: stats.totalProducts,                     Icon: Package,     color: "bg-pink-50 border-pink-100",     text: "text-pink-600",   iconColor: "text-pink-400"   },
+    { label: "Total Orders",   value: stats.totalOrders,                       Icon: ShoppingBag, color: "bg-amber-50 border-amber-100",   text: "text-amber-600",  iconColor: "text-amber-400"  },
+    { label: "Total Users",    value: stats.totalUsers,                        Icon: Users,       color: "bg-purple-50 border-purple-100", text: "text-purple-600", iconColor: "text-purple-400" },
+    { label: "Total Sales",    value: `₱${stats.totalSales.toLocaleString()}`, Icon: DollarSign,  color: "bg-green-50 border-green-100",   text: "text-green-600",  iconColor: "text-green-400"  },
   ]
 
   if (loading) return (
@@ -71,7 +84,6 @@ export default function AdminDashboard() {
         <p className="text-gray-400 text-sm mt-0.5">Overview of your store</p>
       </div>
 
-      {/* STAT CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         {statCards.map((card) => (
           <div key={card.label} className={`${card.color} border rounded-2xl p-5`}>
@@ -84,7 +96,6 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* RECENT ORDERS */}
       <div className="bg-white rounded-2xl border border-[#e8d5d5] shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-50 flex items-center gap-2">
           <ShoppingBag size={16} className="text-[#4b2e2e]" />
@@ -96,8 +107,8 @@ export default function AdminDashboard() {
               <tr className="bg-gray-50/80 text-xs text-gray-400 uppercase tracking-wide">
                 <th className="px-6 py-3 text-left">Order ID</th>
                 <th className="px-6 py-3 text-left">Customer</th>
+                <th className="px-6 py-3 text-left">Phone</th>
                 <th className="px-6 py-3 text-left">Amount</th>
-                <th className="px-6 py-3 text-left">Payment</th>
                 <th className="px-6 py-3 text-left">Status</th>
                 <th className="px-6 py-3 text-left">Date</th>
               </tr>
@@ -109,9 +120,9 @@ export default function AdminDashboard() {
               {recentOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50/50 transition">
                   <td className="px-6 py-4 font-mono text-xs text-gray-500">#{String(order.id).slice(0, 8)}</td>
-                  <td className="px-6 py-4 font-medium text-gray-800">{(order.profiles as any)?.full_name ?? "—"}</td>
+                  <td className="px-6 py-4 font-medium text-gray-800">{order.delivery_details?.full_name || "—"}</td>
+                  <td className="px-6 py-4 text-gray-500 text-xs">{order.delivery_details?.phone || "—"}</td>
                   <td className="px-6 py-4 font-bold text-[#4b2e2e]">₱{Number(order.total_amount).toLocaleString()}</td>
-                  <td className="px-6 py-4 text-gray-500 uppercase text-xs">{order.payment}</td>
                   <td className="px-6 py-4">
                     <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${statusColor[order.status] ?? statusColor.Pending}`}>
                       {order.status}

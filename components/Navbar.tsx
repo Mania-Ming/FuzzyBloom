@@ -15,7 +15,6 @@ export default function Navbar() {
   const [unreadMessages, setUnreadMessages] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Fetch unread message count
   useEffect(() => {
     if (!user?.id) return
     async function fetchUnread() {
@@ -71,13 +70,11 @@ export default function Navbar() {
     <nav className="sticky top-0 w-full z-50 border-b border-white/30 bg-white/70 backdrop-blur-xl shadow-sm">
       <div className="max-w-7xl mx-auto px-5 md:px-12 h-16 flex items-center justify-between gap-4">
 
-        {/* LOGO */}
         <Link href="/dashboard" className="flex items-center gap-2.5 shrink-0">
           <Image src="/logo.jpg" alt="logo" width={38} height={38} className="rounded-full object-cover ring-2 ring-[#4b2e2e]/20" />
           <span className="hidden sm:block font-semibold text-[#4b2e2e] text-sm tracking-wide">Fuzzy Bloom</span>
         </Link>
 
-        {/* NAV LINKS */}
         <div className="flex items-center gap-1 md:gap-2">
 
           <Link href="/about" className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-[#4b2e2e] hover:bg-[#4b2e2e]/5 transition">
@@ -86,16 +83,6 @@ export default function Navbar() {
 
           <Link href="/orders" className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-[#4b2e2e] hover:bg-[#4b2e2e]/5 transition">
             Orders
-          </Link>
-
-          {/* MESSAGES */}
-          <Link href="/messages" className="relative p-2 rounded-lg text-gray-600 hover:text-[#4b2e2e] hover:bg-[#4b2e2e]/5 transition">
-            <MessageCircle size={18} strokeWidth={1.8} />
-            {unreadMessages > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-[#4b2e2e] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold leading-none">
-                {unreadMessages}
-              </span>
-            )}
           </Link>
 
           {/* WISHLIST */}
