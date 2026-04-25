@@ -253,6 +253,12 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
               <span>Payment Method</span>
               <span className="font-semibold">{order.payment || "Cash on Delivery"}</span>
             </div>
+            {dd?.delivery_type === "delivery" && (
+              <div className="flex justify-between text-gray-600">
+                <span>Shipping Fee</span>
+                <span className="font-semibold">₱35</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-base border-t border-[#f0e0e0] pt-2 mt-1">
               <span>Total</span>
               <span className="text-[#4b2e2e]">₱{Number(order.total_amount).toLocaleString()}</span>
