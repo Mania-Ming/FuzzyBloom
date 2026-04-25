@@ -91,38 +91,22 @@ function OrderDrawer({
     async function fetchFull() {
       setLoading(true)
 
-      // Fetch order with delivery_details only (profiles join causes 400 — not a direct FK)
       const { data: orderData, error: orderErr } = await supabase
         .from("orders")
         .select(`
-          *,
-          delivery_details ( * )
+          id, total_amount, payment, status, created_at, receipt_url, items,
+          delivery_details!delivery_details_order_id_fkey ( full_name, phone, address, delivery_date, delivery_time )
         `)
         .eq("id", orderId)
         .single()
 
       if (orderErr) console.error("Order fetch error:", orderErr.message)
 
-      // Fetch order items with product info
-      const { data: itemsData, error: itemsErr } = await supabase
-        .from("order_items")
-        .select("quantity, price, products ( * )")
-        .eq("order_id", orderId)
-
-      if (itemsErr) console.error("Order items fetch error:", itemsErr.message)
-
       if (orderData) {
         const dd = Array.isArray(orderData.delivery_details)
           ? orderData.delivery_details[0] ?? null
           : orderData.delivery_details ?? null
-
-        const items: OrderItemRow[] = (itemsData ?? []).map((i: any) => ({
-          quantity: i.quantity,
-          price: i.price,
-          products: Array.isArray(i.products) ? (i.products[0] ?? null) : (i.products ?? null),
-        }))
-
-        setOrder({ ...orderData, delivery_details: dd, order_items: items })
+        setOrder({ ...orderData, delivery_details: dd, order_items: [] })
       }
       setLoading(false)
     }
@@ -209,38 +193,45 @@ function OrderDrawer({
             </div>
           </div>
 
-          {/* ORDER ITEMS */}
+          {/* ORDER ITEMS from JSONB */}
           <div>
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Items Ordered</p>
-            {order.order_items.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">No items found.</p>
-            ) : (
-              <div className="space-y-2">
-                {order.order_items.map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
-                    {item.products?.image_url ? (
-                      <img
-                        src={resolveImage(item.products.image_url)}
-                        alt={item.products.name}
-                        className="w-10 h-10 rounded-lg object-cover shrink-0"
-                        onError={(e) => { (e.target as HTMLImageElement).src = "/logo.jpg" }}
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center shrink-0">
-                        <Package size={16} className="text-pink-300" />
+            {(() => {
+              const jsonItems: any[] = Array.isArray((order as any).items) ? (order as any).items : []
+              return jsonItems.length === 0 ? (
+                <p className="text-sm text-gray-400 italic">No items found.</p>
+              ) : (
+                <div className="space-y-2">
+                  {jsonItems.map((item: any, i: number) => {
+                    const qty = item.qty ?? item.quantity ?? 1
+                    const imgSrc = item.img || item.image_url
+                    return (
+                      <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                        {imgSrc ? (
+                          <img
+                            src={resolveImage(imgSrc)}
+                            alt={item.name}
+                            className="w-10 h-10 rounded-lg object-cover shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).src = "/logo.jpg" }}
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center shrink-0">
+                            <Package size={16} className="text-pink-300" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 truncate">{item.name ?? "N/A"}</p>
+                          <p className="text-xs text-gray-400">Qty: {qty}</p>
+                        </div>
+                        <p className="font-bold text-[#4b2e2e] text-sm shrink-0">
+                          ₱{(Number(item.price) * qty).toLocaleString()}
+                        </p>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{item.products?.name ?? "N/A"}</p>
-                      <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
-                    </div>
-                    <p className="font-bold text-[#4b2e2e] text-sm shrink-0">
-                      ₱{(Number(item.price) * item.quantity).toLocaleString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </div>
 
           {/* PAYMENT SUMMARY */}
@@ -366,12 +357,19 @@ export default function AdminOrdersPage() {
     const { data, error } = await supabase
       .from("orders")
       .select(`
-        *,
-        delivery_details ( * ),
-        order_items (
-          quantity,
-          price,
-          products ( name, image_url )
+        id,
+        total_amount,
+        status,
+        created_at,
+        items,
+        payment,
+        receipt_url,
+        delivery_details!delivery_details_order_id_fkey (
+          full_name,
+          phone,
+          address,
+          delivery_date,
+          delivery_time
         )
       `)
       .order("created_at", { ascending: false })
