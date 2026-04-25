@@ -91,7 +91,6 @@ function OrderDrawer({
   const [receiptOpen, setReceiptOpen] = useState(false)
   const [riders, setRiders] = useState<{ id: string; name: string; phone: string }[]>([])
   const [selectedRiderId, setSelectedRiderId] = useState("")
-  const [assigningRider, setAssigningRider] = useState(false)
 
   useEffect(() => {
     async function fetchFull() {
@@ -143,44 +142,19 @@ function OrderDrawer({
   const dd = order.delivery_details
   const isDelivery = dd?.delivery_type === "delivery"
 
-  async function assignRider() {
-    if (!order || !selectedRiderId) return
-    setAssigningRider(true)
-
-    const rider = riders.find(r => r.id === selectedRiderId)
-    if (!rider) { setAssigningRider(false); return }
-
-    const { error: ddErr } = await supabase
+  async function assignRider(orderId: string, riderId: string) {
+    const { error } = await supabase
       .from("delivery_details")
-      .update({ rider_id: rider.id, rider_name: rider.name, rider_contact: rider.phone })
-      .eq("order_id", order.id)
+      .update({ rider_id: riderId })
+      .eq("order_id", orderId)
 
-    if (ddErr) {
-      alert("Failed to assign rider: " + ddErr.message)
-      setAssigningRider(false)
-      return
-    }
-
-    const { error: orderErr } = await supabase
-      .from("orders")
-      .update({ status: "Out for Delivery" })
-      .eq("id", order.id)
-
-    if (!orderErr) {
-      await supabase.from("order_status_history").insert({ order_id: order.id, status: "Out for Delivery" })
-      setOrder(prev => prev ? {
-        ...prev,
-        status: "Out for Delivery",
-        delivery_details: prev.delivery_details
-          ? { ...prev.delivery_details, rider_name: rider.name, rider_contact: rider.phone }
-          : prev.delivery_details
-      } : prev)
-      onAction(order.id, "__reload__")
+    if (error) {
+      console.error(error)
+      alert("Failed to assign rider")
     } else {
-      alert("Rider saved but failed to update status: " + orderErr.message)
+      alert("Rider assigned successfully")
+      onAction(orderId, "__reload__")
     }
-
-    setAssigningRider(false)
   }
 
   const displayName    = dd?.full_name    || "N/A"
@@ -370,12 +344,12 @@ function OrderDrawer({
                   ))}
                 </select>
                 <button
-                  onClick={assignRider}
-                  disabled={!selectedRiderId || assigningRider}
+                  onClick={() => order && assignRider(order.id, selectedRiderId)}
+                  disabled={!selectedRiderId}
                   className="w-full flex items-center justify-center gap-2 py-2.5 bg-purple-600 text-white rounded-xl font-semibold text-sm hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Bike size={14} />
-                  {assigningRider ? "Assigning..." : dd?.rider_name ? "Update Rider" : "Assign Rider"}
+                  {dd?.rider_name ? "Update Rider" : "Assign Rider"}
                 </button>
               </div>
             </div>
