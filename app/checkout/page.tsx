@@ -15,6 +15,24 @@ type CartItem = { product_id: string; name: string; price: number; img?: string;
 
 const TIME_SLOTS = ["9:00 AM", "1:00 PM", "6:00 PM"]
 
+const DELIVERY_INFO: Record<string, { label: string; desc: string; payment: string }> = {
+  delivery: {
+    label: "Delivery",
+    desc: "Your order will be delivered by a rider.",
+    payment: "Cash on Delivery",
+  },
+  pickup: {
+    label: "Pick-up",
+    desc: "You will pick up your order at the shop.",
+    payment: "Cash on Arrival",
+  },
+  meetup: {
+    label: "Meet-up",
+    desc: "Meet-up will be arranged with the seller.",
+    payment: "Cash on Arrival",
+  },
+}
+
 function resolveImage(src: string | null | undefined, fallback = "/p2.png"): string {
   if (!src) return fallback
   if (src.startsWith("http")) return src
@@ -25,13 +43,17 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { data: user } = useMe()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [payment, setPayment] = useState("cod")
   const [gcashProof, setGcashProof] = useState<File | null>(null)
   const [gcashPreview, setGcashPreview] = useState<string | null>(null)
   const [receiptError, setReceiptError] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const { mutateAsync: saveOrder } = useInsertOrder()
   const shipping = 20
+
+  // Delivery method + auto payment
+  const [deliveryType, setDeliveryType] = useState("delivery")
+  const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery")
+  const [showPopup, setShowPopup] = useState(false)
 
   // Delivery form fields
   const [fullName, setFullName] = useState("")
@@ -65,6 +87,13 @@ export default function CheckoutPage() {
   const total = subtotal + (cartItems.length > 0 ? shipping : 0)
   const today = new Date().toISOString().split("T")[0]
 
+  function handleDeliveryTypeChange(type: string) {
+    setDeliveryType(type)
+    setPaymentMethod(type === "delivery" ? "Cash on Delivery" : "Cash on Arrival")
+    setShowPopup(true)
+    setErrors({})
+  }
+
   function handleGcashUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -79,14 +108,20 @@ export default function CheckoutPage() {
 
   function validate() {
     const e: Record<string, string> = {}
-    if (!fullName.trim()) e.fullName = "Full name is required."
-    if (!phone.trim()) e.phone = "Phone number is required."
-    else if (!/^09\d{9}$/.test(phone.trim())) e.phone = "Enter a valid 11-digit PH number (09XXXXXXXXX)."
-    if (!address.trim()) e.address = "Delivery address is required."
-    if (!deliveryDate) e.deliveryDate = "Delivery date is required."
-    else if (deliveryDate < today) e.deliveryDate = "Delivery date cannot be in the past."
-    if (!deliveryTime) e.deliveryTime = "Please select a delivery time slot."
-    if (payment === "gcash" && !gcashProof) e.receipt = "Please upload your GCash payment receipt."
+    if (deliveryType === "delivery" || deliveryType === "meetup") {
+      if (!fullName.trim()) e.fullName = "Full name is required."
+      if (!phone.trim()) e.phone = "Phone number is required."
+      else if (!/^09\d{9}$/.test(phone.trim())) e.phone = "Enter a valid 11-digit PH number (09XXXXXXXXX)."
+    }
+    if (deliveryType === "delivery") {
+      if (!address.trim()) e.address = "Delivery address is required."
+    }
+    if (deliveryType === "meetup") {
+      if (!address.trim()) e.address = "Meet-up location is required."
+    }
+    if (!deliveryDate) e.deliveryDate = "Date is required."
+    else if (deliveryDate < today) e.deliveryDate = "Date cannot be in the past."
+    if (!deliveryTime) e.deliveryTime = "Please select a time slot."
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -95,7 +130,6 @@ export default function CheckoutPage() {
     if (cartItems.length === 0) { alert("Cart is empty!"); return }
     if (!validate()) return
 
-    // Always get the freshest user from Supabase auth — never rely on cached hook data
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
     if (authError || !authUser) {
       alert("You must be logged in to place an order.")
@@ -105,20 +139,6 @@ export default function CheckoutPage() {
 
     setSubmitting(true)
     try {
-      // 1. Upload GCash receipt if needed
-      let receiptUrl: string | null = null
-      if (payment === "gcash" && gcashProof) {
-        const ext = gcashProof.name.split(".").pop() ?? "jpg"
-        const filePath = `public/${authUser.id}_${Date.now()}.${ext}`
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("receipts")
-          .upload(filePath, gcashProof, { cacheControl: "3600", upsert: true })
-        if (uploadError) { alert("Failed to upload receipt: " + uploadError.message); return }
-        const { data: urlData } = supabase.storage.from("receipts").getPublicUrl(uploadData.path)
-        receiptUrl = urlData.publicUrl
-      }
-
-      // 2. Insert into orders table — use authUser.id (verified from Supabase, not cached hook)
       const order = await saveOrder({
         user_id: authUser.id,
         items: cartItems,
@@ -126,22 +146,21 @@ export default function CheckoutPage() {
         shipping,
         total,
         total_amount: total,
-        payment,
+        payment: paymentMethod,
         status: "Pending",
-        receipt_url: receiptUrl,
+        receipt_url: null,
       })
 
-      // 3. Insert delivery details into separate table
       await insertDeliveryDetails({
         order_id: order.id,
-        full_name: fullName,
-        phone,
-        address,
+        delivery_type: deliveryType,
+        full_name: deliveryType === "pickup" ? "" : fullName,
+        phone: deliveryType === "pickup" ? "" : phone,
+        address: deliveryType === "pickup" ? "" : address,
         delivery_date: deliveryDate,
         delivery_time: deliveryTime,
       })
 
-      // 4. Validate product IDs and insert order items
       const productIds = cartItems.map(i => i.product_id).filter(Boolean)
       if (productIds.length !== cartItems.length) {
         throw new Error("Some items are no longer available. Please refresh your cart.")
@@ -157,20 +176,19 @@ export default function CheckoutPage() {
       const validIds = new Set(validProducts?.map(p => p.id) ?? [])
       const unavailable = cartItems.filter(i => !validIds.has(i.product_id))
       if (unavailable.length > 0) {
-        const names = unavailable.map(i => i.name).join(", ")
-        throw new Error(`Some items are no longer available: ${names}. Please remove them from your cart.`)
+        throw new Error(`Some items are no longer available: ${unavailable.map(i => i.name).join(", ")}.`)
       }
 
-      const orderItems = cartItems.map((item) => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.qty,
-        price: item.price,
-      }))
-      const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
+      const { error: itemsError } = await supabase.from("order_items").insert(
+        cartItems.map((item) => ({
+          order_id: order.id,
+          product_id: item.product_id,
+          quantity: item.qty,
+          price: item.price,
+        }))
+      )
       if (itemsError) throw itemsError
 
-      // 5. Clear cart
       localStorage.removeItem("cart")
       await supabase.from("cart_items").delete().eq("user_id", authUser.id)
 
@@ -182,6 +200,8 @@ export default function CheckoutPage() {
       setSubmitting(false)
     }
   }
+
+  const info = DELIVERY_INFO[deliveryType]
 
   return (
     <ProtectedRoute>
@@ -231,69 +251,122 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* GCASH QR */}
-              {payment === "gcash" && (
-                <div className="bg-white border border-[#e8d5d5] rounded-2xl shadow-sm p-6 flex flex-col items-center text-center">
-                  <p className="text-sm font-bold text-[#2a1515] mb-1">Scan to Pay via GCash</p>
-                  <p className="text-xs text-gray-400 mb-4">Send payment then upload screenshot below</p>
-                  <img
-                    src="/gcashqrcode.jpg"
-                    alt="GCash QR Code"
-                    className="w-[250px] h-[250px] rounded-xl object-contain shadow-sm"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-                  />
-                </div>
-              )}
+              {/* PAYMENT METHOD DISPLAY */}
+              <div className="bg-[#fdf6f6] border border-[#f0e0e0] rounded-2xl p-4 text-sm">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Payment Method</p>
+                <p className="font-semibold text-[#4b2e2e]">{paymentMethod}</p>
+                <p className="text-xs text-gray-400 mt-0.5">Auto-set based on delivery method</p>
+              </div>
             </div>
 
-            {/* RIGHT — DELIVERY + PAYMENT */}
+            {/* RIGHT — DELIVERY + DETAILS */}
             <div className="space-y-4">
 
-              {/* DELIVERY DETAILS */}
+              {/* DELIVERY METHOD SELECT */}
               <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm space-y-3">
-                <h2 className="font-semibold text-gray-700">Delivery Details</h2>
+                <h2 className="font-semibold text-gray-700">Delivery Method</h2>
+                <select
+                  value={deliveryType}
+                  onChange={(e) => handleDeliveryTypeChange(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] bg-white transition"
+                >
+                  <option value="delivery">🚴 Delivery (Cash on Delivery)</option>
+                  <option value="pickup">🏪 Pick-up (Cash on Arrival)</option>
+                  <option value="meetup">🤝 Meet-up (Cash on Arrival)</option>
+                </select>
+              </div>
 
-                {/* Full Name */}
-                <div>
-                  <label className="text-xs font-medium text-gray-500 mb-1 block">Full Name <span className="text-red-400">*</span></label>
-                  <input
-                    value={fullName}
-                    onChange={e => setFullName(e.target.value)}
-                    placeholder="Enter full name"
-                    className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.fullName ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
-                  />
-                  {errors.fullName && <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>}
-                </div>
+              {/* CONDITIONAL FIELDS */}
+              <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm space-y-3">
+                <h2 className="font-semibold text-gray-700">
+                  {deliveryType === "delivery" ? "Delivery Details" : deliveryType === "pickup" ? "Pick-up Info" : "Meet-up Details"}
+                </h2>
 
-                {/* Phone */}
-                <div>
-                  <label className="text-xs font-medium text-gray-500 mb-1 block">Phone Number <span className="text-red-400">*</span></label>
-                  <input
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    placeholder="09XXXXXXXXX"
-                    maxLength={11}
-                    className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.phone ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
-                  />
-                  {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
-                </div>
+                {deliveryType === "delivery" && (
+                  <>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 mb-1 block">Full Name <span className="text-red-400">*</span></label>
+                      <input
+                        value={fullName}
+                        onChange={e => setFullName(e.target.value)}
+                        placeholder="Enter full name"
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.fullName ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
+                      />
+                      {errors.fullName && <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>}
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 mb-1 block">Phone Number <span className="text-red-400">*</span></label>
+                      <input
+                        value={phone}
+                        onChange={e => setPhone(e.target.value)}
+                        placeholder="09XXXXXXXXX"
+                        maxLength={11}
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.phone ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
+                      />
+                      {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 mb-1 block">Delivery Address <span className="text-red-400">*</span></label>
+                      <input
+                        value={address}
+                        onChange={e => setAddress(e.target.value)}
+                        placeholder="Street, Barangay, City"
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.address ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
+                      />
+                      {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
+                    </div>
+                  </>
+                )}
 
-                {/* Address */}
-                <div>
-                  <label className="text-xs font-medium text-gray-500 mb-1 block">Delivery Address <span className="text-red-400">*</span></label>
-                  <input
-                    value={address}
-                    onChange={e => setAddress(e.target.value)}
-                    placeholder="Street, Barangay, City"
-                    className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.address ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
-                  />
-                  {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
-                </div>
+                {deliveryType === "pickup" && (
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-sm text-amber-700">
+                    <p className="font-semibold">🏪 Pick up at store location</p>
+                    <p className="text-xs mt-1 text-amber-600">No address needed. Pay upon arrival.</p>
+                  </div>
+                )}
 
-                {/* Date + Time */}
+                {deliveryType === "meetup" && (
+                  <>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 mb-1 block">Full Name <span className="text-red-400">*</span></label>
+                      <input
+                        value={fullName}
+                        onChange={e => setFullName(e.target.value)}
+                        placeholder="Enter full name"
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.fullName ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
+                      />
+                      {errors.fullName && <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>}
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 mb-1 block">Meet-up Location <span className="text-red-400">*</span></label>
+                      <input
+                        value={address}
+                        onChange={e => setAddress(e.target.value)}
+                        placeholder="e.g. SM City, Jollibee Rizal Ave"
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.address ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
+                      />
+                      {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 mb-1 block">Phone Number <span className="text-red-400">*</span></label>
+                      <input
+                        value={phone}
+                        onChange={e => setPhone(e.target.value)}
+                        placeholder="09XXXXXXXXX"
+                        maxLength={11}
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#4b2e2e] transition ${errors.phone ? "border-red-300 bg-red-50/30" : "border-gray-200"}`}
+                      />
+                      {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+                    </div>
+                  </>
+                )}
+
+                {/* Date + Time — always shown */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-medium text-gray-500 mb-1 block">Delivery Date <span className="text-red-400">*</span></label>
+                    <label className="text-xs font-medium text-gray-500 mb-1 block">
+                      {deliveryType === "delivery" ? "Delivery Date" : "Date"} <span className="text-red-400">*</span>
+                    </label>
                     <input
                       type="date"
                       value={deliveryDate}
@@ -318,57 +391,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* PAYMENT METHOD */}
-              <div className="bg-white/80 border border-white/60 p-5 rounded-2xl shadow-sm">
-                <h2 className="font-semibold text-gray-700 mb-4">Payment Method</h2>
-                <div className="space-y-2.5">
-                  {[
-                    { value: "cod", label: "Cash on Delivery", icon: "💵" },
-                    { value: "gcash", label: "GCash", icon: "📱" },
-                  ].map((opt) => (
-                    <label
-                      key={opt.value}
-                      className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition ${payment === opt.value ? "border-[#4b2e2e] bg-[#4b2e2e]/5" : "border-gray-100 hover:border-gray-200"}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{opt.icon}</span>
-                        <span className="font-medium text-sm text-gray-700">{opt.label}</span>
-                      </div>
-                      <input
-                        type="radio"
-                        checked={payment === opt.value}
-                        onChange={() => { setPayment(opt.value); setReceiptError(""); setErrors(p => ({ ...p, receipt: "" })) }}
-                        className="accent-[#4b2e2e]"
-                      />
-                    </label>
-                  ))}
-                </div>
-
-                {/* GCASH RECEIPT UPLOAD */}
-                {payment === "gcash" && (
-                  <div className="mt-4">
-                    <p className="text-sm font-semibold text-gray-700 mb-1">
-                      Upload GCash Receipt <span className="text-red-500">*</span>
-                    </p>
-                    <p className="text-xs text-gray-400 mb-2">Accepted: JPG, PNG only</p>
-                    <label className={`block border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition ${errors.receipt ? "border-red-300 bg-red-50/30" : "border-gray-200 hover:border-[#4b2e2e]"}`}>
-                      {gcashPreview ? (
-                        <img src={gcashPreview} alt="receipt preview" className="max-h-40 mx-auto rounded-xl object-contain" />
-                      ) : (
-                        <div className="text-gray-400 text-sm">
-                          <p className="text-3xl mb-2">📎</p>
-                          <p>Click to upload receipt</p>
-                        </div>
-                      )}
-                      <input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onChange={handleGcashUpload} className="hidden" />
-                    </label>
-                    {receiptError && <p className="text-xs text-red-500 mt-1">{receiptError}</p>}
-                    {errors.receipt && !receiptError && <p className="text-xs text-red-500 mt-1">{errors.receipt}</p>}
-                    {gcashProof && !errors.receipt && <p className="text-xs text-green-600 mt-1">✓ Receipt uploaded: {gcashProof.name}</p>}
-                  </div>
-                )}
-              </div>
-
               <button
                 onClick={placeOrder}
                 disabled={submitting}
@@ -382,6 +404,28 @@ export default function CheckoutPage() {
         </main>
         <Footer />
       </div>
+
+      {/* DELIVERY METHOD POPUP */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-[360px] text-center shadow-xl">
+            <div className="text-3xl mb-3">
+              {deliveryType === "delivery" ? "🚴" : deliveryType === "pickup" ? "🏪" : "🤝"}
+            </div>
+            <h2 className="text-lg font-bold text-[#2a1515] mb-2">
+              {info.label} Selected
+            </h2>
+            <p className="text-sm text-gray-600 mb-1">{info.desc}</p>
+            <p className="text-sm font-semibold text-[#4b2e2e]">Payment: {info.payment}</p>
+            <button
+              onClick={() => setShowPopup(false)}
+              className="mt-5 bg-[#4b2e2e] text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-[#3a2323] transition w-full"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
     </ProtectedRoute>
   )
 }

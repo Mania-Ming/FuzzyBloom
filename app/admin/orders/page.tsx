@@ -25,6 +25,7 @@ function formatDate(dateStr: string | null | undefined): string {
 }
 
 type DeliveryDetails = {
+  delivery_type: string
   full_name: string
   phone: string
   address: string
@@ -95,7 +96,7 @@ function OrderDrawer({
         .from("orders")
         .select(`
           id, total_amount, payment, status, created_at, receipt_url, items,
-          delivery_details!delivery_details_order_id_fkey ( full_name, phone, address, delivery_date, delivery_time )
+          delivery_details!delivery_details_order_id_fkey ( delivery_type, full_name, phone, address, delivery_date, delivery_time )
         `)
         .eq("id", orderId)
         .single()
@@ -237,9 +238,15 @@ function OrderDrawer({
           {/* PAYMENT SUMMARY */}
           <div className="bg-[#fdf6f6] rounded-2xl p-4 text-sm space-y-2">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Payment Summary</p>
+            {dd?.delivery_type && (
+              <div className="flex justify-between text-gray-600">
+                <span>Delivery Method</span>
+                <span className="font-semibold capitalize">{dd.delivery_type}</span>
+              </div>
+            )}
             <div className="flex justify-between text-gray-600">
               <span>Payment Method</span>
-              <span className="font-semibold">{isGcash ? "GCash" : "Cash on Delivery"}</span>
+              <span className="font-semibold">{order.payment || "Cash on Delivery"}</span>
             </div>
             <div className="flex justify-between font-bold text-base border-t border-[#f0e0e0] pt-2 mt-1">
               <span>Total</span>
@@ -365,6 +372,7 @@ export default function AdminOrdersPage() {
         payment,
         receipt_url,
         delivery_details!delivery_details_order_id_fkey (
+          delivery_type,
           full_name,
           phone,
           address,
@@ -526,7 +534,11 @@ export default function AdminOrdersPage() {
                 <div className="flex items-center gap-2 flex-wrap shrink-0">
                   <div className="text-right mr-1">
                     <p className="font-bold text-[#4b2e2e] text-sm">₱{Number(order.total_amount).toLocaleString()}</p>
-                    <p className="text-[10px] text-gray-400 uppercase">{isGcash ? "GCash" : "COD"}</p>
+                    <p className="text-[10px] text-gray-400 uppercase">
+                      {(order.delivery_details as any)?.delivery_type
+                        ? `${(order.delivery_details as any).delivery_type} · `
+                        : ""}{isGcash ? "GCash" : order.payment || "COD"}
+                    </p>
                   </div>
 
                   <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${STATUS_COLOR[order.status] ?? STATUS_COLOR.Pending}`}>

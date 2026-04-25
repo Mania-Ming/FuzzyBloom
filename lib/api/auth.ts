@@ -95,6 +95,7 @@ export async function insertOrder(order: {
 // INSERT DELIVERY DETAILS — separate table linked by order_id
 export async function insertDeliveryDetails(details: {
   order_id: string
+  delivery_type: string
   full_name: string
   phone: string
   address: string

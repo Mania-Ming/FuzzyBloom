@@ -21,6 +21,7 @@ type JsonItem = {
 }
 
 type DeliveryDetails = {
+  delivery_type: string
   full_name: string
   phone: string
   address: string
@@ -241,9 +242,15 @@ function OrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
           {/* TOTAL */}
           <div className="bg-[#fdf6f6] rounded-2xl p-4 text-sm space-y-2">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Payment</p>
+            {dd?.delivery_type && (
+              <div className="flex justify-between text-gray-600">
+                <span>Delivery Method</span>
+                <span className="font-semibold capitalize">{dd.delivery_type}</span>
+              </div>
+            )}
             <div className="flex justify-between text-gray-600">
-              <span>Method</span>
-              <span className="font-semibold">{order.payment?.toLowerCase() === "gcash" ? "GCash" : "Cash on Delivery"}</span>
+              <span>Payment Method</span>
+              <span className="font-semibold">{order.payment || "Cash on Delivery"}</span>
             </div>
             <div className="flex justify-between font-bold text-base border-t border-[#f0e0e0] pt-2 mt-1">
               <span>Total</span>
@@ -416,6 +423,7 @@ export default function OrdersPage() {
         items,
         payment,
         delivery_details!delivery_details_order_id_fkey (
+          delivery_type,
           full_name,
           phone,
           address,
