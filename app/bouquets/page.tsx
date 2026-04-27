@@ -21,6 +21,7 @@ type DBProduct = {
   description: string
   price: number
   image_url: string
+  img?: string
   is_available: boolean
   category: string
 }
@@ -43,12 +44,17 @@ export default function BouquetsPage() {
   const fetchProducts = useCallback(async () => {
     const { data, error } = await supabase
       .from("products")
-      .select("id, name, description, price, image_url, is_available, category")
-      .ilike("category", "bouquets")  // case-insensitive match
-      .eq("is_available", true)
+      .select("id, name, description, price, image_url, img, is_available, category")
+      .ilike("category", "%bouquet%")
       .order("name")
-    console.log("[bouquets] data:", data, "error:", error)
-    setProducts(data ?? [])
+    console.log("[bouquets] count:", data?.length, "data:", data, "error:", error)
+    // Normalize: fallback img->image_url, treat null is_available as true
+    const normalized = (data ?? []).map((p) => ({
+      ...p,
+      image_url: p.image_url || p.img || "/p1.png",
+      is_available: p.is_available !== false,
+    }))
+    setProducts(normalized)
     setLoading(false)
   }, [])
 
@@ -171,6 +177,12 @@ export default function BouquetsPage() {
 
         {loading ? (
           <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" /></div>
+        ) : products.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="text-4xl mb-3">🌸</p>
+            <p className="text-gray-500 font-medium">No bouquets available right now.</p>
+            <p className="text-xs text-gray-400 mt-1">Check back soon or contact the seller.</p>
+          </div>
         ) : (
           <>
             {/* Carousel with next arrow */}
