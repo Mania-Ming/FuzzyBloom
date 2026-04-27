@@ -48,16 +48,28 @@ function LoginForm() {
 
     localStorage.setItem("isLoggedIn", "true")
 
-    const { data: profileData, error: profileError } = await supabase
+    let { data: profileData } = await supabase
       .from("profiles")
       .select("role, is_verified")
       .eq("id", data.user.id)
-      .single()
+      .maybeSingle()
 
-    if (profileError) {
-      setErrorMsg("Profile error: " + profileError.message)
-      setIsPending(false)
-      return
+    // Profile missing — create it as fallback (trigger may have failed)
+    if (!profileData) {
+      await supabase.from("profiles").insert({
+        id: data.user.id,
+        email: data.user.email,
+        full_name: data.user.user_metadata?.full_name || "",
+        role: "customer",
+        is_verified: false,
+      })
+      // Re-fetch after insert
+      const { data: refetched } = await supabase
+        .from("profiles")
+        .select("role, is_verified")
+        .eq("id", data.user.id)
+        .maybeSingle()
+      profileData = refetched
     }
 
     if (!profileData?.is_verified) {

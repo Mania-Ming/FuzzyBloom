@@ -5,7 +5,7 @@ export async function getUserRole(userId: string): Promise<string | null> {
     .from("profiles")
     .select("role")
     .eq("id", userId)
-    .single()
+    .maybeSingle()
 
   return data?.role ?? null
 }
