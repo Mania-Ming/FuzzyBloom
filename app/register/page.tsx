@@ -49,19 +49,14 @@ export default function RegisterPage() {
       return
     }
 
-    // insert into profiles
-    if (data.user) {
-      await supabase.from("profiles").upsert({
-        id: data.user.id,
-        full_name: fullName,
-        email,
-      })
+    // Profile is auto-created by DB trigger (on_auth_user_created)
+    // Update full_name if session is available (email confirmation disabled)
+    if (data.session && data.user) {
+      await supabase.from("profiles").update({ full_name: fullName }).eq("id", data.user.id)
+      await supabase.auth.signOut()
     }
 
-    // sign out immediately so user must log in manually
-    await supabase.auth.signOut()
     localStorage.setItem("isLoggedIn", "false")
-
     setSuccessMsg("Account created! Please log in.")
     setTimeout(() => router.push("/login"), 1500)
   }

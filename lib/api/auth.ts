@@ -13,16 +13,12 @@ export async function registerUser(payload: RegisterPayload): Promise<MeResponse
     options: { data: { full_name: payload.full_name } },
   })
   if (error) throw error
-  // insert into profiles table
-  const userId = data.user?.id
-  if (userId) {
-    await supabase.from("profiles").upsert({
-      id: userId,
-      full_name: payload.full_name,
-      email: payload.email,
-    })
+  // Profile is auto-created by DB trigger (on_auth_user_created)
+  // Update full_name only if session exists (email confirmation disabled)
+  if (data.session && data.user) {
+    await supabase.from("profiles").update({ full_name: payload.full_name }).eq("id", data.user.id)
   }
-  return { id: userId!, full_name: payload.full_name, email: payload.email }
+  return { id: data.user?.id!, full_name: payload.full_name, email: payload.email }
 }
 
 // LOGIN
@@ -51,18 +47,20 @@ export async function getMe(): Promise<MeResponse> {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) throw new Error("Not authenticated")
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("full_name, address, contact_number")
+    .select("full_name, address, phone")
     .eq("id", user.id)
     .single()
+
+  if (profileError) throw new Error(profileError.message)
 
   return {
     id: user.id,
     full_name: profile?.full_name ?? user.user_metadata?.full_name ?? "",
     email: user.email ?? "",
     address: profile?.address ?? "",
-    contact_number: profile?.contact_number ?? "",
+    contact_number: profile?.phone ?? "",
   }
 }
 
