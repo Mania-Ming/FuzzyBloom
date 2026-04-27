@@ -17,9 +17,9 @@ function LoginForm() {
   // On mount: if already logged in, redirect based on role
   useEffect(() => {
     async function checkExistingSession() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const role = await getUserRole(user.id)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      const role = await getUserRole(session.user.id)
       if (role === "admin") window.location.href = "/admin"
       else if (role) window.location.href = "/dashboard"
     }
