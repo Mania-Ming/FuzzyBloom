@@ -41,11 +41,13 @@ export default function BouquetsPage() {
   const PER_PAGE = 6
 
   const fetchProducts = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("products")
       .select("id, name, description, price, image_url, is_available, category")
-      .eq("category", "Bouquets")
+      .ilike("category", "bouquets")  // case-insensitive match
+      .eq("is_available", true)
       .order("name")
+    console.log("[bouquets] data:", data, "error:", error)
     setProducts(data ?? [])
     setLoading(false)
   }, [])
