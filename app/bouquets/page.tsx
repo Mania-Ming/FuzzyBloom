@@ -21,7 +21,6 @@ type DBProduct = {
   description: string
   price: number
   image_url: string
-  img?: string
   is_available: boolean
   category: string
 }
@@ -45,20 +44,19 @@ export default function BouquetsPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from("products")
-      .select("*")
+      .select("id, name, description, price, image_url, is_available, category")
       .order("name")
 
-    console.log("RAW PRODUCTS:", data)
+    console.log("RAW:", data)
     console.log("ERROR:", error)
 
     const filtered = (data ?? []).filter((p) =>
       p.category?.toLowerCase().includes("bouquet")
     )
-    console.log("FILTERED BOUQUETS:", filtered)
 
     const normalized = filtered.map((p) => ({
       ...p,
-      image_url: p.image_url || p.img || "/p1.png",
+      image_url: p.image_url || "/p1.png",
       is_available: p.is_available !== false,
     }))
 
