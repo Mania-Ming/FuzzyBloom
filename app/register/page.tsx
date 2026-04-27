@@ -38,7 +38,7 @@ export default function RegisterPage() {
     })
 
     if (error) {
-      if (error.message.includes("already registered")) {
+      if (error.message.includes("already registered") || error.message.includes("already been registered")) {
         setErrorMsg("This email is already registered. Try logging in.")
       } else if (error.message.includes("weak")) {
         setErrorMsg("Password is too weak. Use at least 6 characters.")
@@ -55,15 +55,15 @@ export default function RegisterPage() {
       return
     }
 
-    // Sign out immediately — user must verify before logging in
-    await supabase.auth.signOut()
-
-    // Send OTP via API route (uses service role)
+    // Send OTP first, THEN sign out
     const res = await fetch("/api/send-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, full_name: fullName, user_id: data.user.id }),
     })
+
+    // Sign out after OTP is sent so user must verify before logging in
+    await supabase.auth.signOut()
 
     if (!res.ok) {
       const json = await res.json()
@@ -72,7 +72,6 @@ export default function RegisterPage() {
       return
     }
 
-    // Store in sessionStorage for verify page
     sessionStorage.setItem("verify_email", email)
     sessionStorage.setItem("verify_name", fullName)
     sessionStorage.setItem("verify_user_id", data.user.id)
