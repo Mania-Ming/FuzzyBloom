@@ -42,18 +42,26 @@ export default function BouquetsPage() {
   const PER_PAGE = 6
 
   const fetchProducts = useCallback(async () => {
+    setLoading(true)
     const { data, error } = await supabase
       .from("products")
-      .select("id, name, description, price, image_url, img, is_available, category")
-      .ilike("category", "%bouquet%")
+      .select("*")
       .order("name")
-    console.log("[bouquets] count:", data?.length, "data:", data, "error:", error)
-    // Normalize: fallback img->image_url, treat null is_available as true
-    const normalized = (data ?? []).map((p) => ({
+
+    console.log("RAW PRODUCTS:", data)
+    console.log("ERROR:", error)
+
+    const filtered = (data ?? []).filter((p) =>
+      p.category?.toLowerCase().includes("bouquet")
+    )
+    console.log("FILTERED BOUQUETS:", filtered)
+
+    const normalized = filtered.map((p) => ({
       ...p,
       image_url: p.image_url || p.img || "/p1.png",
       is_available: p.is_available !== false,
     }))
+
     setProducts(normalized)
     setLoading(false)
   }, [])
