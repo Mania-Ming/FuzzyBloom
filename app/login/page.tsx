@@ -50,13 +50,35 @@ function LoginForm() {
 
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, is_verified")
       .eq("id", data.user.id)
       .single()
 
     if (profileError) {
       setErrorMsg("Profile error: " + profileError.message)
       setIsPending(false)
+      return
+    }
+
+    if (!profileData?.is_verified) {
+      await supabase.auth.signOut()
+      localStorage.setItem("isLoggedIn", "false")
+      // Re-send OTP so they can verify
+      await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.user.email,
+          full_name: data.user.user_metadata?.full_name || "",
+          user_id: data.user.id,
+        }),
+      })
+      sessionStorage.setItem("verify_email", data.user.email!)
+      sessionStorage.setItem("verify_name", data.user.user_metadata?.full_name || "")
+      sessionStorage.setItem("verify_user_id", data.user.id)
+      setErrorMsg("Please verify your email before logging in. A new code has been sent.")
+      setIsPending(false)
+      setTimeout(() => { window.location.href = "/verify" }, 2000)
       return
     }
 

@@ -49,16 +49,35 @@ export default function RegisterPage() {
       return
     }
 
-    // Profile is auto-created by DB trigger (on_auth_user_created)
-    // Update full_name if session is available (email confirmation disabled)
-    if (data.session && data.user) {
-      await supabase.from("profiles").update({ full_name: fullName }).eq("id", data.user.id)
-      await supabase.auth.signOut()
+    if (!data.user) {
+      setErrorMsg("Registration failed. Please try again.")
+      setIsPending(false)
+      return
     }
 
-    localStorage.setItem("isLoggedIn", "false")
-    setSuccessMsg("Account created! Please log in.")
-    setTimeout(() => router.push("/login"), 1500)
+    // Sign out immediately — user must verify before logging in
+    await supabase.auth.signOut()
+
+    // Send OTP via API route (uses service role)
+    const res = await fetch("/api/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, full_name: fullName, user_id: data.user.id }),
+    })
+
+    if (!res.ok) {
+      const json = await res.json()
+      setErrorMsg(json.error || "Failed to send verification email.")
+      setIsPending(false)
+      return
+    }
+
+    // Store in sessionStorage for verify page
+    sessionStorage.setItem("verify_email", email)
+    sessionStorage.setItem("verify_name", fullName)
+    sessionStorage.setItem("verify_user_id", data.user.id)
+
+    router.push("/verify")
   }
 
   return (
