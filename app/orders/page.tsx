@@ -7,7 +7,7 @@ import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { supabase } from "@/lib/supabase"
 import { useMe } from "@/lib/hooks/useMe"
-import { X, MapPin, Phone, Calendar, Clock, Package, Truck, CheckCircle, Loader, BadgeCheck, ClockIcon, MessageCircle, Send } from "lucide-react"
+import { X, MapPin, Phone, Calendar, Clock, Package, Truck, CheckCircle, Loader, BadgeCheck, ClockIcon } from "lucide-react"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -149,16 +149,9 @@ function StatusTimeline({ status, history }: { status: string; history: StatusHi
 
 // ─── Order Detail Modal ───────────────────────────────────────────────────────
 
-type ChatMessage = { id: string; message: string; reply: string | null; created_at: string }
-
 function OrderModal({ order: initialOrder, onClose }: { order: Order; onClose: () => void }) {
   const [order, setOrder] = useState<Order>(initialOrder)
   const [history, setHistory] = useState<StatusHistory[]>([])
-  const [showChat, setShowChat] = useState(false)
-  const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([])
-  const [chatText, setChatText] = useState("")
-  const [sending, setSending] = useState(false)
-  const { data: user } = useMe()
 
   useEffect(() => {
     supabase
@@ -183,38 +176,6 @@ function OrderModal({ order: initialOrder, onClose }: { order: Order; onClose: (
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [order.id])
-
-  // Load chat messages for this order
-  useEffect(() => {
-    if (!showChat || !user?.id) return
-    supabase.from("messages").select("id, message, reply, created_at")
-      .eq("sender_id", user.id).eq("order_id", order.id)
-      .order("created_at", { ascending: true })
-      .then(({ data }) => setChatMsgs(data ?? []))
-  }, [showChat, user?.id, order.id])
-
-  // Real-time chat
-  useEffect(() => {
-    if (!showChat || !user?.id) return
-    const ch = supabase.channel("order-chat-" + order.id)
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `sender_id=eq.${user.id}` },
-        () => supabase.from("messages").select("id, message, reply, created_at")
-          .eq("sender_id", user.id).eq("order_id", order.id)
-          .order("created_at", { ascending: true })
-          .then(({ data }) => setChatMsgs(data ?? []))
-      ).subscribe()
-    return () => { supabase.removeChannel(ch) }
-  }, [showChat, user?.id, order.id])
-
-  async function sendChat() {
-    if (!chatText.trim() || !user?.id) return
-    setSending(true)
-    await supabase.from("messages").insert({
-      sender_id: user.id, order_id: order.id, message: chatText.trim(), is_read: false,
-    })
-    setChatText("")
-    setSending(false)
-  }
 
   useEffect(() => {
     document.body.style.overflow = "hidden"
@@ -351,51 +312,9 @@ function OrderModal({ order: initialOrder, onClose }: { order: Order; onClose: (
                     <Phone size={13} className="text-purple-500 shrink-0" />
                     <span>{dd.riders.phone}</span>
                   </div>
-                  <button
-                    onClick={() => setShowChat(v => !v)}
-                    className="flex items-center gap-1.5 mt-1 px-3 py-1.5 rounded-full bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition"
-                  >
-                    <MessageCircle size={11} /> {showChat ? "Hide Chat" : "Message Rider"}
-                  </button>
                 </div>
               ) : (
                 <p className="text-sm text-gray-400">No rider assigned yet</p>
-              )}
-
-              {/* CHAT PANEL */}
-              {showChat && (
-                <div className="mt-3 border border-purple-100 rounded-2xl overflow-hidden">
-                  <div className="max-h-48 overflow-y-auto px-4 py-3 space-y-2 bg-purple-50/40">
-                    {chatMsgs.length === 0 && (
-                      <p className="text-xs text-gray-400 text-center py-2">No messages yet. Say hi!</p>
-                    )}
-                    {chatMsgs.map(m => (
-                      <div key={m.id} className="space-y-1.5">
-                        <div className="flex justify-end">
-                          <div className="bg-[#4b2e2e] text-white px-3 py-2 rounded-2xl rounded-tr-sm text-xs max-w-[80%]">{m.message}</div>
-                        </div>
-                        {m.reply && (
-                          <div className="flex justify-start">
-                            <div className="bg-white border border-purple-100 text-gray-700 px-3 py-2 rounded-2xl rounded-tl-sm text-xs max-w-[80%]">{m.reply}</div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-2 p-3 border-t border-purple-100 bg-white">
-                    <input
-                      value={chatText}
-                      onChange={e => setChatText(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter") sendChat() }}
-                      placeholder="Type a message..."
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-purple-200"
-                    />
-                    <button onClick={sendChat} disabled={sending || !chatText.trim()}
-                      className="px-3 py-2 bg-purple-600 text-white rounded-xl text-xs font-semibold hover:bg-purple-700 transition disabled:opacity-60">
-                      <Send size={11} />
-                    </button>
-                  </div>
-                </div>
               )}
             </div>
           )}

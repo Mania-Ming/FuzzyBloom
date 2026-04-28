@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import nodemailer from "nodemailer"
 import { createClient } from "@supabase/supabase-js"
-import { verificationEmailHTML } from "@/lib/emailTemplate"
+import { sendVerificationEmail } from "@/lib/mailer"
 
 function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
@@ -9,7 +8,6 @@ function generateOTP(): string {
 
 export async function POST(req: NextRequest) {
   try {
-    // Validate env vars first
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     const gmailUser = process.env.GMAIL_USER
@@ -30,16 +28,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing email" }, { status: 400 })
     }
 
-    // Create admin client inline so it always uses fresh env vars
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
 
     const code = generateOTP()
     const expires_at = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
-    // Delete any existing unused codes for this email
     await supabaseAdmin.from("verification_codes").delete().eq("email", email).eq("used", false)
 
-    // Insert new OTP
     const { error: dbError } = await supabaseAdmin.from("verification_codes").insert({
       ...(user_id ? { user_id } : {}),
       email,
@@ -53,20 +48,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: dbError.message }, { status: 500 })
     }
 
-    // Send email via Gmail SMTP
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: { user: gmailUser, pass: gmailPass },
-    })
-
-    await transporter.sendMail({
-      from: `"FuzzyBloom" <${gmailUser}>`,
-      to: email,
-      subject: "Your Verification Code - FuzzyBloom",
-      html: verificationEmailHTML(full_name || "there", code, 10),
-    })
+    await sendVerificationEmail(email, full_name || "there", code)
 
     console.log(`[send-otp] OTP sent to ${email}`)
     return NextResponse.json({ success: true })

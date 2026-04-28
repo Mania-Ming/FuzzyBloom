@@ -5,7 +5,7 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut, MessageCircle, Bike } from "lucide-react"
+import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut, Bike } from "lucide-react"
 
 const navItems = [
   { label: "Dashboard", href: "/admin",          Icon: LayoutDashboard },
@@ -13,22 +13,16 @@ const navItems = [
   { label: "Orders",    href: "/admin/orders",    Icon: ShoppingBag     },
   { label: "Riders",    href: "/admin/riders",    Icon: Bike            },
   { label: "Users",     href: "/admin/users",     Icon: Users           },
-  { label: "Messages",  href: "/admin/messages",  Icon: MessageCircle   },
   { label: "Settings",  href: "/admin/settings",  Icon: Settings        },
 ]
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const [unread, setUnread] = useState(0)
   const [pendingOrders, setPendingOrders] = useState(0)
 
   useEffect(() => {
     async function fetchCounts() {
-      const [{ count: msgCount }, { count: orderCount }] = await Promise.all([
-        supabase.from("messages").select("id", { count: "exact", head: true }).eq("is_read", false),
-        supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "Pending"),
-      ])
-      setUnread(msgCount ?? 0)
+      const { count: orderCount } = await supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "Pending")
       setPendingOrders(orderCount ?? 0)
     }
 
@@ -36,7 +30,6 @@ export default function Sidebar() {
 
     const channel = supabase
       .channel("sidebar-counts")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, fetchCounts)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, fetchCounts)
       .subscribe()
 
@@ -63,7 +56,7 @@ export default function Sidebar() {
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map(({ label, href, Icon }) => {
           const active = pathname === href || (href !== "/admin" && pathname.startsWith(href))
-          const badge = href === "/admin/messages" ? unread : href === "/admin/orders" ? pendingOrders : 0
+          const badge = href === "/admin/orders" ? pendingOrders : 0
           return (
             <Link
               key={href}
