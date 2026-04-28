@@ -90,6 +90,7 @@ export default function CheckoutPage() {
     setDeliveryType(type)
     setPaymentMethod(DELIVERY_INFO[type].defaultPayment)
     setGcashFile(null); setGcashPreview(null); setReceiptError("")
+    if (type === "delivery") { setDeliveryDate(""); setDeliveryTime("") }
     setErrors({})
     setShowPopup(true)
   }
@@ -119,9 +120,11 @@ export default function CheckoutPage() {
       else if (!/^09\d{9}$/.test(phone.trim())) e.phone = "Enter a valid 11-digit PH number (09XXXXXXXXX)."
       if (!address.trim()) e.address = "Delivery address is required."
     }
-    if (!deliveryDate) e.deliveryDate = "Date is required."
-    else if (deliveryDate < today) e.deliveryDate = "Date cannot be in the past."
-    if (!deliveryTime) e.deliveryTime = "Please select a time slot."
+    if (deliveryType === "pickup") {
+      if (!deliveryDate) e.deliveryDate = "Date is required."
+      else if (deliveryDate < today) e.deliveryDate = "Date cannot be in the past."
+      if (!deliveryTime) e.deliveryTime = "Please select a time slot."
+    }
     if (isGcash && !gcashFile) e.receipt = "Please upload your GCash receipt."
     setErrors(e)
     return Object.keys(e).length === 0
@@ -384,26 +387,32 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {/* Date + Time */}
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label={deliveryType === "delivery" ? "Delivery Date" : "Pick-up Date"} error={errors.deliveryDate}>
-                    <div className="relative">
-                      <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                      <input type="date" value={deliveryDate} min={today} onChange={e => setDeliveryDate(e.target.value)}
-                        className={`${input(errors.deliveryDate)} pl-8`} />
-                    </div>
-                  </Field>
-                  <Field label="Time Slot" error={errors.deliveryTime}>
-                    <div className="relative">
-                      <Clock size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                      <select value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)}
-                        className={`${input(errors.deliveryTime)} pl-8 bg-white`}>
-                        <option value="">Select time</option>
-                        {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
-                  </Field>
-                </div>
+                {/* Date + Time — pickup only */}
+                {deliveryType === "pickup" ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Pick-up Date" error={errors.deliveryDate}>
+                      <div className="relative">
+                        <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        <input type="date" value={deliveryDate} min={today} onChange={e => setDeliveryDate(e.target.value)}
+                          className={`${input(errors.deliveryDate)} pl-8`} />
+                      </div>
+                    </Field>
+                    <Field label="Time Slot" error={errors.deliveryTime}>
+                      <div className="relative">
+                        <Clock size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        <select value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)}
+                          className={`${input(errors.deliveryTime)} pl-8 bg-white`}>
+                          <option value="">Select time</option>
+                          {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                    </Field>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-4 py-3">
+                    🚚 Delivery schedule will be handled by the rider.
+                  </p>
+                )}
               </div>
 
               <button onClick={placeOrder} disabled={submitting}

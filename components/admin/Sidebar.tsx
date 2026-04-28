@@ -20,21 +20,24 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname()
   const [unread, setUnread] = useState(0)
+  const [pendingOrders, setPendingOrders] = useState(0)
 
   useEffect(() => {
-    async function fetchUnread() {
-      const { count } = await supabase
-        .from("messages")
-        .select("id", { count: "exact", head: true })
-        .eq("is_read", false)
-      setUnread(count ?? 0)
+    async function fetchCounts() {
+      const [{ count: msgCount }, { count: orderCount }] = await Promise.all([
+        supabase.from("messages").select("id", { count: "exact", head: true }).eq("is_read", false),
+        supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "Pending"),
+      ])
+      setUnread(msgCount ?? 0)
+      setPendingOrders(orderCount ?? 0)
     }
 
-    fetchUnread()
+    fetchCounts()
 
     const channel = supabase
-      .channel("sidebar-unread")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, fetchUnread)
+      .channel("sidebar-counts")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, fetchCounts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, fetchCounts)
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -60,7 +63,7 @@ export default function Sidebar() {
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map(({ label, href, Icon }) => {
           const active = pathname === href || (href !== "/admin" && pathname.startsWith(href))
-          const isMessages = href === "/admin/messages"
+          const badge = href === "/admin/messages" ? unread : href === "/admin/orders" ? pendingOrders : 0
           return (
             <Link
               key={href}
@@ -73,9 +76,9 @@ export default function Sidebar() {
             >
               <Icon size={18} className={active ? "text-white" : "text-white/40"} />
               <span className="flex-1">{label}</span>
-              {isMessages && unread > 0 && (
+              {badge > 0 && (
                 <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-                  {unread > 99 ? "99+" : unread}
+                  {badge > 99 ? "99+" : badge}
                 </span>
               )}
             </Link>
