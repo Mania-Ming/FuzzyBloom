@@ -42,6 +42,7 @@ export default function CheckoutPage() {
   // Delivery + payment
   const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery")
   const [pickupLocation, setPickupLocation] = useState("")
+  const [pickupLoading, setPickupLoading] = useState(true)
   const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery")
   const [showPopup, setShowPopup] = useState(false)
 
@@ -60,8 +61,14 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setCartItems(JSON.parse(localStorage.getItem("cart") || "[]"))
-    supabase.from("settings").select("value").eq("key", "pickup_location").single()
-      .then(({ data }) => { if (data) setPickupLocation(data.value ?? "") })
+    // Fetch via API route — bypasses RLS, no 406 from .single() on empty result
+    fetch("/api/admin/settings?key=pickup_location")
+      .then(r => r.json())
+      .then((rows: { key: string; value: string }[]) => {
+        setPickupLocation(rows[0]?.value ?? "")
+      })
+      .catch(() => setPickupLocation(""))
+      .finally(() => setPickupLoading(false))
   }, [])
 
   useEffect(() => {
@@ -359,10 +366,15 @@ export default function CheckoutPage() {
                 {deliveryType === "pickup" && (
                   <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-xl p-4">
                     <Store size={18} className="text-amber-600 shrink-0 mt-0.5" />
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-amber-700">Pick up at store</p>
-                      {pickupLocation ? (
-                        <p className="text-xs text-amber-600 mt-0.5">{pickupLocation}</p>
+                      {pickupLoading ? (
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                          <span className="text-xs text-amber-500">Loading location...</span>
+                        </div>
+                      ) : pickupLocation ? (
+                        <p className="text-xs text-amber-700 font-medium mt-0.5 break-words">{pickupLocation}</p>
                       ) : (
                         <p className="text-xs text-amber-500 mt-0.5">No address needed. Pay upon arrival.</p>
                       )}
