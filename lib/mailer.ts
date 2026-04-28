@@ -27,7 +27,7 @@ type OrderEmailPayload = {
   to: string
   customerName: string
   orderId: string
-  status: "Confirmed" | "Out for Delivery" | "Delivered"
+  status: "Confirmed" | "Preparing" | "Out for Delivery" | "Delivered"
   items: { name: string; price: number; qty?: number; quantity?: number }[]
   totalAmount: number
   riderName?: string
@@ -36,6 +36,7 @@ type OrderEmailPayload = {
 
 const STATUS_SUBJECTS: Record<OrderEmailPayload["status"], string> = {
   Confirmed:          "Your Order Has Been Confirmed! 🌸 - FuzzyBloom",
+  Preparing:          "Your Order is Being Prepared! 🎀 - FuzzyBloom",
   "Out for Delivery": "Your Order is On Its Way! 🚴 - FuzzyBloom",
   Delivered:          "Your Order Has Been Delivered! 🎉 - FuzzyBloom",
 }

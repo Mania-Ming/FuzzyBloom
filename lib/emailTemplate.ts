@@ -79,7 +79,7 @@ export function verificationEmailHTML(userName: string, code: string, expiresInM
 type OrderEmailData = {
   customerName: string
   orderId: string
-  status: "Confirmed" | "Out for Delivery" | "Delivered"
+  status: "Confirmed" | "Preparing" | "Out for Delivery" | "Delivered"
   items: { name: string; price: number; qty?: number; quantity?: number }[]
   totalAmount: number
   riderName?: string
@@ -92,6 +92,12 @@ const STATUS_META: Record<OrderEmailData["status"], { emoji: string; heading: st
     heading: "Order Confirmed!",
     color: "#2563eb",
     message: "Great news! We've confirmed your order and it's now being prepared.",
+  },
+  Preparing: {
+    emoji: "🎀",
+    heading: "Your Order is Being Prepared!",
+    color: "#ea580c",
+    message: "Our team is now carefully preparing your order. It will be on its way soon!",
   },
   "Out for Delivery": {
     emoji: "🚴",

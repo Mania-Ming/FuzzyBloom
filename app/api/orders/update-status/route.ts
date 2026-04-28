@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { sendOrderEmail } from "@/lib/mailer"
 
-const EMAIL_STATUSES = new Set(["Confirmed", "Out for Delivery", "Delivered"])
+const EMAIL_STATUSES = new Set(["Confirmed", "Preparing", "Out for Delivery", "Delivered"])
 
 function adminClient() {
   return createClient(
@@ -33,7 +33,7 @@ export async function PATCH(req: NextRequest) {
     // 2. Log status history
     await db.from("order_status_history").insert({ order_id: orderId, status })
 
-    // 3. Send email for relevant statuses
+    // 3. Send email for all relevant statuses
     if (EMAIL_STATUSES.has(status)) {
       const [orderRes, ddRes] = await Promise.all([
         db.from("orders")
@@ -56,7 +56,7 @@ export async function PATCH(req: NextRequest) {
             to:           profile.email,
             customerName: profile.full_name ?? "Customer",
             orderId:      order.id,
-            status:       status as "Confirmed" | "Out for Delivery" | "Delivered",
+            status:       status as "Confirmed" | "Preparing" | "Out for Delivery" | "Delivered",
             items:        Array.isArray(order.items) ? order.items : [],
             totalAmount:  order.total_amount,
             riderName:    status === "Out for Delivery" ? rider?.name  : undefined,

@@ -487,9 +487,13 @@ export default function AdminOrdersPage() {
       load(); return
     }
 
-    const { error } = await supabase.from("orders").update({ status: action }).eq("id", orderId)
-    if (error) { setToast({ message: "Failed to update order.", type: "error" }); return }
-    await supabase.from("order_status_history").insert({ order_id: orderId, status: action })
+    const res = await fetch("/api/orders/update-status", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId, status: action }),
+    })
+    const data = await res.json()
+    if (!res.ok) { setToast({ message: "Failed to update order: " + data.error, type: "error" }); return }
     setToast({ message: `Order marked as "${action}".`, type: "success" })
     load()
   }
