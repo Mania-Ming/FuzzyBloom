@@ -8,7 +8,7 @@ import Footer from "@/components/Footer"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/hooks/useAuth"
 import { useMe } from "@/lib/hooks/useMe"
-import { MessageCircle, X, Heart } from "lucide-react"
+import { Heart } from "lucide-react"
 
 type Product = { id: string; name: string; img: string }
 
@@ -27,9 +27,6 @@ export default function FlowerKeychainsPage() {
   const { isLoggedIn } = useAuth()
   const { data: user } = useMe()
   const router = useRouter()
-  const [msgText, setMsgText] = useState("")
-  const [showMsg, setShowMsg] = useState(false)
-  const [sending, setSending] = useState(false)
   const [toast, setToast] = useState("")
 
   useEffect(() => {
@@ -85,43 +82,13 @@ export default function FlowerKeychainsPage() {
     }
   }
 
-  async function sendMessage() {
-    if (!msgText.trim() || !user?.id) return
-    setSending(true)
-    await supabase.from("messages").insert({ sender_id: user.id, product_id: selected.id, message: msgText.trim() })
-    setSending(false)
-    setMsgText("")
-    setShowMsg(false)
-    setToast("Message sent to seller!")
-    setTimeout(() => setToast(""), 3000)
-  }
-
   return (
     <div className="min-h-screen flex flex-col text-gray-800">
       <SmartNavbar />
 
       {toast && <div className="fixed bottom-6 right-6 z-50 bg-[#2a1515] text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium fade-up">{toast}</div>}
 
-      {showMsg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 fade-up">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-bold text-gray-800">Message Seller</h2>
-              <button onClick={() => setShowMsg(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
-            </div>
-            <p className="text-xs text-gray-400 mb-4">About: <span className="font-semibold text-gray-600">Flower Keychain - {selected.name}</span></p>
-            <textarea value={msgText} onChange={e => setMsgText(e.target.value)} placeholder="Write your message..." rows={4}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#4b2e2e]/20 resize-none mb-4" />
-            <div className="flex gap-3">
-              <button onClick={() => setShowMsg(false)} className="flex-1 py-2.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-600">Cancel</button>
-              <button onClick={sendMessage} disabled={sending || !msgText.trim()}
-                className="flex-1 py-2.5 rounded-full bg-[#4b2e2e] text-white text-sm font-semibold hover:bg-[#3a2323] transition disabled:opacity-60">
-                {sending ? "Sending..." : "Send Message"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       <main className="max-w-5xl mx-auto px-6 md:px-12 py-10 flex-1 w-full">
         <button onClick={() => window.history.back()} className="flex items-center gap-1.5 text-sm hover:text-[#4b2e2e] transition mb-8 group" style={{ color: "#3E2C2C" }}>
@@ -167,12 +134,7 @@ export default function FlowerKeychainsPage() {
                 {!isLoggedIn ? "Login to Purchase" : isAvailable ? "Add to Cart" : "Not Available"}
               </button>
             </div>
-            {isLoggedIn && (
-              <button onClick={() => setShowMsg(true)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full border border-gray-200 text-sm text-gray-500 hover:border-[#4b2e2e] hover:text-[#4b2e2e] transition">
-                <MessageCircle size={14} /> Message Seller
-              </button>
-            )}
+
           </div>
         </div>
       </main>
