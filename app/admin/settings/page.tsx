@@ -62,8 +62,10 @@ export default function SettingsPage() {
       const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single()
       setName(profile?.full_name ?? "")
       setEmail(user.email ?? "")
-      const { data: settings } = await supabase.from("settings").select("*").eq("key", "pickup_location").single()
-      setPickupLocation(settings?.value ?? "")
+      // Use API route — bypasses RLS
+      const res = await fetch("/api/admin/settings?key=pickup_location")
+      const rows: { key: string; value: string }[] = await res.json()
+      setPickupLocation(rows[0]?.value ?? "")
       setLoading(false)
     }
     load()
@@ -118,8 +120,13 @@ export default function SettingsPage() {
     e.preventDefault()
     setSavingLocation(true)
     try {
-      const { error } = await supabase.from("settings").upsert({ key: "pickup_location", value: pickupLocation }, { onConflict: "key" })
-      if (error) throw error
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "pickup_location", value: pickupLocation }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || "Failed to save")
       setToast({ message: "Pickup location saved!", type: "success" })
     } catch (err: any) {
       setToast({ message: err.message, type: "error" })
