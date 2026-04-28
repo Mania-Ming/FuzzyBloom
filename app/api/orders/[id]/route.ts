@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
 
   const [orderRes, ddRes, historyRes, ridersRes] = await Promise.all([
     db.from("orders")
-      .select("id, total_amount, payment, status, created_at, receipt_url, items")
+      .select("id, user_id, total_amount, payment, status, created_at, receipt_url, items, profiles!orders_user_id_fkey ( full_name, email, contact_number, address )")
       .eq("id", id)
       .single(),
 
@@ -27,9 +27,9 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       .maybeSingle(),
 
     db.from("order_status_history")
-      .select("status, changed_at")
+      .select("status, updated_at")
       .eq("order_id", id)
-      .order("changed_at", { ascending: true }),
+      .order("updated_at", { ascending: true }),
 
     db.from("riders").select("id, name, phone").order("name"),
   ])

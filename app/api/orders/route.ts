@@ -9,14 +9,15 @@ function adminClient() {
   )
 }
 
-// GET /api/orders  — admin fetch all orders with delivery details
+// GET /api/orders  — admin fetch all orders with delivery details + profile
 export async function GET() {
   const db = adminClient()
 
   const { data: orders, error } = await db
     .from("orders")
     .select(`
-      id, total_amount, status, created_at, items, payment, receipt_url,
+      id, user_id, total_amount, status, created_at, items, payment, receipt_url,
+      profiles!orders_user_id_fkey ( full_name, email, contact_number, address ),
       delivery_details (
         delivery_type, full_name, phone, address,
         delivery_date, delivery_time, rider_id
@@ -29,9 +30,9 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Normalise delivery_details: Supabase may return array or object
   const normalized = (orders ?? []).map((o: any) => ({
     ...o,
+    profiles: Array.isArray(o.profiles) ? (o.profiles[0] ?? null) : (o.profiles ?? null),
     delivery_details: Array.isArray(o.delivery_details)
       ? (o.delivery_details[0] ?? null)
       : (o.delivery_details ?? null),
