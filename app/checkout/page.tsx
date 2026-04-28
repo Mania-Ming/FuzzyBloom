@@ -175,9 +175,9 @@ export default function CheckoutPage() {
           },
           deliveryDetails: {
             delivery_type: deliveryType,
-            full_name:     deliveryType === "pickup" ? "" : fullName,
-            phone:         deliveryType === "pickup" ? "" : phone,
-            address:       deliveryType === "pickup" ? "" : address,
+            full_name:     deliveryType === "pickup" ? (fullName || "") : fullName,
+            phone:         deliveryType === "pickup" ? (phone || "") : phone,
+            address:       deliveryType === "pickup" ? "Pick-up at store" : address,
             delivery_date: deliveryDate,
             delivery_time: deliveryTime,
           },
