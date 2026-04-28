@@ -2,14 +2,23 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { supabase } from "@/lib/supabase"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [sent, setSent] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: connect to backend POST /api/auth/forgot-password/
+    setLoading(true)
+    setError("")
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setLoading(false)
+    if (error) { setError(error.message); return }
     setSent(true)
   }
 
@@ -48,11 +57,15 @@ export default function ForgotPasswordPage() {
                   required
                 />
               </div>
+              {error && (
+                <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-red-600 text-sm text-center">{error}</div>
+              )}
               <button
                 type="submit"
-                className="w-full bg-[#4b2e2e] text-white py-3 rounded-full hover:bg-[#3a2323] transition font-semibold text-sm shadow-md shadow-[#4b2e2e]/20"
+                disabled={loading}
+                className="w-full bg-[#4b2e2e] text-white py-3 rounded-full hover:bg-[#3a2323] transition font-semibold text-sm shadow-md shadow-[#4b2e2e]/20 disabled:opacity-60"
               >
-                Send Reset Link
+                {loading ? "Sending..." : "Send Reset Link"}
               </button>
               <Link href="/login" className="block text-center text-sm text-gray-500 hover:text-gray-700 transition">
                 ← Back to Login

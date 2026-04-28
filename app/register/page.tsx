@@ -15,6 +15,17 @@ export default function RegisterPage() {
   const [successMsg, setSuccessMsg] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
+  function getStrength(pw: string) {
+    if (pw.length === 0) return null
+    const hasLetter = /[a-zA-Z]/.test(pw)
+    const hasNumber = /\d/.test(pw)
+    const score = [hasLetter, hasNumber, pw.length >= 6, pw.length >= 10].filter(Boolean).length
+    if (score <= 1) return { label: "Weak", color: "bg-red-400", width: "33%" }
+    if (score <= 2) return { label: "Medium", color: "bg-yellow-400", width: "66%" }
+    return { label: "Strong", color: "bg-green-500", width: "100%" }
+  }
+  const strength = getStrength(password)
+
   // Auto-redirect if already logged in
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -139,6 +150,25 @@ export default function RegisterPage() {
                   <i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"} text-sm`} />
                 </button>
               </div>
+              {strength && (
+                <div className="mt-2 space-y-1">
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all duration-300 ${strength.color}`} style={{ width: strength.width }} />
+                  </div>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="flex gap-2 text-gray-400">
+                      <span className={password.length >= 6 ? "text-green-500" : ""}>✓ 6+ chars</span>
+                      <span className={/[a-zA-Z]/.test(password) ? "text-green-500" : ""}>✓ letters</span>
+                      <span className={/\d/.test(password) ? "text-green-500" : ""}>✓ numbers</span>
+                    </span>
+                    <span className={
+                      strength.label === "Strong" ? "text-green-500 font-semibold" :
+                      strength.label === "Medium" ? "text-yellow-500 font-semibold" :
+                      "text-red-400 font-semibold"
+                    }>{strength.label}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {errorMsg && (
