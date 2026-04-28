@@ -74,8 +74,8 @@ create table if not exists delivery_details (
   full_name text not null,
   phone text not null,
   address text not null,
-  delivery_date date not null,
-  delivery_time text not null,
+  delivery_date date,         -- null for delivery (rider handles scheduling)
+  delivery_time text,         -- null for delivery
   created_at timestamptz default now()
 );
 
