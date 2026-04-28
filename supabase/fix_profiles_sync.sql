@@ -1,33 +1,21 @@
 -- ================================================================
--- FIX: profiles sync with auth.users
+-- FIX: profiles sync with auth.users — DEFINITIVE VERSION
 -- Run this entire file in Supabase SQL Editor
 -- ================================================================
 
--- 1. ENSURE profiles table has all required columns
+-- 1. ENSURE all required columns exist on profiles
 -- ----------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS profiles (
-  id            uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  full_name     text,
-  email         text,
-  role          text DEFAULT 'customer',
-  is_verified   boolean DEFAULT false,
-  phone         text,
-  address       text,
-  profile_image text,
-  created_at    timestamptz DEFAULT now()
-);
-
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role          text DEFAULT 'customer';
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_verified   boolean DEFAULT false;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role          text        DEFAULT 'customer';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_verified   boolean     DEFAULT false;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS phone         text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS address       text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS profile_image text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS created_at    timestamptz DEFAULT now();
 
--- 2. TRIGGER FUNCTION — fires on every new auth.users INSERT
+-- 2. TRIGGER FUNCTION
+-- Runs as postgres superuser (SECURITY DEFINER) so it bypasses RLS.
+-- ON CONFLICT (id) DO NOTHING prevents duplicate rows.
 -- ----------------------------------------------------------------
--- Uses SECURITY DEFINER so it runs as the postgres superuser,
--- bypassing RLS. ON CONFLICT DO NOTHING prevents duplicates.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -48,7 +36,7 @@ BEGIN
 END;
 $$;
 
--- Drop old trigger names that may conflict
+-- Drop any old conflicting trigger names, then recreate
 DROP TRIGGER IF EXISTS on_auth_user_created    ON auth.users;
 DROP TRIGGER IF EXISTS on_auth_user_created_v2 ON auth.users;
 
@@ -60,30 +48,38 @@ CREATE TRIGGER on_auth_user_created
 -- ----------------------------------------------------------------
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
--- Users: read + update own profile
-DROP POLICY IF EXISTS "Users can view own profile"   ON profiles;
-DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
-CREATE POLICY "Users can view own profile"
-  ON profiles FOR SELECT TO authenticated USING (auth.uid() = id);
+-- Drop all old policies to start clean
+DROP POLICY IF EXISTS "Users can view own profile"        ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile"      ON profiles;
+DROP POLICY IF EXISTS "Admin can view all profiles"       ON profiles;
+DROP POLICY IF EXISTS "Admin can update all profiles"     ON profiles;
+DROP POLICY IF EXISTS "Service role can insert profiles"  ON profiles;
+
+-- Authenticated users can read ALL profiles (needed for admin panel)
+CREATE POLICY "Authenticated users can read all profiles"
+  ON profiles FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Users can update their own profile
 CREATE POLICY "Users can update own profile"
-  ON profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
+  ON profiles FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = id);
 
--- Admin: read all profiles
-DROP POLICY IF EXISTS "Admin can view all profiles" ON profiles;
-CREATE POLICY "Admin can view all profiles"
-  ON profiles FOR SELECT TO authenticated USING (true);
-
--- Admin: update any profile (for role changes)
-DROP POLICY IF EXISTS "Admin can update all profiles" ON profiles;
+-- Admin can update any profile (role changes etc.)
 CREATE POLICY "Admin can update all profiles"
-  ON profiles FOR UPDATE TO authenticated USING (true);
+  ON profiles FOR UPDATE
+  TO authenticated
+  USING (true);
 
--- Allow service role to insert profiles (used by trigger + API fallback)
-DROP POLICY IF EXISTS "Service role can insert profiles" ON profiles;
-CREATE POLICY "Service role can insert profiles"
-  ON profiles FOR INSERT TO authenticated WITH CHECK (true);
+-- Allow inserts from authenticated context (trigger + API fallback)
+CREATE POLICY "Allow profile inserts"
+  ON profiles FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
 
--- 4. BACKFILL — insert any auth.users that are missing from profiles
+-- 4. BACKFILL — sync any auth.users missing from profiles
 -- ----------------------------------------------------------------
 INSERT INTO public.profiles (id, email, full_name, role, is_verified)
 SELECT
@@ -97,11 +93,14 @@ WHERE NOT EXISTS (
   SELECT 1 FROM public.profiles p WHERE p.id = u.id
 );
 
--- 5. FIX existing profiles that have role = 'user' → 'customer'
+-- 5. NORMALIZE role values: 'user' → 'customer'
 -- ----------------------------------------------------------------
 UPDATE public.profiles
 SET role = 'customer'
 WHERE role = 'user';
 
--- Verify result
+-- ================================================================
+-- VERIFY — run these to confirm everything is correct:
 -- SELECT id, email, full_name, role, is_verified FROM profiles ORDER BY created_at DESC;
+-- SELECT policyname, cmd FROM pg_policies WHERE tablename = 'profiles';
+-- ================================================================
