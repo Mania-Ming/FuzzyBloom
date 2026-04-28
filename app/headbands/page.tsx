@@ -51,6 +51,7 @@ export default function HeadbandsPage() {
     const exist = cart.find((i: any) => i.product_id === selected.id)
     if (exist) { exist.qty += 1 } else { cart.push({ product_id: selected.id, name, price: 150, img: selected.img, qty: 1 }) }
     localStorage.setItem("cart", JSON.stringify(cart))
+    const { data: { user } } = await supabase.auth.getUser()
     if (user?.id) {
       const { data: existing } = await supabase.from("cart_items").select("*").eq("user_id", user.id).eq("product_id", selected.id).single()
       if (existing) { await supabase.from("cart_items").update({ quantity: existing.quantity + 1 }).eq("id", existing.id) }
@@ -67,6 +68,7 @@ export default function HeadbandsPage() {
       wishlist.push({ product_id: selected.id, name, price: 150, img: selected.img })
       localStorage.setItem("wishlist", JSON.stringify(wishlist))
     }
+    const { data: { user } } = await supabase.auth.getUser()
     if (user?.id) {
       const { data: existing } = await supabase.from("wishlist").select("*").eq("user_id", user.id).eq("product_id", selected.id).single()
       if (!existing) { await supabase.from("wishlist").insert({ user_id: user.id, product_id: selected.id }) }
