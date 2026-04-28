@@ -4,6 +4,8 @@ import Link from "next/link"
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
 
+const SITE_URL = "https://fuzzy-bloom.vercel.app"
+
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [sent, setSent] = useState(false)
@@ -14,11 +16,16 @@ export default function ForgotPasswordPage() {
     e.preventDefault()
     setLoading(true)
     setError("")
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: `${SITE_URL}/update-password`,
     })
+
     setLoading(false)
-    if (error) { setError(error.message); return }
+    if (error) {
+      setError(error.message)
+      return
+    }
     setSent(true)
   }
 
@@ -40,6 +47,7 @@ export default function ForgotPasswordPage() {
               <p className="text-sm text-gray-500">
                 We sent a reset link to <span className="font-semibold text-gray-700">{email}</span>
               </p>
+              <p className="text-xs text-gray-400">Didn't receive it? Check your spam folder.</p>
               <Link href="/login" className="inline-block mt-2 text-[#4b2e2e] text-sm font-semibold hover:underline">
                 ← Back to Login
               </Link>
@@ -47,7 +55,9 @@ export default function ForgotPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Email Address</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   placeholder="you@example.com"
@@ -55,11 +65,16 @@ export default function ForgotPasswordPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4b2e2e]/30 focus:border-[#4b2e2e] bg-gray-50/80 text-sm transition"
                   required
+                  autoComplete="email"
                 />
               </div>
+
               {error && (
-                <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-red-600 text-sm text-center">{error}</div>
+                <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-red-600 text-sm text-center">
+                  {error}
+                </div>
               )}
+
               <button
                 type="submit"
                 disabled={loading}
@@ -67,6 +82,7 @@ export default function ForgotPasswordPage() {
               >
                 {loading ? "Sending..." : "Send Reset Link"}
               </button>
+
               <Link href="/login" className="block text-center text-sm text-gray-500 hover:text-gray-700 transition">
                 ← Back to Login
               </Link>
