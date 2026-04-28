@@ -10,6 +10,8 @@ type Profile = {
   full_name: string
   email: string
   role: string
+  is_verified: boolean
+  created_at: string
 }
 
 export default function UsersPage() {
@@ -20,7 +22,7 @@ export default function UsersPage() {
   const [search, setSearch] = useState("")
 
   const load = useCallback(async () => {
-    const { data } = await supabase.from("profiles").select("id, full_name, email, role").order("full_name")
+    const { data } = await supabase.from("profiles").select("id, full_name, email, role, is_verified, created_at").order("created_at", { ascending: false })
     setUsers(data ?? [])
     setLoading(false)
   }, [])
@@ -29,10 +31,10 @@ export default function UsersPage() {
 
   async function handlePromote() {
     if (!promoteTarget) return
-    const newRole = promoteTarget.role === "admin" ? "user" : "admin"
+    const newRole = promoteTarget.role === "admin" ? "customer" : "admin"
     const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", promoteTarget.id)
     if (error) setToast({ message: "Failed to update role.", type: "error" })
-    else { setToast({ message: `User ${newRole === "admin" ? "promoted to Admin" : "demoted to User"}.`, type: "success" }); load() }
+    else { setToast({ message: `User ${newRole === "admin" ? "promoted to Admin" : "demoted to Customer"}.`, type: "success" }); load() }
     setPromoteTarget(null)
   }
 
@@ -54,7 +56,7 @@ export default function UsersPage() {
 
       <div>
         <h1 className="text-2xl font-bold text-[#2a1515]">Users</h1>
-        <p className="text-gray-400 text-sm mt-0.5">{users.length} registered users</p>
+        <p className="text-gray-400 text-sm mt-0.5">{users.length} registered users · {users.filter(u => u.is_verified).length} verified</p>
       </div>
 
       <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or email..."
@@ -68,12 +70,14 @@ export default function UsersPage() {
                 <th className="px-6 py-3 text-left">User</th>
                 <th className="px-6 py-3 text-left">Email</th>
                 <th className="px-6 py-3 text-left">Role</th>
+                <th className="px-6 py-3 text-left">Verified</th>
+                <th className="px-6 py-3 text-left">Joined</th>
                 <th className="px-6 py-3 text-left">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading && <tr><td colSpan={4} className="px-6 py-10 text-center text-gray-400">Loading...</td></tr>}
-              {!loading && filtered.length === 0 && <tr><td colSpan={4} className="px-6 py-10 text-center text-gray-400">No users found</td></tr>}
+              {!loading && filtered.length === 0 && <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-400">No users found</td></tr>}
               {filtered.map(user => (
                 <tr key={user.id} className="hover:bg-gray-50/50 transition">
                   <td className="px-6 py-4">
@@ -81,18 +85,30 @@ export default function UsersPage() {
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] text-white flex items-center justify-center text-xs font-bold shrink-0">
                         {user.full_name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) ?? "?"}
                       </div>
-                      <p className="font-semibold text-gray-800">{user.full_name ?? "—"}</p>
+                      <p className="font-semibold text-gray-800">{user.full_name || "—"}</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-500">{user.email ?? "—"}</td>
+                  <td className="px-6 py-4 text-gray-500">{user.email || "—"}</td>
                   <td className="px-6 py-4">
                     <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${
                       user.role === "admin"
                         ? "bg-[#4b2e2e]/10 text-[#4b2e2e] border-[#4b2e2e]/20"
                         : "bg-gray-50 text-gray-500 border-gray-200"
                     }`}>
-                      {user.role === "admin" ? "Admin" : "User"}
+                      {user.role === "admin" ? "Admin" : "Customer"}
                     </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                      user.is_verified
+                        ? "bg-green-50 text-green-600 border-green-100"
+                        : "bg-amber-50 text-amber-500 border-amber-100"
+                    }`}>
+                      {user.is_verified ? "✓ Verified" : "Pending"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-xs text-gray-400">
+                    {user.created_at ? new Date(user.created_at).toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" }) : "—"}
                   </td>
                   <td className="px-6 py-4">
                     <button onClick={() => setPromoteTarget(user)}
@@ -101,7 +117,7 @@ export default function UsersPage() {
                           ? "border-gray-200 text-gray-500 hover:bg-gray-50"
                           : "border-[#4b2e2e]/20 text-[#4b2e2e] hover:bg-[#4b2e2e]/5"
                       }`}>
-                      {user.role === "admin" ? "Demote to User" : "Promote to Admin"}
+                      {user.role === "admin" ? "Demote to Customer" : "Promote to Admin"}
                     </button>
                   </td>
                 </tr>

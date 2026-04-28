@@ -1,50 +1,107 @@
--- =============================================
--- RUN THIS IN SUPABASE SQL EDITOR
--- Fixes: profiles not created, trigger missing, role mismatch
--- =============================================
+-- ================================================================
+-- FIX: profiles sync with auth.users
+-- Run this entire file in Supabase SQL Editor
+-- ================================================================
 
--- 1. Ensure profiles table has all required columns
-alter table profiles add column if not exists is_verified   boolean default false;
-alter table profiles add column if not exists role          text default 'customer';
-alter table profiles add column if not exists phone         text;
-alter table profiles add column if not exists address       text;
-alter table profiles add column if not exists profile_image text;
+-- 1. ENSURE profiles table has all required columns
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS profiles (
+  id            uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name     text,
+  email         text,
+  role          text DEFAULT 'customer',
+  is_verified   boolean DEFAULT false,
+  phone         text,
+  address       text,
+  profile_image text,
+  created_at    timestamptz DEFAULT now()
+);
 
--- 2. Recreate trigger function with role = 'customer'
-create or replace function create_profile_for_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, email, full_name, role, is_verified)
-  values (
-    new.id,
-    new.email,
-    coalesce(new.raw_user_meta_data->>'full_name', ''),
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role          text DEFAULT 'customer';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_verified   boolean DEFAULT false;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS phone         text;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS address       text;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS profile_image text;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS created_at    timestamptz DEFAULT now();
+
+-- 2. TRIGGER FUNCTION — fires on every new auth.users INSERT
+-- ----------------------------------------------------------------
+-- Uses SECURITY DEFINER so it runs as the postgres superuser,
+-- bypassing RLS. ON CONFLICT DO NOTHING prevents duplicates.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, role, is_verified)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
     'customer',
     false
   )
-  on conflict (id) do nothing;
-  return new;
-end;
-$$ language plpgsql security definer set search_path = public;
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$;
 
--- 3. Recreate trigger safely
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure create_profile_for_user();
+-- Drop old trigger names that may conflict
+DROP TRIGGER IF EXISTS on_auth_user_created    ON auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_created_v2 ON auth.users;
 
--- 4. Backfill: create profiles for existing users who have none
-insert into public.profiles (id, email, full_name, role, is_verified)
-select
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 3. RLS POLICIES
+-- ----------------------------------------------------------------
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Users: read + update own profile
+DROP POLICY IF EXISTS "Users can view own profile"   ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+CREATE POLICY "Users can view own profile"
+  ON profiles FOR SELECT TO authenticated USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile"
+  ON profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
+
+-- Admin: read all profiles
+DROP POLICY IF EXISTS "Admin can view all profiles" ON profiles;
+CREATE POLICY "Admin can view all profiles"
+  ON profiles FOR SELECT TO authenticated USING (true);
+
+-- Admin: update any profile (for role changes)
+DROP POLICY IF EXISTS "Admin can update all profiles" ON profiles;
+CREATE POLICY "Admin can update all profiles"
+  ON profiles FOR UPDATE TO authenticated USING (true);
+
+-- Allow service role to insert profiles (used by trigger + API fallback)
+DROP POLICY IF EXISTS "Service role can insert profiles" ON profiles;
+CREATE POLICY "Service role can insert profiles"
+  ON profiles FOR INSERT TO authenticated WITH CHECK (true);
+
+-- 4. BACKFILL — insert any auth.users that are missing from profiles
+-- ----------------------------------------------------------------
+INSERT INTO public.profiles (id, email, full_name, role, is_verified)
+SELECT
   u.id,
   u.email,
-  coalesce(u.raw_user_meta_data->>'full_name', ''),
+  COALESCE(u.raw_user_meta_data->>'full_name', ''),
   'customer',
-  false
-from auth.users u
-where not exists (select 1 from public.profiles p where p.id = u.id);
+  CASE WHEN u.email_confirmed_at IS NOT NULL THEN true ELSE false END
+FROM auth.users u
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.profiles p WHERE p.id = u.id
+);
 
--- 5. Fix existing profiles that have null or 'user' role
-update public.profiles
-set role = 'customer'
-where role is null or role = 'user';
+-- 5. FIX existing profiles that have role = 'user' → 'customer'
+-- ----------------------------------------------------------------
+UPDATE public.profiles
+SET role = 'customer'
+WHERE role = 'user';
+
+-- Verify result
+-- SELECT id, email, full_name, role, is_verified FROM profiles ORDER BY created_at DESC;
