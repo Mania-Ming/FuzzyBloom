@@ -181,8 +181,8 @@ export default function CheckoutPage() {
             full_name:     deliveryType === "pickup" ? (fullName || "") : fullName,
             phone:         deliveryType === "pickup" ? (phone || "") : phone,
             address:       deliveryType === "pickup" ? "Pick-up at store" : address,
-            delivery_date: deliveryDate,
-            delivery_time: deliveryTime,
+            delivery_date: deliveryDate || null,
+            delivery_time: deliveryTime || null,
           },
           orderItems: cartItems.map(item => ({
             product_id: item.product_id,
