@@ -8,9 +8,7 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { useMe } from "@/lib/hooks/useMe"
-import { useInsertOrder } from "@/lib/hooks/useInsertOrder"
 import { supabase } from "@/lib/supabase"
-import { insertDeliveryDetails } from "@/lib/api/auth"
 
 type CartItem = { product_id: string; name: string; price: number; img?: string; qty: number }
 
@@ -37,7 +35,6 @@ export default function CheckoutPage() {
   const { data: user } = useMe()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const { mutateAsync: saveOrder } = useInsertOrder()
 
   // Delivery + payment
   const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery")
@@ -139,7 +136,7 @@ export default function CheckoutPage() {
 
     setSubmitting(true)
     try {
-      // 1. Upload GCash receipt
+      // 1. Upload GCash receipt (storage is not RLS-blocked)
       let receiptUrl: string | null = null
       if (isGcash && gcashFile) {
         const ext = gcashFile.name.split(".").pop() ?? "jpg"
@@ -151,46 +148,51 @@ export default function CheckoutPage() {
         receiptUrl = urlData.publicUrl
       }
 
-      // 2. Insert order with correct total (includes shipping)
-      const order = await saveOrder({
-        user_id: authUser.id,
-        items: cartItems,
-        subtotal,
-        shipping: shippingFee,
-        total,
-        total_amount: total,
-        payment: paymentMethod,
-        status: "Pending",
-        receipt_url: receiptUrl,
-      })
-
-      // 3. Insert delivery details
-      await insertDeliveryDetails({
-        order_id: order.id,
-        delivery_type: deliveryType,
-        full_name: deliveryType === "pickup" ? "" : fullName,
-        phone: deliveryType === "pickup" ? "" : phone,
-        address: deliveryType === "pickup" ? "" : address,
-        delivery_date: deliveryDate,
-        delivery_time: deliveryTime,
-      })
-
-      // 4. Validate + insert order items
+      // 2. Validate products still exist
       const productIds = cartItems.map(i => i.product_id).filter(Boolean)
       const { data: validProducts, error: productCheckError } = await supabase
         .from("products").select("id").in("id", productIds)
       if (productCheckError) throw productCheckError
-
       const validIds = new Set(validProducts?.map(p => p.id) ?? [])
       const unavailable = cartItems.filter(i => !validIds.has(i.product_id))
       if (unavailable.length > 0) throw new Error(`Items no longer available: ${unavailable.map(i => i.name).join(", ")}`)
 
-      const { error: itemsError } = await supabase.from("order_items").insert(
-        cartItems.map(item => ({ order_id: order.id, product_id: item.product_id, quantity: item.qty, price: item.price }))
-      )
-      if (itemsError) throw itemsError
+      // 3. Place order via API route (service role — bypasses RLS on orders, delivery_details, order_items)
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order: {
+            user_id:      authUser.id,
+            items:        cartItems,
+            subtotal,
+            shipping:     shippingFee,
+            total,
+            total_amount: total,
+            payment:      paymentMethod,
+            status:       "Pending",
+            receipt_url:  receiptUrl,
+          },
+          deliveryDetails: {
+            delivery_type: deliveryType,
+            full_name:     deliveryType === "pickup" ? "" : fullName,
+            phone:         deliveryType === "pickup" ? "" : phone,
+            address:       deliveryType === "pickup" ? "" : address,
+            delivery_date: deliveryDate,
+            delivery_time: deliveryTime,
+          },
+          orderItems: cartItems.map(item => ({
+            product_id: item.product_id,
+            quantity:   item.qty,
+            price:      item.price,
+          })),
+        }),
+      })
 
-      // 5. Clear cart
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || "Failed to place order")
+
+      // 4. Clear cart
       localStorage.removeItem("cart")
       await supabase.from("cart_items").delete().eq("user_id", authUser.id)
 
