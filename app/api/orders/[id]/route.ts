@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
+type RouteContext = { params: Promise<{ id: string }> }
+
 function adminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,12 +11,9 @@ function adminClient() {
   )
 }
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_req: NextRequest, context: RouteContext) {
+  const { id } = await context.params
   const db = adminClient()
-  const { id } = params
 
   const [orderRes, ddRes, historyRes, ridersRes] = await Promise.all([
     db.from("orders")
@@ -47,26 +46,18 @@ export async function GET(
   })
 }
 
-// PATCH /api/orders/[id]  — update status or assign rider
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: NextRequest, context: RouteContext) {
+  const { id } = await context.params
   const db = adminClient()
-  const { id } = params
   const body = await req.json()
 
-  // Status update
   if (body.status) {
     const { error } = await db.from("orders").update({ status: body.status }).eq("id", id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-    // Record in history
     await db.from("order_status_history").insert({ order_id: id, status: body.status })
     return NextResponse.json({ success: true })
   }
 
-  // Rider assignment
   if (body.rider_id !== undefined) {
     const { error } = await db.from("delivery_details")
       .update({ rider_id: body.rider_id })
@@ -78,13 +69,9 @@ export async function PATCH(
   return NextResponse.json({ error: "Nothing to update" }, { status: 400 })
 }
 
-// DELETE /api/orders/[id]  — hard delete order + related rows
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(_req: NextRequest, context: RouteContext) {
+  const { id } = await context.params
   const db = adminClient()
-  const { id } = params
 
   await db.from("order_status_history").delete().eq("order_id", id)
   await db.from("order_items").delete().eq("order_id", id)
