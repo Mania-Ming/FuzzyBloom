@@ -144,24 +144,18 @@ function OrderDrawer({
   const isDelivery = dd?.delivery_type === "delivery"
 
   async function assignRider(orderId: string, riderId: string) {
-    const { error } = await supabase
-      .from("delivery_details")
-      .update({ rider_id: riderId })
-      .eq("order_id", orderId)
-
-    if (error) {
-      console.error(error)
-      alert("Failed to assign rider: " + error.message)
-    } else {
-      // Re-fetch delivery details to reflect persisted rider
-      const { data: ddData } = await supabase
-        .from("delivery_details")
-        .select("delivery_type, full_name, phone, address, delivery_date, delivery_time, rider_id, riders ( id, name, phone )")
-        .eq("order_id", orderId)
-        .maybeSingle()
-      setOrder(prev => prev ? { ...prev, delivery_details: ddData ?? prev.delivery_details } : prev)
-      onAction(orderId, "__reload__")
+    const res = await fetch("/api/orders/assign-rider", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId, riderId }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      alert("Failed to assign rider: " + data.error)
+      return
     }
+    setOrder(prev => prev ? { ...prev, delivery_details: data.delivery_details ?? prev.delivery_details } : prev)
+    onAction(orderId, "__reload__")
   }
 
   const displayName    = dd?.full_name    || "N/A"
@@ -353,7 +347,7 @@ function OrderDrawer({
                   className="w-full flex items-center justify-center gap-2 py-2.5 bg-purple-600 text-white rounded-xl font-semibold text-sm hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Bike size={14} />
-                  {dd?.rider_name ? "Update Rider" : "Assign Rider"}
+                  {(dd as any)?.riders ? "Update Rider" : "Assign Rider"}
                 </button>
               </div>
             </div>
