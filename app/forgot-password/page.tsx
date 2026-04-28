@@ -2,31 +2,40 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { supabase } from "@/lib/supabase"
-
-const SITE_URL = "https://fuzzy-bloom.vercel.app"
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("")
-  const [sent, setSent] = useState(false)
+  const [email, setEmail]     = useState("")
+  const [sent, setSent]       = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError]     = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError("")
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      redirectTo: `${SITE_URL}/update-password`,
-    })
+    try {
+      const res = await fetch("/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      })
+
+      const json = await res.json()
+
+      if (!res.ok) {
+        setError(json.error || "Something went wrong. Please try again.")
+        setLoading(false)
+        return
+      }
+
+      // Always show success — never reveal if email exists
+      setSent(true)
+    } catch {
+      setError("Network error. Please check your connection.")
+    }
 
     setLoading(false)
-    if (error) {
-      setError(error.message)
-      return
-    }
-    setSent(true)
   }
 
   return (
@@ -45,7 +54,7 @@ export default function ForgotPasswordPage() {
               <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto text-3xl">📧</div>
               <p className="font-semibold text-gray-800">Check your inbox!</p>
               <p className="text-sm text-gray-500">
-                We sent a reset link to <span className="font-semibold text-gray-700">{email}</span>
+                If <span className="font-semibold text-gray-700">{email}</span> is registered, a reset link is on its way.
               </p>
               <p className="text-xs text-gray-400">Didn't receive it? Check your spam folder.</p>
               <Link href="/login" className="inline-block mt-2 text-[#4b2e2e] text-sm font-semibold hover:underline">
@@ -88,6 +97,7 @@ export default function ForgotPasswordPage() {
               </Link>
             </form>
           )}
+
         </div>
       </div>
     </div>
