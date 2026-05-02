@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from "react"
 import Navbar from "@/components/Navbar"
-import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { supabase } from "@/lib/supabase"
 import { MessageSquare, Send, Trash2 } from "lucide-react"
@@ -163,7 +162,7 @@ export default function UserMessagesPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen flex flex-col text-gray-800">
+      <div className="h-screen flex flex-col text-gray-800 overflow-hidden">
         <Navbar />
         <Toast toast={toast} onClose={() => setToast(null)} />
         {showDeleteModal && (
@@ -174,35 +173,40 @@ export default function UserMessagesPage() {
           />
         )}
 
-        <main className="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-8 flex flex-col">
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <MessageSquare size={22} className="text-[#4b2e2e]" />
-              <div>
-                <h1 className="text-2xl text-[#2a1515] font-bold">Chat with Seller</h1>
-                <p className="text-gray-400 text-sm">We typically reply within a few hours</p>
-              </div>
-            </div>
-            {convId && messages.length > 0 && (
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition px-3 py-1.5 rounded-lg hover:bg-red-50"
-              >
-                <Trash2 size={14} /> Delete chat
-              </button>
-            )}
-          </div>
+        <main className="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 flex flex-col min-h-0">
 
           {error && (
-            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+            <div className="mb-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 shrink-0">
               {error}
             </div>
           )}
 
-          <div className="flex-1 bg-white rounded-3xl border border-[#e8d5d5] shadow-sm flex flex-col overflow-hidden" style={{ minHeight: "500px" }}>
+          {/* Chat box — fills remaining height, nothing outside scrolls */}
+          <div className="flex-1 bg-white rounded-3xl border border-[#e8d5d5] shadow-sm flex flex-col min-h-0 overflow-hidden">
 
-            {/* Messages area */}
-            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-2">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] text-white flex items-center justify-center text-xs font-bold">
+                  FB
+                </div>
+                <div>
+                  <p className="font-bold text-gray-800 text-sm">FuzzyBloom</p>
+                  <p className="text-xs text-gray-400">We typically reply within a few hours</p>
+                </div>
+              </div>
+              {convId && messages.length > 0 && (
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition px-3 py-1.5 rounded-lg hover:bg-red-50"
+                >
+                  <Trash2 size={14} /> Delete
+                </button>
+              )}
+            </div>
+
+            {/* Messages — only this scrolls */}
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-3 min-h-0">
               {loading && (
                 <div className="flex justify-center items-center h-full">
                   <div className="w-6 h-6 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
@@ -245,7 +249,7 @@ export default function UserMessagesPage() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Input — only disabled while initially loading */}
+            {/* Input — sticky at bottom */}
             <div className="px-4 py-3 border-t border-gray-100 flex items-center gap-2 shrink-0">
               <input
                 value={input}
@@ -265,8 +269,6 @@ export default function UserMessagesPage() {
             </div>
           </div>
         </main>
-
-        <Footer />
       </div>
     </ProtectedRoute>
   )
