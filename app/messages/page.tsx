@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react"
 import Navbar from "@/components/Navbar"
+import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { supabase } from "@/lib/supabase"
 import { MessageSquare, Send, Trash2 } from "lucide-react"
@@ -269,6 +270,7 @@ export default function UserMessagesPage() {
             </div>
           </div>
         </main>
+        <Footer />
       </div>
     </ProtectedRoute>
   )
