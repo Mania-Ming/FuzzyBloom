@@ -5,7 +5,7 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut, Bike } from "lucide-react"
+import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut, Bike, MessageSquare } from "lucide-react"
 
 const navItems = [
   { label: "Dashboard", href: "/admin",          Icon: LayoutDashboard },
@@ -13,17 +13,36 @@ const navItems = [
   { label: "Orders",    href: "/admin/orders",    Icon: ShoppingBag     },
   { label: "Riders",    href: "/admin/riders",    Icon: Bike            },
   { label: "Users",     href: "/admin/users",     Icon: Users           },
+  { label: "Messages",  href: "/admin/messages",  Icon: MessageSquare   },
   { label: "Settings",  href: "/admin/settings",  Icon: Settings        },
 ]
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const [pendingOrders, setPendingOrders] = useState(0)
+  const [pendingOrders, setPendingOrders]   = useState(0)
+  const [unreadMessages, setUnreadMessages] = useState(0)
+  const [adminId, setAdminId]               = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setAdminId(data.user?.id ?? null))
+  }, [])
 
   useEffect(() => {
     async function fetchCounts() {
-      const { count: orderCount } = await supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "Pending")
+      const { count: orderCount } = await supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "Pending")
       setPendingOrders(orderCount ?? 0)
+
+      if (adminId) {
+        const { count: msgCount } = await supabase
+          .from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("is_read", false)
+          .neq("sender_id", adminId)
+        setUnreadMessages(msgCount ?? 0)
+      }
     }
 
     fetchCounts()
@@ -31,10 +50,11 @@ export default function Sidebar() {
     const channel = supabase
       .channel("sidebar-counts")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, fetchCounts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, fetchCounts)
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [])
+  }, [adminId])
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -56,7 +76,9 @@ export default function Sidebar() {
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map(({ label, href, Icon }) => {
           const active = pathname === href || (href !== "/admin" && pathname.startsWith(href))
-          const badge = href === "/admin/orders" ? pendingOrders : 0
+          const badge = href === "/admin/orders" ? pendingOrders
+                      : href === "/admin/messages" ? unreadMessages
+                      : 0
           return (
             <Link
               key={href}

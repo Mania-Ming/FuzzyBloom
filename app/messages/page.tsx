@@ -1,5 +1,207 @@
-import { redirect } from "next/navigation"
+"use client"
 
-export default function MessagesPage() {
-  redirect("/orders")
+import { useEffect, useState, useRef, useCallback } from "react"
+import Navbar from "@/components/Navbar"
+import Footer from "@/components/Footer"
+import ProtectedRoute from "@/components/ProtectedRoute"
+import { supabase } from "@/lib/supabase"
+import { MessageSquare, Send } from "lucide-react"
+
+type Message = {
+  id: string
+  conversation_id: string
+  sender_id: string
+  message: string
+  is_read: boolean
+  created_at: string
+}
+
+function formatTime(ts: string) {
+  const d = new Date(ts)
+  const now = new Date()
+  const isToday = d.toDateString() === now.toDateString()
+  if (isToday) return d.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })
+  return d.toLocaleDateString("en-PH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+}
+
+export default function UserMessagesPage() {
+  const [userId, setUserId]           = useState<string | null>(null)
+  const [convId, setConvId]           = useState<string | null>(null)
+  const [messages, setMessages]       = useState<Message[]>([])
+  const [input, setInput]             = useState("")
+  const [sending, setSending]         = useState(false)
+  const [loading, setLoading]         = useState(true)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  // Get user and find/create their conversation
+  useEffect(() => {
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
+      setUserId(user.id)
+
+      // Find existing conversation
+      const { data: existing } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      if (existing) {
+        setConvId(existing.id)
+      } else {
+        // Create new conversation
+        const { data: created } = await supabase
+          .from("conversations")
+          .insert({ user_id: user.id })
+          .select("id")
+          .single()
+        if (created) setConvId(created.id)
+      }
+      setLoading(false)
+    }
+    init()
+  }, [])
+
+  const loadMessages = useCallback(async () => {
+    if (!convId || !userId) return
+    const { data } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", convId)
+      .order("created_at", { ascending: true })
+    setMessages(data ?? [])
+
+    // Mark admin messages as read
+    await supabase
+      .from("messages")
+      .update({ is_read: true })
+      .eq("conversation_id", convId)
+      .eq("is_read", false)
+      .neq("sender_id", userId)
+  }, [convId, userId])
+
+  useEffect(() => {
+    loadMessages()
+  }, [loadMessages])
+
+  // Realtime
+  useEffect(() => {
+    if (!convId) return
+    const ch = supabase
+      .channel("user-chat-" + convId)
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "messages",
+        filter: `conversation_id=eq.${convId}`
+      }, (payload) => {
+        setMessages(prev => [...prev, payload.new as Message])
+        if (payload.new.sender_id !== userId) {
+          supabase.from("messages").update({ is_read: true }).eq("id", payload.new.id)
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [convId, userId])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  async function sendMessage() {
+    if (!input.trim() || !convId || !userId) return
+    setSending(true)
+    await supabase.from("messages").insert({
+      conversation_id: convId,
+      sender_id: userId,
+      message: input.trim(),
+    })
+    setInput("")
+    setSending(false)
+  }
+
+  return (
+    <ProtectedRoute>
+      <div className="min-h-screen flex flex-col text-gray-800">
+        <Navbar />
+
+        <main className="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-8 flex flex-col">
+          <div className="mb-5 flex items-center gap-3">
+            <MessageSquare size={22} className="text-[#4b2e2e]" />
+            <div>
+              <h1 className="text-2xl text-[#2a1515] font-bold">Chat with Seller</h1>
+              <p className="text-gray-400 text-sm">We typically reply within a few hours</p>
+            </div>
+          </div>
+
+          <div className="flex-1 bg-white rounded-3xl border border-[#e8d5d5] shadow-sm flex flex-col overflow-hidden" style={{ minHeight: "500px" }}>
+
+            {/* Messages area */}
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-2">
+              {loading && (
+                <div className="flex justify-center items-center h-full">
+                  <div className="w-6 h-6 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+
+              {!loading && messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <MessageSquare size={40} className="text-gray-200 mb-3" />
+                  <p className="font-semibold text-gray-400">No messages yet</p>
+                  <p className="text-xs text-gray-300 mt-1">Send a message to start the conversation</p>
+                </div>
+              )}
+
+              {messages.map(msg => {
+                const isMe = msg.sender_id === userId
+                return (
+                  <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                    {!isMe && (
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] text-white flex items-center justify-center text-[10px] font-bold shrink-0 mr-2 mt-auto">
+                        FB
+                      </div>
+                    )}
+                    <div className="max-w-[70%]">
+                      <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                        isMe
+                          ? "bg-[#4b2e2e] text-white rounded-br-sm"
+                          : "bg-gray-100 text-gray-800 rounded-bl-sm"
+                      }`}>
+                        {msg.message}
+                      </div>
+                      <p className={`text-[10px] text-gray-400 mt-1 ${isMe ? "text-right" : "text-left"}`}>
+                        {formatTime(msg.created_at)}
+                        {isMe && msg.is_read && <span className="ml-1 text-blue-400">· Seen</span>}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Input */}
+            <div className="px-4 py-3 border-t border-gray-100 flex items-center gap-2 shrink-0">
+              <input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                placeholder="Type a message..."
+                disabled={loading || !convId}
+                className="flex-1 px-4 py-2.5 bg-gray-100 rounded-full text-sm outline-none focus:bg-gray-50 focus:ring-2 focus:ring-[#4b2e2e]/20 transition disabled:opacity-50"
+              />
+              <button
+                onClick={sendMessage}
+                disabled={!input.trim() || sending || !convId}
+                className="w-10 h-10 rounded-full bg-[#4b2e2e] text-white flex items-center justify-center hover:bg-[#3a2323] transition disabled:opacity-40 shrink-0"
+              >
+                <Send size={15} />
+              </button>
+            </div>
+          </div>
+        </main>
+
+        <Footer />
+      </div>
+    </ProtectedRoute>
+  )
 }

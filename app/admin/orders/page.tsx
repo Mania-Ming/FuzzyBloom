@@ -573,7 +573,6 @@ export default function AdminOrdersPage() {
         )}
 
         {filtered.map(order => {
-          const next = nextStatus(order.status)
           const isGcash = order.payment?.toLowerCase() === "gcash"
           const hasReceipt = !!order.receipt_url
           const dd = order.delivery_details
@@ -618,9 +617,16 @@ export default function AdminOrdersPage() {
                     </p>
                   </div>
 
-                  <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${STATUS_COLOR[order.status] ?? STATUS_COLOR.Pending}`}>
-                    {order.status}
-                  </span>
+                  <select
+                    value={order.status}
+                    onChange={e => handleAction(order.id, e.target.value)}
+                    onClick={e => e.stopPropagation()}
+                    className={`text-xs font-semibold px-2 py-1.5 rounded-xl border outline-none cursor-pointer transition ${STATUS_COLOR[order.status] ?? STATUS_COLOR.Pending}`}
+                  >
+                    {["Pending","Confirmed","Preparing","Out for Delivery","Delivered","Cancelled"].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
 
                   <button
                     onClick={() => setSelectedId(order.id)}
@@ -628,24 +634,6 @@ export default function AdminOrdersPage() {
                   >
                     View Details <ChevronRight size={11} />
                   </button>
-
-                  {next && order.status !== "Cancelled" && (
-                    <button
-                      onClick={() => handleAction(order.id, next)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#4b2e2e] text-white text-xs font-semibold hover:bg-[#3a2323] transition"
-                    >
-                      <Check size={11} /> {next}
-                    </button>
-                  )}
-
-                  {order.status !== "Cancelled" && order.status !== "Delivered" && (
-                    <button
-                      onClick={() => handleAction(order.id, "Cancelled")}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-100 text-xs font-semibold text-red-500 hover:bg-red-50 transition"
-                    >
-                      <X size={11} /> Cancel
-                    </button>
-                  )}
 
                   {order.status === "Cancelled" && (
                     <button
