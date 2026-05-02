@@ -43,10 +43,12 @@ export default function CartPage() {
 
       const { data: validProducts } = await supabase
         .from("products")
-        .select("id")
+        .select("id, is_available")
         .in("id", ids)
 
-      const validIds = new Set(validProducts?.map(p => p.id) ?? [])
+      const validIds = new Set(
+        (validProducts ?? []).filter(p => p.is_available !== false).map(p => p.id)
+      )
       const valid = raw.filter(i => i.product_id && validIds.has(i.product_id))
       const removed = raw.filter(i => !i.product_id || !validIds.has(i.product_id))
 

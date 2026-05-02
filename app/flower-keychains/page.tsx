@@ -71,6 +71,7 @@ export default function FlowerKeychainsPage() {
 
   async function addToWishlist() {
     if (!isLoggedIn) { router.push("/login"); return }
+    if (!isAvailable) { alert("This product is sold out."); return }
     const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]")
     const name = "Flower Keychain - " + selected.name
     if (!wishlist.find((i: any) => i.product_id === selected.id)) {
@@ -127,12 +128,13 @@ export default function FlowerKeychainsPage() {
             </div>
             {!isLoggedIn && <p className="text-xs text-gray-400 bg-gray-50 rounded-xl px-3 py-2 mb-4">Login to add to cart or wishlist</p>}
             <div className="flex gap-3 mb-3">
-              <button onClick={addToWishlist} className="w-12 h-12 flex items-center justify-center border-2 border-gray-200 rounded-full hover:border-pink-400 hover:text-pink-500 transition">
+              <button onClick={addToWishlist} disabled={!isAvailable}
+                className={`w-12 h-12 flex items-center justify-center border-2 rounded-full transition ${isAvailable ? "border-gray-200 hover:border-pink-400 hover:text-pink-500" : "border-gray-100 text-gray-300 cursor-not-allowed"}`}>
                 <Heart size={16} />
               </button>
               <button onClick={addToCart} disabled={!isAvailable}
                 className={`flex-1 py-3 rounded-full font-semibold text-sm transition ${isAvailable ? "bg-[#4b2e2e] text-white hover:bg-[#3a2323] shadow-md shadow-[#4b2e2e]/20" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
-                {!isLoggedIn ? "Login to Purchase" : isAvailable ? "Add to Cart" : "Not Available"}
+                {!isLoggedIn ? "Login to Purchase" : isAvailable ? "Add to Cart" : "Sold Out"}
               </button>
               <ContactModal productName={`Flower Keychain - ${selected.name}`} />
             </div>

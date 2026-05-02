@@ -53,6 +53,22 @@ export async function POST(req: NextRequest) {
 
     const db = adminClient()
 
+    // 0. Sold-out guard — check all items are still available
+    const productIds = (order.items as any[]).map((i: any) => i.product_id).filter(Boolean)
+    if (productIds.length > 0) {
+      const { data: products } = await db
+        .from("products")
+        .select("id, name, is_available")
+        .in("id", productIds)
+      const soldOut = (products ?? []).filter(p => p.is_available === false)
+      if (soldOut.length > 0) {
+        return NextResponse.json(
+          { error: `Some items are no longer available: ${soldOut.map((p: any) => p.name).join(", ")}` },
+          { status: 400 }
+        )
+      }
+    }
+
     // 1. Insert order
     const { data: insertedOrder, error: orderError } = await db
       .from("orders")

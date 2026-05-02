@@ -91,6 +91,7 @@ export default function BouquetsPage() {
 
   async function addToWishlist(product: DBProduct) {
     if (!isLoggedIn) { router.push("/login"); return }
+    if (!product.is_available) { alert("This product is sold out."); return }
     const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]")
     if (!wishlist.find((i: any) => i.product_id === product.id)) {
       wishlist.push({ product_id: product.id, name: product.name, price: product.price, img: product.image_url })
@@ -193,12 +194,13 @@ export default function BouquetsPage() {
                     <p className="text-xs text-gray-400 mt-0.5 flex-1 line-clamp-2">{product.description}</p>
                     <p className="text-[#4b2e2e] font-bold mt-2 text-sm mb-2">₱{product.price.toLocaleString()}</p>
                     <div className="flex gap-1.5 mb-1.5">
-                      <button onClick={() => addToWishlist(product)} className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-full hover:border-pink-400 hover:text-pink-500 transition">
+                      <button onClick={() => addToWishlist(product)} disabled={!product.is_available}
+                        className={`w-9 h-9 flex items-center justify-center border rounded-full transition ${product.is_available ? "border-gray-200 hover:border-pink-400 hover:text-pink-500" : "border-gray-100 text-gray-300 cursor-not-allowed"}`}>
                         <Heart size={13} />
                       </button>
                       <button onClick={() => addToCart(product)} disabled={!product.is_available}
                         className={`flex-1 rounded-full py-2 text-xs font-semibold transition ${product.is_available ? "bg-[#4b2e2e] text-white hover:bg-[#3a2323]" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
-                        {product.is_available ? "+ Cart" : "Not Available"}
+                        {product.is_available ? "+ Cart" : "Sold Out"}
                       </button>
                     </div>
 

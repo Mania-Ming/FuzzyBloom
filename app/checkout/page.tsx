@@ -151,14 +151,16 @@ export default function CheckoutPage() {
         receiptUrl = urlData.publicUrl
       }
 
-      // 2. Validate products still exist
+      // 2. Validate products still exist and are available
       const productIds = cartItems.map(i => i.product_id).filter(Boolean)
       const { data: validProducts, error: productCheckError } = await supabase
-        .from("products").select("id").in("id", productIds)
+        .from("products").select("id, is_available").in("id", productIds)
       if (productCheckError) throw productCheckError
-      const validIds = new Set(validProducts?.map(p => p.id) ?? [])
-      const unavailable = cartItems.filter(i => !validIds.has(i.product_id))
-      if (unavailable.length > 0) throw new Error(`Items no longer available: ${unavailable.map(i => i.name).join(", ")}`)
+      const availableIds = new Set(
+        (validProducts ?? []).filter(p => p.is_available !== false).map(p => p.id)
+      )
+      const unavailable = cartItems.filter(i => !availableIds.has(i.product_id))
+      if (unavailable.length > 0) throw new Error(`Some items are no longer available: ${unavailable.map(i => i.name).join(", ")}`)
 
       // 3. Place order via API route (service role — bypasses RLS on orders, delivery_details, order_items)
       const res = await fetch("/api/orders", {
