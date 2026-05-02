@@ -163,7 +163,7 @@ export default function UserMessagesPage() {
 
   return (
     <ProtectedRoute>
-      <div className="h-screen flex flex-col text-gray-800 overflow-hidden">
+      <div className="min-h-screen flex flex-col text-gray-800">
         <Navbar />
         <Toast toast={toast} onClose={() => setToast(null)} />
         {showDeleteModal && (
@@ -174,7 +174,7 @@ export default function UserMessagesPage() {
           />
         )}
 
-        <main className="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 flex flex-col min-h-0">
+        <main className="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 flex flex-col">
 
           {error && (
             <div className="mb-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 shrink-0">
@@ -183,7 +183,7 @@ export default function UserMessagesPage() {
           )}
 
           {/* Chat box — fills remaining height, nothing outside scrolls */}
-          <div className="flex-1 bg-white rounded-3xl border border-[#e8d5d5] shadow-sm flex flex-col min-h-0 overflow-hidden">
+          <div className="h-[500px] bg-white rounded-3xl border border-[#e8d5d5] shadow-sm flex flex-col overflow-hidden">
 
             {/* Header */}
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
