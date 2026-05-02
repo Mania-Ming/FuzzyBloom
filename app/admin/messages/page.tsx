@@ -56,6 +56,7 @@ export default function AdminMessagesPage() {
     const { data: convs, error } = await supabase
       .from("conversations")
       .select("id, user_id, created_at")
+      .eq("deleted_by_admin", false)
       .order("created_at", { ascending: false })
 
     if (error) { console.error("conversations fetch error:", error); return }
@@ -166,10 +167,11 @@ export default function AdminMessagesPage() {
   }, [messages])
 
   async function deleteConversation(convId: string) {
-    const { error: msgErr } = await supabase.from("messages").delete().eq("conversation_id", convId)
-    if (msgErr) { setToast({ message: "Failed to delete messages", type: "error" }); setDeleteTarget(null); return }
-    const { error: convErr } = await supabase.from("conversations").delete().eq("id", convId)
-    if (convErr) { setToast({ message: "Failed to delete conversation", type: "error" }); setDeleteTarget(null); return }
+    const { error } = await supabase
+      .from("conversations")
+      .update({ deleted_by_admin: true })
+      .eq("id", convId)
+    if (error) { setToast({ message: "Failed to delete conversation", type: "error" }); setDeleteTarget(null); return }
     if (selected?.id === convId) { setSelected(null); setMessages([]) }
     setDeleteTarget(null)
     setToast({ message: "Conversation deleted", type: "success" })
@@ -202,7 +204,7 @@ export default function AdminMessagesPage() {
       <Toast toast={toast} onClose={() => setToast(null)} />
       {deleteTarget && (
         <ConfirmModal
-          message="Are you sure you want to delete this conversation? This cannot be undone."
+          message="Remove this conversation from your view? The user can still see and send messages."
           onConfirm={() => deleteConversation(deleteTarget)}
           onCancel={() => setDeleteTarget(null)}
         />

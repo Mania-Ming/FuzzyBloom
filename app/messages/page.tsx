@@ -51,11 +51,12 @@ export default function UserMessagesPage() {
       }
       setUserId(user.id)
 
-      // Try to find existing conversation
+      // Try to find existing conversation (not deleted by user)
       const { data: existing, error: selErr } = await supabase
         .from("conversations")
         .select("id")
         .eq("user_id", user.id)
+        .eq("deleted_by_user", false)
         .maybeSingle()
 
       if (selErr) {
@@ -131,10 +132,11 @@ export default function UserMessagesPage() {
 
   async function deleteConversation() {
     if (!convId) return
-    const { error: msgErr } = await supabase.from("messages").delete().eq("conversation_id", convId)
-    if (msgErr) { setToast({ message: "Failed to delete messages", type: "error" }); setShowDeleteModal(false); return }
-    const { error: convErr } = await supabase.from("conversations").delete().eq("id", convId)
-    if (convErr) { setToast({ message: "Failed to delete conversation", type: "error" }); setShowDeleteModal(false); return }
+    const { error } = await supabase
+      .from("conversations")
+      .update({ deleted_by_user: true })
+      .eq("id", convId)
+    if (error) { setToast({ message: "Failed to delete conversation", type: "error" }); setShowDeleteModal(false); return }
     setConvId(null)
     setMessages([])
     setShowDeleteModal(false)
@@ -143,12 +145,24 @@ export default function UserMessagesPage() {
 
   async function sendMessage() {
     const trimmed = input.trim()
-    if (!trimmed) return
-    if (!userId || !convId) { alert("Chat not ready yet, please wait."); return }
+    if (!trimmed || !userId) return
+
+    // Auto-recreate conversation if it was soft-deleted
+    let activeConvId = convId
+    if (!activeConvId) {
+      const { data: created, error: insErr } = await supabase
+        .from("conversations")
+        .insert({ user_id: userId, deleted_by_user: false, deleted_by_admin: false })
+        .select("id")
+        .single()
+      if (insErr || !created) { alert("Failed to start conversation."); return }
+      activeConvId = created.id
+      setConvId(activeConvId)
+    }
 
     setSending(true)
     const { error: err } = await supabase.from("messages").insert({
-      conversation_id: convId,
+      conversation_id: activeConvId,
       sender_id: userId,
       message: trimmed,
     })
@@ -168,7 +182,7 @@ export default function UserMessagesPage() {
         <Toast toast={toast} onClose={() => setToast(null)} />
         {showDeleteModal && (
           <ConfirmModal
-            message="Are you sure you want to delete this conversation? All messages will be lost."
+            message="Delete this conversation? It will be removed from your view but the seller can still see it."
             onConfirm={deleteConversation}
             onCancel={() => setShowDeleteModal(false)}
           />
