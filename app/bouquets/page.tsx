@@ -7,8 +7,8 @@ import Footer from "@/components/Footer"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/hooks/useAuth"
 import { useMe } from "@/lib/hooks/useMe"
-import { Heart, ChevronRight } from "lucide-react"
-import ContactModal from "@/components/ContactModal"
+import { Heart, ChevronRight, MessageCircle } from "lucide-react"
+import { ContactModalDialog } from "@/components/ContactModal"
 
 function resolveImage(src: string | null | undefined, fallback = "/p1.png"): string {
   if (!src) return fallback
@@ -33,6 +33,7 @@ export default function BouquetsPage() {
   const [products, setProducts] = useState<DBProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [zoomedImg, setZoomedImg] = useState<{ src: string; name: string } | null>(null)
+  const [contactProduct, setContactProduct] = useState<string | null>(null)
   const [toast, setToast] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
   const [page, setPage] = useState(0)
@@ -167,8 +168,16 @@ export default function BouquetsPage() {
                     style={{ width: "200px" }}
                   >
                     {!product.is_available && (
-                      <span className="absolute top-2 right-2 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Sold Out</span>
+                      <span className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Sold Out</span>
                     )}
+                    {/* Chat icon — top-right overlay */}
+                    <button
+                      onClick={e => { e.stopPropagation(); setContactProduct(product.name) }}
+                      title="Contact Seller"
+                      className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-sm text-gray-400 hover:text-[#4b2e2e] hover:scale-110 transition"
+                    >
+                      <MessageCircle size={13} />
+                    </button>
                     <div
                       className="h-[160px] flex items-center justify-center bg-gray-50/50 rounded-xl mb-3 cursor-zoom-in overflow-hidden"
                       onClick={() => setZoomedImg({ src: resolveImage(product.image_url), name: product.name })}
@@ -220,7 +229,11 @@ export default function BouquetsPage() {
                 </button>
               </div>
             )}
-            <ContactModal productName="Bouquet" />
+            <ContactModalDialog
+              open={contactProduct !== null}
+              onClose={() => setContactProduct(null)}
+              productName={contactProduct ?? ""}
+            />
           </>
         )}
       </main>

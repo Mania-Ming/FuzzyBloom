@@ -125,8 +125,8 @@ export default function RibbonKeychainsPage() {
                 className={`flex-1 py-3 rounded-full font-semibold text-sm transition ${isAvailable ? "bg-[#4b2e2e] text-white hover:bg-[#3a2323] shadow-md shadow-[#4b2e2e]/20" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
                 {!isLoggedIn ? "Login to Purchase" : isAvailable ? "Add to Cart" : "Not Available"}
               </button>
+              <ContactModal productName={`Ribbon Keychain - ${selected.name}`} />
             </div>
-            <ContactModal productName={`Ribbon Keychain - ${selected.name}`} />
           </div>
         </div>
       </main>
