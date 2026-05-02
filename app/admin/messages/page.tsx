@@ -1,17 +1,18 @@
 "use client"
 
-import { useEffect, useState, useRef, useCallback } from "react"
+import { useEffect, useState, useRef } from "react"
 import { supabase } from "@/lib/supabase"
-import { MessageSquare, Send, User } from "lucide-react"
+import { MessageSquare, Send } from "lucide-react"
 
 type Conversation = {
   id: string
   user_id: string
   created_at: string
-  profiles?: { full_name: string; email: string } | null
-  last_message?: string
-  last_message_at?: string
-  unread_count?: number
+  profile_name: string
+  profile_email: string
+  last_message: string
+  last_message_at: string
+  unread_count: number
 }
 
 type Message = {
@@ -25,46 +26,47 @@ type Message = {
 
 function formatTime(ts: string) {
   const d = new Date(ts)
-  const now = new Date()
-  const isToday = d.toDateString() === now.toDateString()
+  const isToday = d.toDateString() === new Date().toDateString()
   if (isToday) return d.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })
   return d.toLocaleDateString("en-PH", { month: "short", day: "numeric" })
 }
 
 export default function AdminMessagesPage() {
+  const [adminId, setAdminId]           = useState<string | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [selected, setSelected]           = useState<Conversation | null>(null)
-  const [messages, setMessages]           = useState<Message[]>([])
-  const [input, setInput]                 = useState("")
-  const [adminId, setAdminId]             = useState<string | null>(null)
-  const [sending, setSending]             = useState(false)
+  const [selected, setSelected]         = useState<Conversation | null>(null)
+  const [messages, setMessages]         = useState<Message[]>([])
+  const [input, setInput]               = useState("")
+  const [sending, setSending]           = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  // Get current admin user
+  // Get admin user once
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setAdminId(data.user?.id ?? null))
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setAdminId(data.user.id)
+    })
   }, [])
 
-  const loadConversations = useCallback(async () => {
-    const { data: convs } = await supabase
+  // Load conversations (called after adminId is known)
+  async function loadConversations(currentAdminId: string) {
+    const { data: convs, error } = await supabase
       .from("conversations")
       .select("id, user_id, created_at")
       .order("created_at", { ascending: false })
 
+    if (error) { console.error("conversations fetch error:", error); return }
     if (!convs?.length) { setConversations([]); return }
 
-    // Fetch profiles for each user
     const userIds = [...new Set(convs.map(c => c.user_id))]
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, full_name, email")
       .in("id", userIds)
 
-    const profileMap: Record<string, any> = {}
+    const profileMap: Record<string, { full_name: string; email: string }> = {}
     for (const p of profiles ?? []) profileMap[p.id] = p
 
-    // Fetch last message + unread count per conversation
-    const enriched = await Promise.all(convs.map(async (c) => {
+    const enriched: Conversation[] = await Promise.all(convs.map(async (c) => {
       const { data: lastMsg } = await supabase
         .from("messages")
         .select("message, created_at")
@@ -78,52 +80,64 @@ export default function AdminMessagesPage() {
         .select("id", { count: "exact", head: true })
         .eq("conversation_id", c.id)
         .eq("is_read", false)
-        .neq("sender_id", adminId ?? "")
+        .neq("sender_id", currentAdminId)
 
       return {
-        ...c,
-        profiles: profileMap[c.user_id] ?? null,
+        id: c.id,
+        user_id: c.user_id,
+        created_at: c.created_at,
+        profile_name: profileMap[c.user_id]?.full_name ?? "Unknown",
+        profile_email: profileMap[c.user_id]?.email ?? "",
         last_message: lastMsg?.message ?? "",
         last_message_at: lastMsg?.created_at ?? c.created_at,
         unread_count: unread ?? 0,
       }
     }))
 
-    enriched.sort((a, b) => new Date(b.last_message_at!).getTime() - new Date(a.last_message_at!).getTime())
+    enriched.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
     setConversations(enriched)
+  }
+
+  // Trigger load once adminId is ready
+  useEffect(() => {
+    if (!adminId) return
+    loadConversations(adminId)
   }, [adminId])
 
+  // Realtime: refresh conversation list on any message change
   useEffect(() => {
-    if (adminId) loadConversations()
-  }, [adminId, loadConversations])
-
-  // Realtime: new conversations or messages
-  useEffect(() => {
+    if (!adminId) return
     const ch = supabase
-      .channel("admin-msg-watch")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, loadConversations)
-      .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, loadConversations)
+      .channel("admin-conv-watch")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => loadConversations(adminId))
+      .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, () => loadConversations(adminId))
       .subscribe()
     return () => { supabase.removeChannel(ch) }
-  }, [loadConversations])
+  }, [adminId])
 
-  const loadMessages = useCallback(async (convId: string) => {
-    const { data } = await supabase
+  // Load messages for selected conversation
+  async function loadMessages(convId: string) {
+    const { data, error } = await supabase
       .from("messages")
       .select("*")
       .eq("conversation_id", convId)
       .order("created_at", { ascending: true })
+
+    if (error) { console.error("messages fetch error:", error); return }
     setMessages(data ?? [])
 
-    // Mark unread messages as read
-    await supabase
-      .from("messages")
-      .update({ is_read: true })
-      .eq("conversation_id", convId)
-      .eq("is_read", false)
-      .neq("sender_id", adminId ?? "")
-  }, [adminId])
+    // Mark user messages as read
+    if (adminId) {
+      await supabase
+        .from("messages")
+        .update({ is_read: true })
+        .eq("conversation_id", convId)
+        .eq("is_read", false)
+        .neq("sender_id", adminId)
+    }
+  }
 
+  // When conversation is selected
   useEffect(() => {
     if (!selected) return
     loadMessages(selected.id)
@@ -132,34 +146,41 @@ export default function AdminMessagesPage() {
       .channel("admin-chat-" + selected.id)
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "messages",
-        filter: `conversation_id=eq.${selected.id}`
+        filter: `conversation_id=eq.${selected.id}`,
       }, (payload) => {
         setMessages(prev => [...prev, payload.new as Message])
-        // Mark as read if from user
-        if (payload.new.sender_id !== adminId) {
+        if (adminId && payload.new.sender_id !== adminId) {
           supabase.from("messages").update({ is_read: true }).eq("id", payload.new.id)
         }
       })
       .subscribe()
     return () => { supabase.removeChannel(ch) }
-  }, [selected, loadMessages, adminId])
+  }, [selected?.id, adminId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
   async function sendMessage() {
-    if (!input.trim() || !selected || !adminId) return
+    const trimmed = input.trim()
+    if (!trimmed || !selected || !adminId) return
     setSending(true)
-    await supabase.from("messages").insert({
+    const { error } = await supabase.from("messages").insert({
       conversation_id: selected.id,
       sender_id: adminId,
-      message: input.trim(),
+      message: trimmed,
     })
-    setInput("")
+    if (error) {
+      console.error("admin send error:", error)
+      alert("Failed to send: " + error.message)
+    } else {
+      setInput("")
+      if (adminId) loadConversations(adminId)
+    }
     setSending(false)
-    loadConversations()
   }
+
+  const totalUnread = conversations.reduce((s, c) => s + c.unread_count, 0)
 
   return (
     <div className="flex h-[calc(100vh-2rem)] bg-white rounded-2xl border border-[#e8d5d5] shadow-sm overflow-hidden">
@@ -169,22 +190,23 @@ export default function AdminMessagesPage() {
         <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
           <MessageSquare size={18} className="text-[#4b2e2e]" />
           <h2 className="font-bold text-[#2a1515] text-base">Messages</h2>
-          {conversations.reduce((s, c) => s + (c.unread_count ?? 0), 0) > 0 && (
+          {totalUnread > 0 && (
             <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-              {conversations.reduce((s, c) => s + (c.unread_count ?? 0), 0)}
+              {totalUnread}
             </span>
           )}
         </div>
 
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-center px-4">
+            <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
               <MessageSquare size={32} className="text-gray-200 mb-2" />
               <p className="text-gray-400 text-sm">No conversations yet</p>
             </div>
           )}
           {conversations.map(conv => {
             const isActive = selected?.id === conv.id
+            const initial = (conv.profile_name ?? "?")[0].toUpperCase()
             return (
               <button
                 key={conv.id}
@@ -192,20 +214,16 @@ export default function AdminMessagesPage() {
                 className={`w-full text-left px-4 py-3.5 border-b border-gray-50 hover:bg-gray-50 transition flex items-start gap-3 ${isActive ? "bg-[#fdf6f6]" : ""}`}
               >
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                  {(conv.profiles?.full_name ?? "?")[0].toUpperCase()}
+                  {initial}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
-                    <p className="font-semibold text-gray-800 text-sm truncate">
-                      {conv.profiles?.full_name ?? "Unknown"}
-                    </p>
-                    {conv.last_message_at && (
-                      <span className="text-[10px] text-gray-400 shrink-0">{formatTime(conv.last_message_at)}</span>
-                    )}
+                    <p className="font-semibold text-gray-800 text-sm truncate">{conv.profile_name}</p>
+                    <span className="text-[10px] text-gray-400 shrink-0">{formatTime(conv.last_message_at)}</span>
                   </div>
                   <p className="text-xs text-gray-400 truncate mt-0.5">{conv.last_message || "No messages yet"}</p>
                 </div>
-                {(conv.unread_count ?? 0) > 0 && (
+                {conv.unread_count > 0 && (
                   <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                     {conv.unread_count}
                   </span>
@@ -225,14 +243,14 @@ export default function AdminMessagesPage() {
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Chat header */}
+          {/* Header */}
           <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3 shrink-0">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] text-white flex items-center justify-center text-xs font-bold">
-              {(selected.profiles?.full_name ?? "?")[0].toUpperCase()}
+              {(selected.profile_name ?? "?")[0].toUpperCase()}
             </div>
             <div>
-              <p className="font-bold text-gray-800 text-sm">{selected.profiles?.full_name ?? "Unknown"}</p>
-              <p className="text-xs text-gray-400">{selected.profiles?.email ?? ""}</p>
+              <p className="font-bold text-gray-800 text-sm">{selected.profile_name}</p>
+              <p className="text-xs text-gray-400">{selected.profile_email}</p>
             </div>
           </div>
 
@@ -249,10 +267,10 @@ export default function AdminMessagesPage() {
                 <div key={msg.id} className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}>
                   {!isAdmin && (
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] text-white flex items-center justify-center text-[10px] font-bold shrink-0 mr-2 mt-auto">
-                      {(selected.profiles?.full_name ?? "?")[0].toUpperCase()}
+                      {(selected.profile_name ?? "?")[0].toUpperCase()}
                     </div>
                   )}
-                  <div className={`max-w-[65%] group`}>
+                  <div className="max-w-[65%]">
                     <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                       isAdmin
                         ? "bg-[#4b2e2e] text-white rounded-br-sm"
@@ -276,7 +294,7 @@ export default function AdminMessagesPage() {
             <input
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
               placeholder="Type a message..."
               className="flex-1 px-4 py-2.5 bg-gray-100 rounded-full text-sm outline-none focus:bg-gray-50 focus:ring-2 focus:ring-[#4b2e2e]/20 transition"
             />
