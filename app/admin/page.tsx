@@ -1,24 +1,58 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import { LayoutDashboard, Package, ShoppingBag, Users, DollarSign } from "lucide-react"
+import Toast, { ToastType } from "@/components/admin/Toast"
 
 type Stats = { totalProducts: number; totalOrders: number; totalUsers: number; totalSales: number }
 
-const statusColor: Record<string, string> = {
-  Pending:            "bg-amber-50 text-amber-600 border-amber-100",
-  Confirmed:          "bg-blue-50 text-blue-600 border-blue-100",
-  Preparing:          "bg-orange-50 text-orange-500 border-orange-100",
-  "Out for Delivery": "bg-purple-50 text-purple-600 border-purple-100",
-  Delivered:          "bg-green-50 text-green-600 border-green-100",
-  Cancelled:          "bg-red-50 text-red-500 border-red-100",
+const STATUS_OPTIONS = ["Pending", "Confirmed", "Preparing", "Out for Delivery", "Delivered", "Cancelled"] as const
+
+const statusSelectStyle: Record<string, string> = {
+  Pending:            "bg-amber-50 text-amber-600 border-amber-300",
+  Confirmed:          "bg-blue-50 text-blue-600 border-blue-300",
+  Preparing:          "bg-orange-50 text-orange-500 border-orange-300",
+  "Out for Delivery": "bg-purple-50 text-purple-600 border-purple-300",
+  Delivered:          "bg-green-50 text-green-600 border-green-300",
+  Cancelled:          "bg-red-50 text-red-500 border-red-300",
 }
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats>({ totalProducts: 0, totalOrders: 0, totalUsers: 0, totalSales: 0 })
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState<string>("All")
+  const [toast, setToast] = useState<ToastType>(null)
+
+  const fetchOrders = useCallback(async () => {
+    const { data: recentRaw } = await supabase
+      .from("orders")
+      .select("id, total_amount, status, created_at, payment")
+      .order("created_at", { ascending: false })
+      .limit(5)
+
+    const orderIds = (recentRaw ?? []).map((o: any) => o.id)
+    const { data: ddData } = await supabase
+      .from("delivery_details")
+      .select("order_id, full_name, phone, address")
+      .in("order_id", orderIds)
+
+    const ddMap: Record<string, any> = {}
+    for (const dd of ddData ?? []) ddMap[dd.order_id] = dd
+
+    setRecentOrders((recentRaw ?? []).map((o: any) => ({ ...o, delivery_details: ddMap[o.id] ?? null })))
+  }, [])
+
+  const updateStatus = async (orderId: string, newStatus: string) => {
+    const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId)
+    if (error) {
+      setToast({ message: "Failed to update status", type: "error" })
+    } else {
+      setToast({ message: "Status updated successfully", type: "success" })
+      await fetchOrders()
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -35,28 +69,8 @@ export default function AdminDashboard() {
       const { data: salesData } = await supabase.from("orders").select("total_amount")
       const totalSales = salesData?.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0) ?? 0
 
-      const { data: recentRaw } = await supabase
-        .from("orders")
-        .select("id, total_amount, status, created_at, payment")
-        .order("created_at", { ascending: false })
-        .limit(5)
-
-      const orderIds = (recentRaw ?? []).map((o: any) => o.id)
-      const { data: ddData } = await supabase
-        .from("delivery_details")
-        .select("order_id, full_name, phone, address")
-        .in("order_id", orderIds)
-
-      const ddMap: Record<string, any> = {}
-      for (const dd of ddData ?? []) ddMap[dd.order_id] = dd
-
-      const recent = (recentRaw ?? []).map((o: any) => ({
-        ...o,
-        delivery_details: ddMap[o.id] ?? null,
-      }))
-
       setStats({ totalProducts: products ?? 0, totalOrders: orders ?? 0, totalUsers: users ?? 0, totalSales })
-      setRecentOrders(recent)
+      await fetchOrders()
       setLoading(false)
     }
     load()
@@ -69,6 +83,8 @@ export default function AdminDashboard() {
     { label: "Total Sales",    value: `₱${stats.totalSales.toLocaleString()}`, Icon: DollarSign,  color: "bg-green-50 border-green-100",   text: "text-green-600",  iconColor: "text-green-400"  },
   ]
 
+  const filteredOrders = statusFilter === "All" ? recentOrders : recentOrders.filter((o) => o.status === statusFilter)
+
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="w-8 h-8 border-4 border-[#4b2e2e] border-t-transparent rounded-full animate-spin" />
@@ -77,6 +93,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
+      <Toast toast={toast} onClose={() => setToast(null)} />
       <div>
         <h1 className="text-2xl font-bold text-[#2a1515] flex items-center gap-2">
           <LayoutDashboard size={22} className="text-[#4b2e2e]" /> Dashboard
@@ -97,9 +114,19 @@ export default function AdminDashboard() {
       </div>
 
       <div className="bg-white rounded-2xl border border-[#e8d5d5] shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-50 flex items-center gap-2">
-          <ShoppingBag size={16} className="text-[#4b2e2e]" />
-          <h2 className="font-bold text-gray-800">Recent Orders</h2>
+        <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <ShoppingBag size={16} className="text-[#4b2e2e]" />
+            <h2 className="font-bold text-gray-800">Recent Orders</h2>
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-[#4b2e2e]/20"
+          >
+            <option value="All">All</option>
+            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -114,19 +141,25 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {recentOrders.length === 0 && (
-                <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-400">No orders yet</td></tr>
+              {filteredOrders.length === 0 && (
+                <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-400">No orders found</td></tr>
               )}
-              {recentOrders.map((order) => (
+              {filteredOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50/50 transition">
                   <td className="px-6 py-4 font-mono text-xs text-gray-500">#{String(order.id).slice(0, 8)}</td>
                   <td className="px-6 py-4 font-medium text-gray-800">{order.delivery_details?.full_name || "—"}</td>
                   <td className="px-6 py-4 text-gray-500 text-xs">{order.delivery_details?.phone || "—"}</td>
                   <td className="px-6 py-4 font-bold text-[#4b2e2e]">₱{Number(order.total_amount).toLocaleString()}</td>
                   <td className="px-6 py-4">
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${statusColor[order.status] ?? statusColor.Pending}`}>
-                      {order.status}
-                    </span>
+                    <select
+                      value={order.status}
+                      onChange={(e) => updateStatus(order.id, e.target.value)}
+                      className={`text-xs font-semibold px-2 py-1 rounded-lg border cursor-pointer focus:outline-none ${
+                        statusSelectStyle[order.status] ?? statusSelectStyle.Pending
+                      }`}
+                    >
+                      {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
                   </td>
                   <td className="px-6 py-4 text-gray-400 text-xs">{new Date(order.created_at).toLocaleDateString()}</td>
                 </tr>
