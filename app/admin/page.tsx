@@ -9,13 +9,13 @@ type Stats = { totalProducts: number; totalOrders: number; totalUsers: number; t
 
 const STATUS_OPTIONS = ["Pending", "Confirmed", "Preparing", "Out for Delivery", "Delivered", "Cancelled"] as const
 
-const statusSelectStyle: Record<string, string> = {
-  Pending:            "bg-amber-50 text-amber-600 border-amber-300",
-  Confirmed:          "bg-blue-50 text-blue-600 border-blue-300",
-  Preparing:          "bg-orange-50 text-orange-500 border-orange-300",
-  "Out for Delivery": "bg-purple-50 text-purple-600 border-purple-300",
-  Delivered:          "bg-green-50 text-green-600 border-green-300",
-  Cancelled:          "bg-red-50 text-red-500 border-red-300",
+const statusBadgeStyle: Record<string, string> = {
+  Pending:            "bg-amber-50 text-amber-600 border-amber-200",
+  Confirmed:          "bg-blue-50 text-blue-600 border-blue-200",
+  Preparing:          "bg-orange-50 text-orange-500 border-orange-200",
+  "Out for Delivery": "bg-purple-50 text-purple-600 border-purple-200",
+  Delivered:          "bg-green-50 text-green-600 border-green-200",
+  Cancelled:          "bg-red-50 text-red-500 border-red-200",
 }
 
 export default function AdminDashboard() {
@@ -151,15 +151,11 @@ export default function AdminDashboard() {
                   <td className="px-6 py-4 text-gray-500 text-xs">{order.delivery_details?.phone || "—"}</td>
                   <td className="px-6 py-4 font-bold text-[#4b2e2e]">₱{Number(order.total_amount).toLocaleString()}</td>
                   <td className="px-6 py-4">
-                    <select
-                      value={order.status}
-                      onChange={(e) => updateStatus(order.id, e.target.value)}
-                      className={`text-xs font-semibold px-2 py-1 rounded-lg border cursor-pointer focus:outline-none ${
-                        statusSelectStyle[order.status] ?? statusSelectStyle.Pending
-                      }`}
-                    >
-                      {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                    <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full border shadow-sm ${
+                      statusBadgeStyle[order.status] ?? statusBadgeStyle.Pending
+                    }`}>
+                      {order.status}
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-gray-400 text-xs">{new Date(order.created_at).toLocaleDateString()}</td>
                 </tr>
