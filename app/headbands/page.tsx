@@ -7,7 +7,7 @@ import SmartNavbar from "@/components/SmartNavbar"
 import Footer from "@/components/Footer"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/hooks/useAuth"
-import ContactSellerForm from "@/components/ContactSellerForm"
+import ContactModal from "@/components/ContactModal"
 
 type Product = { id: string; name: string; img: string }
 
@@ -119,7 +119,7 @@ export default function HeadbandsPage() {
                 {!isLoggedIn ? "Login to Purchase" : isAvailable ? "Add to Cart" : "Not Available"}
               </button>
             </div>
-            <ContactSellerForm productName={`Headband - ${selected.name}`} />
+            <ContactModal productName={`Headband - ${selected.name}`} />
           </div>
         </div>
       </main>

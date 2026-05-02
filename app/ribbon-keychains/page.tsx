@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/hooks/useAuth"
 import { useMe } from "@/lib/hooks/useMe"
 import { Heart } from "lucide-react"
-import ContactSellerForm from "@/components/ContactSellerForm"
+import ContactModal from "@/components/ContactModal"
 
 type Product = { id: string; name: string; img: string }
 
@@ -126,7 +126,7 @@ export default function RibbonKeychainsPage() {
                 {!isLoggedIn ? "Login to Purchase" : isAvailable ? "Add to Cart" : "Not Available"}
               </button>
             </div>
-            <ContactSellerForm productName={`Ribbon Keychain - ${selected.name}`} />
+            <ContactModal productName={`Ribbon Keychain - ${selected.name}`} />
           </div>
         </div>
       </main>

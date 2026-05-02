@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/hooks/useAuth"
 import { useMe } from "@/lib/hooks/useMe"
 import { Heart, ChevronRight } from "lucide-react"
-import ContactSellerForm from "@/components/ContactSellerForm"
+import ContactModal from "@/components/ContactModal"
 
 function resolveImage(src: string | null | undefined, fallback = "/p1.png"): string {
   if (!src) return fallback
@@ -220,7 +220,7 @@ export default function BouquetsPage() {
                 </button>
               </div>
             )}
-            <ContactSellerForm productName="Bouquet" />
+            <ContactModal productName="Bouquet" />
           </>
         )}
       </main>
