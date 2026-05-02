@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useRef } from "react"
 import { supabase } from "@/lib/supabase"
-import { MessageSquare, Send } from "lucide-react"
+import { MessageSquare, Send, Trash2 } from "lucide-react"
+import ConfirmModal from "@/components/admin/ConfirmModal"
+import Toast, { ToastType } from "@/components/admin/Toast"
 
 type Conversation = {
   id: string
@@ -38,6 +40,8 @@ export default function AdminMessagesPage() {
   const [messages, setMessages]         = useState<Message[]>([])
   const [input, setInput]               = useState("")
   const [sending, setSending]           = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [toast, setToast]               = useState<ToastType>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // Get admin user once
@@ -161,6 +165,17 @@ export default function AdminMessagesPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
+  async function deleteConversation(convId: string) {
+    const { error: msgErr } = await supabase.from("messages").delete().eq("conversation_id", convId)
+    if (msgErr) { setToast({ message: "Failed to delete messages", type: "error" }); setDeleteTarget(null); return }
+    const { error: convErr } = await supabase.from("conversations").delete().eq("id", convId)
+    if (convErr) { setToast({ message: "Failed to delete conversation", type: "error" }); setDeleteTarget(null); return }
+    if (selected?.id === convId) { setSelected(null); setMessages([]) }
+    setDeleteTarget(null)
+    setToast({ message: "Conversation deleted", type: "success" })
+    if (adminId) loadConversations(adminId)
+  }
+
   async function sendMessage() {
     const trimmed = input.trim()
     if (!trimmed || !selected || !adminId) return
@@ -184,6 +199,14 @@ export default function AdminMessagesPage() {
 
   return (
     <div className="flex h-[calc(100vh-2rem)] bg-white rounded-2xl border border-[#e8d5d5] shadow-sm overflow-hidden">
+      <Toast toast={toast} onClose={() => setToast(null)} />
+      {deleteTarget && (
+        <ConfirmModal
+          message="Are you sure you want to delete this conversation? This cannot be undone."
+          onConfirm={() => deleteConversation(deleteTarget)}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
 
       {/* ── Conversation List ── */}
       <div className="w-72 shrink-0 border-r border-gray-100 flex flex-col">
@@ -208,27 +231,35 @@ export default function AdminMessagesPage() {
             const isActive = selected?.id === conv.id
             const initial = (conv.profile_name ?? "?")[0].toUpperCase()
             return (
-              <button
+              <div
                 key={conv.id}
-                onClick={() => setSelected(conv)}
-                className={`w-full text-left px-4 py-3.5 border-b border-gray-50 hover:bg-gray-50 transition flex items-start gap-3 ${isActive ? "bg-[#fdf6f6]" : ""}`}
+                className={`group w-full text-left px-4 py-3.5 border-b border-gray-50 hover:bg-gray-50 transition flex items-start gap-3 ${isActive ? "bg-[#fdf6f6]" : ""}`}
               >
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                  {initial}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1">
-                    <p className="font-semibold text-gray-800 text-sm truncate">{conv.profile_name}</p>
-                    <span className="text-[10px] text-gray-400 shrink-0">{formatTime(conv.last_message_at)}</span>
+                <button onClick={() => setSelected(conv)} className="flex items-start gap-3 flex-1 min-w-0 text-left">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4b2e2e] to-[#c084a0] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                    {initial}
                   </div>
-                  <p className="text-xs text-gray-400 truncate mt-0.5">{conv.last_message || "No messages yet"}</p>
-                </div>
-                {conv.unread_count > 0 && (
-                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-                    {conv.unread_count}
-                  </span>
-                )}
-              </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1">
+                      <p className="font-semibold text-gray-800 text-sm truncate">{conv.profile_name}</p>
+                      <span className="text-[10px] text-gray-400 shrink-0">{formatTime(conv.last_message_at)}</span>
+                    </div>
+                    <p className="text-xs text-gray-400 truncate mt-0.5">{conv.last_message || "No messages yet"}</p>
+                  </div>
+                  {conv.unread_count > 0 && (
+                    <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      {conv.unread_count}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDeleteTarget(conv.id) }}
+                  className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition shrink-0 mt-1"
+                  title="Delete conversation"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             )
           })}
         </div>

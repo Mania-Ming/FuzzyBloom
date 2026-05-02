@@ -5,7 +5,9 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import { supabase } from "@/lib/supabase"
-import { MessageSquare, Send } from "lucide-react"
+import { MessageSquare, Send, Trash2 } from "lucide-react"
+import ConfirmModal from "@/components/admin/ConfirmModal"
+import Toast, { ToastType } from "@/components/admin/Toast"
 
 type Message = {
   id: string
@@ -28,9 +30,11 @@ export default function UserMessagesPage() {
   const [convId, setConvId]   = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput]     = useState("")
-  const [sending, setSending] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState<string | null>(null)
+  const [sending, setSending]         = useState(false)
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState<string | null>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [toast, setToast]             = useState<ToastType>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // Step 1: get user → find or create conversation
@@ -125,6 +129,18 @@ export default function UserMessagesPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
+  async function deleteConversation() {
+    if (!convId) return
+    const { error: msgErr } = await supabase.from("messages").delete().eq("conversation_id", convId)
+    if (msgErr) { setToast({ message: "Failed to delete messages", type: "error" }); setShowDeleteModal(false); return }
+    const { error: convErr } = await supabase.from("conversations").delete().eq("id", convId)
+    if (convErr) { setToast({ message: "Failed to delete conversation", type: "error" }); setShowDeleteModal(false); return }
+    setConvId(null)
+    setMessages([])
+    setShowDeleteModal(false)
+    setToast({ message: "Conversation deleted", type: "success" })
+  }
+
   async function sendMessage() {
     const trimmed = input.trim()
     if (!trimmed) return
@@ -149,14 +165,32 @@ export default function UserMessagesPage() {
     <ProtectedRoute>
       <div className="min-h-screen flex flex-col text-gray-800">
         <Navbar />
+        <Toast toast={toast} onClose={() => setToast(null)} />
+        {showDeleteModal && (
+          <ConfirmModal
+            message="Are you sure you want to delete this conversation? All messages will be lost."
+            onConfirm={deleteConversation}
+            onCancel={() => setShowDeleteModal(false)}
+          />
+        )}
 
         <main className="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-8 flex flex-col">
-          <div className="mb-5 flex items-center gap-3">
-            <MessageSquare size={22} className="text-[#4b2e2e]" />
-            <div>
-              <h1 className="text-2xl text-[#2a1515] font-bold">Chat with Seller</h1>
-              <p className="text-gray-400 text-sm">We typically reply within a few hours</p>
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <MessageSquare size={22} className="text-[#4b2e2e]" />
+              <div>
+                <h1 className="text-2xl text-[#2a1515] font-bold">Chat with Seller</h1>
+                <p className="text-gray-400 text-sm">We typically reply within a few hours</p>
+              </div>
             </div>
+            {convId && messages.length > 0 && (
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition px-3 py-1.5 rounded-lg hover:bg-red-50"
+              >
+                <Trash2 size={14} /> Delete chat
+              </button>
+            )}
           </div>
 
           {error && (
