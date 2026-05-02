@@ -635,14 +635,13 @@ export default function AdminOrdersPage() {
                     View Details <ChevronRight size={11} />
                   </button>
 
-                  {order.status === "Cancelled" && (
-                    <button
-                      onClick={() => handleAction(order.id, "Delete")}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition"
-                    >
-                      <Trash2 size={11} /> Delete
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleAction(order.id, "Delete")}
+                    title="Delete Order"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition"
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 </div>
               </div>
 
